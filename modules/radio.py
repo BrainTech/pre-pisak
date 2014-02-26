@@ -24,7 +24,7 @@ import wx, alsaaudio
 import wx.lib.buttons as bt
 
 from pymouse import PyMouse
-
+from pygame import mixer
 from pilots import radioPilot
 
 
@@ -89,8 +89,8 @@ class radio( wx.Frame ):
 		alsaaudio.Mixer( control = 'Master' ).setvolume( self.musicVolumeLevel, 0 )
 		self.flag = 'row'
 
-		self.numberOfRows = 4,
-		self.numberOfColumns = 5,
+		self.numberOfRows = 3,
+		self.numberOfColumns = 3,
             
 		self.columnIteration = 0
 		self.rowIteration = 0						
@@ -107,6 +107,10 @@ class radio( wx.Frame ):
 		self.mouseCursor = PyMouse( )
 		self.mousePosition = self.winWidth - 8, self.winHeight - 8
                	self.mouseCursor.move( *self.mousePosition )			
+
+		mixer.init( )
+		self.switchSound = mixer.Sound( self.pathToATPlatform + '/sounds/switchSound.wav' )
+		self.pressSound = mixer.Sound( self.pathToATPlatform + '/sounds/pressSound.wav' )
 
 		self.radioFlag = 'OFF'
 		self.SetBackgroundColour( 'black' )
@@ -153,8 +157,8 @@ class radio( wx.Frame ):
 			self.numberOfPanels = 1
 			print "Błąd w strukturze plików."
 						
-		self.functionButtonPath = [ wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform + 'icons/volume down.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform + 'icons/volume up.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform + 'icons/show2.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open( '%sicons/delete.png' % self.pathToATPlatform, 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open( '%sicons/back.png' % self.pathToATPlatform, 'rb' ) ) ) ]
-	
+		self.functionButtonPath = [ wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform + 'icons/volume down.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform + 'icons/volume up.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open( '%sicons/back.png' % self.pathToATPlatform, 'rb' ) ) ) ]
+			
 		if self.numberOfPanels == 1:
 			self.flag = 'row'
 		else:
@@ -166,7 +170,7 @@ class radio( wx.Frame ):
                 self.subSizers = [ ]
                 self.mainSizer = wx.BoxSizer( wx.VERTICAL )
                
-		self.numberOfCells = self.numberOfRows[ 0 ] * self.numberOfColumns[ 0 ]
+		self.numberOfCells = self.numberOfRows[ 0 ] * self.numberOfColumns[ 0 ] - 1
                 for panel in self.panels.keys( ):
 			
 			subSizer = wx.GridBagSizer( 4, 4 )
@@ -186,7 +190,7 @@ class radio( wx.Frame ):
 				index = -1
 
 			index_2 = 0
-			while index + index_2 < self.numberOfCells - 6:
+			while index + index_2 < self.numberOfCells - 3:
 				index_2 += 1
 				b = bt.GenButton( self, -1 )
 				b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
@@ -210,18 +214,6 @@ class radio( wx.Frame ):
 			b.SetBezelWidth( 3 )
 			b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
 			subSizer.Add( b, ( ( index + index_2 + 3 ) / self.numberOfColumns[ 0 ], ( index + index_2 + 3 ) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
-
-			b = bt.GenBitmapButton( self, -1, bitmap = self.functionButtonPath[ 3 ] )
-			b.SetBackgroundColour( self.backgroundColour )
-			b.SetBezelWidth( 3 )
-			b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
-			subSizer.Add( b, ( ( index + index_2 + 4 ) / self.numberOfColumns[ 0 ], ( index + index_2 + 4 ) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
-
-			b = bt.GenBitmapButton( self, -1, bitmap = self.functionButtonPath[ 4 ] )
-			b.SetBackgroundColour( self.backgroundColour )
-			b.SetBezelWidth( 3 )
-			b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
-			subSizer.Add( b, ( ( index + index_2 + 5 ) / self.numberOfColumns[ 0 ], ( index + index_2 + 5 ) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
 				
 			for number in range( self.numberOfRows[ 0 ] - 1 ):
 				subSizer.AddGrowableRow( number )
@@ -288,6 +280,8 @@ class radio( wx.Frame ):
 		
 	#-------------------------------------------------------------------------
         def onPress(self, event):
+
+		self.pressSound.play( )
 
 		self.numberOfPresses += 1
 
@@ -362,15 +356,9 @@ class radio( wx.Frame ):
 							time.sleep( 1.5 )
 						
 					elif self.columnIteration == 3:
-						self.stoper.Stop( )
-						radioPilot.pilot( self, id = 2 ).Show( True )
-						self.Hide( )
-
-					elif self.columnIteration == 4:
 						os.system( 'smplayer -send-action quit &')
-						
-					elif self.columnIteration == 5:
 						self.onExit( )
+
 				else:
 					try:
 						# print self.panelIteration
@@ -459,6 +447,7 @@ class radio( wx.Frame ):
 						b = item.GetWindow( )
 						b.SetBackgroundColour( self.backgroundColour )
 						b.SetFocus( )
+
 #####################################################################################################################################
 
 					if self.numberOfPanels > 1:
@@ -468,6 +457,7 @@ class radio( wx.Frame ):
 							self.panelIteration -= 1
 
 ######################################################################################################################################			
+
 				else:
 					self.rowIteration = self.rowIteration % self.numberOfRows[ 0 ]
                                 
@@ -488,7 +478,9 @@ class radio( wx.Frame ):
 						b.SetBackgroundColour( self.scanningColour )
 						b.SetFocus( )
 					self.rowIteration += 1
-                        
+
+				self.switchSound.play( )
+
 			elif self.flag == 'columns': #flag = columns ie. switching between cells in the particular row
 
 				if self.emptyColumnIteration == self.maxEmptyColumnIteration:
@@ -522,6 +514,8 @@ class radio( wx.Frame ):
 					b.SetFocus( )
 
 					self.columnIteration += 1
+
+				self.switchSound.play( )
 
 			else:
 				pass

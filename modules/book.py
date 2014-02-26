@@ -24,7 +24,7 @@ import wx
 import wx.lib.buttons as bt
 
 from pymouse import PyMouse
-
+from pygame import mixer
 from pilots import bookSuspend
 
 
@@ -85,8 +85,8 @@ class book( wx.Frame ):
 					self.filmVolumeLevel = 100
 					self.musicVolumeLevel = 70
 
-		self.numberOfRows = 4,
-		self.numberOfColumns = 6,
+		self.numberOfRows = 3,
+		self.numberOfColumns = 3,
 
 		self.columnIteration = 0
 		self.rowIteration = 0						
@@ -103,6 +103,10 @@ class book( wx.Frame ):
 		self.mouseCursor = PyMouse( )
 		self.mousePosition = self.winWidth - 8, self.winHeight - 8
                	self.mouseCursor.move( *self.mousePosition )			
+
+		mixer.init( )
+		self.switchSound = mixer.Sound( self.pathToATPlatform + '/sounds/switchSound.wav' )
+		self.pressSound = mixer.Sound( self.pathToATPlatform + '/sounds/pressSound.wav' )
 		
 		self.SetBackgroundColour( 'black' )
 
@@ -165,9 +169,9 @@ class book( wx.Frame ):
 			subSizer = wx.GridBagSizer( 4, 4 )
                    
 			self.subSizers.append( subSizer )
-
-			if self.panels != { 1 : [ [], [] ] }:
 			
+			if self.panels != { 1 : [ [], [] ] }:
+
 				index = 0
 				for index, logo in enumerate( self.panels[ panel ][ 1 ] ):
 					b = bt.GenBitmapButton( self, -1, name = self.panels[ panel ][ 0 ][ index ], bitmap = logo )
@@ -177,9 +181,9 @@ class book( wx.Frame ):
 					subSizer.Add( b, ( index / self.numberOfColumns[ 0 ], index % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
 			else:
 				index = -1
-					
+
 			index_2 = 0
-			while index + index_2 < self.numberOfCells - 7:
+			while index + index_2 < self.numberOfCells - 4:
 				index_2 += 1
 				b = bt.GenButton( self, -1 )
 				b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
@@ -190,7 +194,7 @@ class book( wx.Frame ):
 			b.SetBackgroundColour( self.backgroundColour )
 			b.SetBezelWidth( 3 )
 			b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
-			subSizer.Add( b, ( ( index + index_2 + 1 ) / self.numberOfColumns[ 0 ], ( index + index_2 + 1 ) % self.numberOfColumns[ 0 ] ), (1, 6), wx.EXPAND )
+			subSizer.Add( b, ( ( index + index_2 + 1 ) / self.numberOfColumns[ 0 ], ( index + index_2 + 1 ) % self.numberOfColumns[ 0 ] ), (1, 3), wx.EXPAND )
 				
 			for number in range( self.numberOfRows[ 0 ] - 1 ):
 				subSizer.AddGrowableRow( number )
@@ -243,6 +247,7 @@ class book( wx.Frame ):
 
 	#-------------------------------------------------------------------------
 	def onExit(self):
+
 		if __name__ == '__main__':
 			self.stoper.Stop( )
 			self.Destroy( )
@@ -255,6 +260,8 @@ class book( wx.Frame ):
 	
 	#-------------------------------------------------------------------------
         def onPress(self, event):
+
+		self.pressSound.play( )
 		
 		self.numberOfPresses += 1
 
@@ -397,6 +404,7 @@ class book( wx.Frame ):
 						b = item.GetWindow( )
 						b.SetBackgroundColour( self.backgroundColour )
 						b.SetFocus( )
+
 #####################################################################################################################################
 
 					if self.numberOfPanels > 1:
@@ -406,6 +414,7 @@ class book( wx.Frame ):
 							self.panelIteration -= 1
 
 ######################################################################################################################################			
+
 				else:
 					self.rowIteration = self.rowIteration % self.numberOfRows[ 0 ]
 
@@ -427,6 +436,8 @@ class book( wx.Frame ):
 						b.SetBackgroundColour( self.scanningColour )
 						b.SetFocus( )
 					self.rowIteration += 1
+
+				self.switchSound.play( )
 
 			elif self.flag == 'columns': #flag = columns ie. switching between cells in the particular row
 
@@ -462,9 +473,11 @@ class book( wx.Frame ):
 
 					self.columnIteration += 1
 
+				self.switchSound.play( )
+
 			else:
 				pass
-					
+			
 		# print self.panelIteration, self.rowIteration, self.columnIteration
 
 

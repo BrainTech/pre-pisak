@@ -24,7 +24,7 @@ import wx.lib.buttons as bt
 import subprocess as sp
 
 from pymouse import PyMouse
-
+from pygame import mixer
 from modules import speller, book, audiobook, music, movie, radio 
 
 
@@ -109,6 +109,10 @@ class main_menu( wx.Frame ):
 		self.mousePosition = self.winWidth - 4, self.winHeight - 4
 		self.mouseCursor.move( *self.mousePosition )
 
+		mixer.init( )
+		self.switchSound = mixer.Sound( './sounds/switchSound.wav' )
+		self.pressSound = mixer.Sound( './sounds/pressSound.wav' )
+
 		self.SetBackgroundColour( 'black' )
 
 	#-------------------------------------------------------------------------	
@@ -122,6 +126,7 @@ class main_menu( wx.Frame ):
 
 	#-------------------------------------------------------------------------
 	def createGui(self):
+
 		self.vbox = wx.BoxSizer( wx.VERTICAL )
                 self.sizer = wx.GridSizer( self.numberOfRows[ 0 ], self.numberOfColumns[ 0 ], 3, 3 )
 		for i in self.labels:
@@ -162,7 +167,9 @@ class main_menu( wx.Frame ):
 
 	#-------------------------------------------------------------------------
 	def onPress(self, event):
-			
+
+		self.pressSound.play( )
+
 		self.numberOfPresses += 1
 		self.countRows = 0
 
@@ -294,6 +301,8 @@ class main_menu( wx.Frame ):
 
 					self.colIteration += 1
 					self.countColumns += 1
+
+			self.switchSound.play( )
 
 		elif self.countRows == self.maxRows[ 0 ]:
 			self.flag = 'rest'

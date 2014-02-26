@@ -346,9 +346,7 @@ class speller( wx.Frame ):
 
 				else:
 					self.typewriterKeySound.play( )
-					
-					#self.typingSound.Play(wx.SOUND_ASYNC) doesn't work. Wonder why
-					
+										
 					self.textField.AppendText( label )
 				
 				self.flag = 'row'

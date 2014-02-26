@@ -24,9 +24,9 @@ import wx.lib.buttons as bt
 import subprocess as sp
 
 from pymouse import PyMouse
-from pygame import mixer
-from modules import speller, book, audiobook, music, movie, radio 
 
+from modules import speller, audiobook, music, movie, radio 
+from modules import exercise
 
 #=============================================================================
 class main_menu( wx.Frame ):
@@ -55,7 +55,8 @@ class main_menu( wx.Frame ):
 		p = sp.Popen( cmd, shell = True, stdin = sp.PIPE, stdout = sp.PIPE, stderr = sp.STDOUT, close_fds = True )
 		self.path = p.stdout.read( )[ :-1 ] + '/'
 		
-		files = [ '.pathToATPlatform', './modules/.pathToATPlatform', './modules/pilots/.pathToATPlatform', './modules/spellers/.pathToATPlatform', './modules/others/.pathToATPlatform' ]
+		files = [ '.pathToATPlatform', './modules/.pathToATPlatform', './modules/pilots/.pathToATPlatform', './modules/spellers/.pathToATPlatform', './modules/others/.pathToATPlatform', 'modules/ewriting/.pathToATPlatform', 'modules/games/atmemory/.pathToATPlatform', 'modules/games/atsweeper/.pathToATPlatform' ]
+
 		for item in files:
 			with open(item, 'w') as textFile:
 				textFile.write( self.path ) 
@@ -89,7 +90,7 @@ class main_menu( wx.Frame ):
 					self.filmVolumeLevel = 100
 					self.musicVolumeLevel = 40
 
-		self.labels = 'SPELLER BOOKS AUDIOBOOKS MUSIC MOVIES RADIO'.split( )
+		self.labels = 'SPELLER EXERCISES AUDIOBOOKS MUSIC MOVIES RADIO'.split( )
 
 		self.flag = 'row'
 
@@ -109,16 +110,12 @@ class main_menu( wx.Frame ):
 		self.mousePosition = self.winWidth - 4, self.winHeight - 4
 		self.mouseCursor.move( *self.mousePosition )
 
-		mixer.init( )
-		self.switchSound = mixer.Sound( './sounds/switchSound.wav' )
-		self.pressSound = mixer.Sound( './sounds/pressSound.wav' )
-
 		self.SetBackgroundColour( 'black' )
 
 	#-------------------------------------------------------------------------	
         def initializeBitmaps(self):
             
-	    labelFiles = [ self.path + item for item in [ 'icons/modules/speller.png', 'icons/modules/books.png', 'icons/modules/audiobooks.png', 'icons/modules/music.png', 'icons/modules/movies.png', 'icons/modules/radio.png', ] ]
+	    labelFiles = [ self.path + item for item in [ 'icons/modules/speller.png', 'icons/modules/exercises.png', 'icons/modules/audiobooks.png', 'icons/modules/music.png', 'icons/modules/movies.png', 'icons/modules/radio.png', ] ]
 
             self.labelbitmaps = { }
 	    for index in xrange( len(self.labels) ):
@@ -126,7 +123,6 @@ class main_menu( wx.Frame ):
 
 	#-------------------------------------------------------------------------
 	def createGui(self):
-
 		self.vbox = wx.BoxSizer( wx.VERTICAL )
                 self.sizer = wx.GridSizer( self.numberOfRows[ 0 ], self.numberOfColumns[ 0 ], 3, 3 )
 		for i in self.labels:
@@ -167,9 +163,7 @@ class main_menu( wx.Frame ):
 
 	#-------------------------------------------------------------------------
 	def onPress(self, event):
-
-		self.pressSound.play( )
-
+			
 		self.numberOfPresses += 1
 		self.countRows = 0
 
@@ -210,9 +204,9 @@ class main_menu( wx.Frame ):
 				    speller.speller( parent = self, id = -1 ).Show( True )
 				    self.Hide( )
 			    
-			    elif label == 'BOOKS':
+			    elif label == 'EXERCISES':
 				    self.stoper.Stop( )
-				    book.book( self, id = -1 ).Show( True )
+				    exercise.exercise( self, id = -1 ).Show( True )
 				    self.Hide( )
 
 			    elif label == 'AUDIOBOOKS':
@@ -243,8 +237,6 @@ class main_menu( wx.Frame ):
 
 		else:
 			pass
-
-		# print self.numberOfPresses
 
 	#-------------------------------------------------------------------------
 	def timerUpdate(self , event):
@@ -301,8 +293,6 @@ class main_menu( wx.Frame ):
 
 					self.colIteration += 1
 					self.countColumns += 1
-
-			self.switchSound.play( )
 
 		elif self.countRows == self.maxRows[ 0 ]:
 			self.flag = 'rest'

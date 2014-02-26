@@ -19,12 +19,12 @@
 import wxversion
 wxversion.select( '2.8' )
 
-import glob, os, time
+import glob, os, time #modules of the Python standard library 
 import wx, alsaaudio
 import wx.lib.buttons as bt
 
 from pymouse import PyMouse
-from pygame import mixer
+
 from pilots import audiobookPilot
 
 
@@ -87,8 +87,8 @@ class audiobook( wx.Frame ):
 		
 		alsaaudio.Mixer( control = 'Master' ).setvolume( self.musicVolumeLevel, 0 )
 
-		self.numberOfRows = 3,
-		self.numberOfColumns = 3,
+		self.numberOfRows = 4,
+		self.numberOfColumns = 6,
 		
 		self.columnIteration = 0
 		self.rowIteration = 0						
@@ -105,10 +105,6 @@ class audiobook( wx.Frame ):
 		self.mouseCursor = PyMouse( )
 		self.mousePosition = self.winWidth - 8, self.winHeight - 8
                	self.mouseCursor.move( *self.mousePosition )			
-
-		mixer.init( )
-		self.switchSound = mixer.Sound( self.pathToATPlatform + '/sounds/switchSound.wav' )
-		self.pressSound = mixer.Sound( self.pathToATPlatform + './sounds/pressSound.wav' )
 		
 		self.SetBackgroundColour( 'black' )
 		
@@ -152,7 +148,7 @@ class audiobook( wx.Frame ):
 			self.numberOfPanels = 1
 			print "Błąd w strukturze plików."
 
-		self.functionButtonPath = [ wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform + 'icons/volume down.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform + 'icons/volume up.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform + 'icons/back.png', 'rb' ) ) ) ]
+		self.functionButtonPath = [ wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform + 'icons/volume down.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform + 'icons/volume up.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform + 'icons/show.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform + 'icons/delete.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform + 'icons/back.png', 'rb' ) ) ) ]
 
 		if self.numberOfPanels == 1:
 			self.flag = 'row'
@@ -185,7 +181,7 @@ class audiobook( wx.Frame ):
 				index = -1
 
 			index_2 = 0
-			while index + index_2 < self.numberOfCells - 4:
+			while index + index_2 < self.numberOfCells - 7:
 				index_2 += 1
 				b = bt.GenButton( self, -1 )
 				b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
@@ -208,7 +204,19 @@ class audiobook( wx.Frame ):
 			b.SetBackgroundColour( self.backgroundColour )
 			b.SetBezelWidth( 3 )
 			b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
-			subSizer.Add( b, ( ( index + index_2 + 3 ) / self.numberOfColumns[ 0 ], ( index + index_2 + 3 ) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
+			subSizer.Add( b, ( ( index + index_2 + 3 ) / self.numberOfColumns[ 0 ], ( index + index_2 + 3 ) % self.numberOfColumns[ 0 ] ), ( 1, 2 ), wx.EXPAND )
+
+			b = bt.GenBitmapButton( self, -1, bitmap = self.functionButtonPath[ 3 ] )
+			b.SetBackgroundColour( self.backgroundColour )
+			b.SetBezelWidth( 3 )
+			b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+			subSizer.Add( b, ( ( index + index_2 + 5 ) / self.numberOfColumns[ 0 ], ( index + index_2 + 5 ) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
+
+			b = bt.GenBitmapButton( self, -1, bitmap = self.functionButtonPath[ 4 ] )
+			b.SetBackgroundColour( self.backgroundColour )
+			b.SetBezelWidth( 3 )
+			b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+			subSizer.Add( b, ( ( index + index_2 + 6 ) / self.numberOfColumns[ 0 ], ( index + index_2 + 6 ) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
 				
 			for number in range( self.numberOfRows[ 0 ] - 1 ):
 				subSizer.AddGrowableRow( number )
@@ -276,8 +284,6 @@ class audiobook( wx.Frame ):
 	#-------------------------------------------------------------------------
         def onPress(self, event):
 
-		self.pressSound.play( )
-
 		self.numberOfPresses += 1
 
                 if self.numberOfPresses == 1:
@@ -302,7 +308,11 @@ class audiobook( wx.Frame ):
 			
 			elif self.flag == 'row':
                                 
-				buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ], ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] )
+				if self.rowIteration == self.numberOfRows[ 0 ]:
+					buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ], ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] - 1 )
+
+				else:
+					buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ], ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] )
 			
 				for button in buttonsToHighlight:
 					item = self.subSizers[ self.panelIteration ].GetItem( button )
@@ -353,9 +363,15 @@ class audiobook( wx.Frame ):
 							time.sleep( 1.5 )
 						
 					elif self.columnIteration == 3:
-						os.system( 'smplayer -send-action quit &')
-						self.onExit( )
+						self.stoper.Stop( )
+						audiobookPilot.pilot( self, id = 2 ).Show( True )
+						self.Hide( )
 
+					elif self.columnIteration == 4:
+						os.system( 'smplayer -send-action quit &')
+						
+					elif self.columnIteration == 5:
+						self.onExit( )
 				else:
 					try:
 						
@@ -439,7 +455,6 @@ class audiobook( wx.Frame ):
 						b = item.GetWindow( )
 						b.SetBackgroundColour( self.backgroundColour )
 						b.SetFocus( )
-
 #####################################################################################################################################
 
 					if self.numberOfPanels > 1:
@@ -449,7 +464,6 @@ class audiobook( wx.Frame ):
 							self.panelIteration -= 1
 
 ######################################################################################################################################			
-
 				else:
 					self.rowIteration = self.rowIteration % self.numberOfRows[ 0 ]
                                 
@@ -462,7 +476,9 @@ class audiobook( wx.Frame ):
 					if self.rowIteration == self.numberOfRows[ 0 ] - 1:
 						self.emptyRowIteration += 1
 						
-					scope = range( self.rowIteration * self.numberOfColumns[ 0 ], self.rowIteration * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] )
+						scope = range( self.rowIteration * self.numberOfColumns[ 0 ], self.rowIteration * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] - 1 )
+					else:
+						scope = range( self.rowIteration * self.numberOfColumns[ 0 ], self.rowIteration * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] )
 
 					for i in scope:
 						item = self.subSizers[ self.panelIteration ].GetItem( i )
@@ -470,8 +486,6 @@ class audiobook( wx.Frame ):
 						b.SetBackgroundColour( self.scanningColour )
 						b.SetFocus( )
 					self.rowIteration += 1
-					
-				self.switchSound.play( )
                         
 			elif self.flag == 'columns': #flag = columns ie. switching between cells in the particular row
 
@@ -490,14 +504,17 @@ class audiobook( wx.Frame ):
 						b.SetFocus( )
 
 				else:
+					if self.rowIteration == self.numberOfRows[ 0 ]:
+						self.columnIteration = self.columnIteration % ( self.numberOfColumns[ 0 ] - 1 )
 
-					# if self.columnIteration == self.numberOfColumns[ 0 ] - 2:
-					# 	self.emptyColumnIteration += 1
+						if self.columnIteration == self.numberOfColumns[ 0 ] - 2:
+							self.emptyColumnIteration += 1
+
+					else:
+						self.columnIteration = self.columnIteration % self.numberOfColumns[ 0 ]
 						
-					self.columnIteration = self.columnIteration % self.numberOfColumns[ 0 ]
-						
-					if self.columnIteration == self.numberOfColumns[ 0 ] - 1:
-						self.emptyColumnIteration += 1
+						if self.columnIteration == self.numberOfColumns[ 0 ] - 1:
+							self.emptyColumnIteration += 1
 
 					items = self.subSizers[ self.panelIteration ].GetChildren( )
 					for item in items:
@@ -512,8 +529,6 @@ class audiobook( wx.Frame ):
 
 					self.columnIteration += 1
 
-				self.switchSound.play( )
-		
 			else:
 				pass
 					

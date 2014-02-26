@@ -1,0 +1,9 @@
+timeGap = 1500
+
+backgroundColour = white
+textColour = black
+scanningColour = #CFECEC
+selectionColour = #B7CEEC
+
+filmVolume = 10
+musicVolume = 10

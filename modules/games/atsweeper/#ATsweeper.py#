@@ -19,11 +19,19 @@
 import wxversion
 wxversion.select('2.8')
 
+import glob, os, time
+import time
+from random import shuffle
+
 import wx
 import wx.lib.buttons as bt
 from pymouse import PyMouse
+import numpy as np
 
+import subprocess as sp
+import shlex
 import pygame
+
 import minesweeper
 
 #=============================================================================
@@ -42,8 +50,8 @@ class sweeper_GUI( wx.Frame ):
 		self.initializeParameters( )
 		self.initializeBitmaps( )
 		self.createGui( )
-		self.createBindings( )
 		self.initializeTimer( )
+		self.Bind( wx.EVT_CLOSE , self.OnExit )
 
 	#-------------------------------------------------------------------------
 	def initializeParameters(self):
@@ -83,7 +91,7 @@ class sweeper_GUI( wx.Frame ):
                 
 		self.colorlegend = {'0':'#E5D9D9', '1': '#5545EA', '2': '#B229B7', '3': '#13CE1A', '4':'#CE1355', '5': '#F9F504', '6':'#FF7504', '7':'#FF0404', '8':'#000000'}
 
-		self.options = ['mode', 'restart', 'exit']
+		self.options = [ 'mode', 'restart', 'exit' ]
 		self.selection_mode = 'mines'	
 		self.winstate = False
 		self.failstate = False
@@ -93,9 +101,9 @@ class sweeper_GUI( wx.Frame ):
 		self.numberOfRows = self.gamesize[ 0 ] + 1
                 self.numberOfColumns = self.gamesize[ 1 ]
 
-		self.numberOfMines = 4
+		self.numberOfMines = 3
 		
-		if self.numberOfColumns < 3 or self.numberOfColumns * (self.numberOfRows-1) < self.numberOfMines:
+		if self.numberOfColumns < 3 or self.numberOfColumns * ( self.numberOfRows-1 ) < self.numberOfMines:
 			print '\nZbyt mała liczba komórek lub kolumn. \nKomórek musi być więcej niż min, a minimalna liczba kolumn to 3. \n'
 			exit( )
 
@@ -109,27 +117,26 @@ class sweeper_GUI( wx.Frame ):
                 self.countColumns = 0										
 
 		self.maxNumberOfRows = 3
-                self.maxNumberOfColumns = 2									
+                self.maxNumberOfColumns = 2								
 	    
                 self.numberOfPresses = 1
                 self.subSizerNumber = 0
 		self.mouseCursor = PyMouse( )
-
-		self.mouseCursor = PyMouse( )
-		self.mousePosition = self.winWidth - 8, self.winHeight - 8
-               	self.mouseCursor.move( *self.mousePosition )			
-
-
+		
+		self.winWidth, self.winHeight = wx.DisplaySize( )
+		
 		self.SetBackgroundColour( 'black' )
-
+		
 	#-------------------------------------------------------------------------
-        def initializeBitmaps(self):
+	def initializeBitmaps(self):
+
+		self.pathToEPlatform = './'
 		
-		self.path=self.pathToATPlatform + 'icons/games/ATsweeper/'
-		iconFiles = [ file for file in [ self.path + 'mine_mini.png', self.path + 'mines.png', self.path + 'flag.png', self.path + 'flag_mini.png', self.path + 'flag_crossed_mini.png', self.path + 'restart.png', self.path + 'exit.png', self.path + 'win.png', self.path + 'lose.png' ] ]
+		self.path=self.pathToEPlatform+'multimedia/'
+		iconFiles = [ file for file in [ self.path + 'icons/minesweeper/mine.png', self.path + 'icons/minesweeper/mines.png', self.path + 'icons/minesweeper/flag.png', self.path + 'icons/minesweeper/flag_mini.png', self.path + 'icons/minesweeper/restart.png', self.path + 'icons/minesweeper/exit.png', self.path + 'icons/minesweeper/win.png', self.path + 'icons/minesweeper/lose.png' ] ]
     
-		iconBitmapName = [ 'mine', 'mines', 'flag', 'flag_mini', 'flag_crossed_mini', 'restart', 'exit', 'win', 'lose' ]
-		
+		iconBitmapName = [ 'mine', 'mines', 'flag', 'flag_mini', 'restart', 'exit', 'win', 'lose' ]
+
 		self.iconBitmaps = { }
 
 		for i in xrange( len( iconFiles ) ):
@@ -156,17 +163,13 @@ class sweeper_GUI( wx.Frame ):
 
 		for index_1, item in enumerate( self.labels ):
 
-			if item == -2.0:
+			if item == -2.0 or item == -4.0:
 
 				b = bt.GenBitmapButton( self, -1, bitmap = self.iconBitmaps[ 'mine' ], size = ( ( self.winWidth - self.margine/1.8 * (self.numberOfColumns) ) / float( self.numberOfColumns ), ( 0.7 * ( self.winHeight-20 ) - self.margine * (self.numberOfRows - 1) ) / float( self.numberOfRows - 1 ) ) )
 
 			elif item == -3.0:
 
 				b = bt.GenBitmapButton( self, -1, bitmap=self.iconBitmaps[ 'flag_mini' ],size = ( ( self.winWidth - self.margine/1.8 * (self.numberOfColumns) ) / float( self.numberOfColumns ), ( 0.7 * ( self.winHeight-20 ) - self.margine * (self.numberOfRows - 1) ) / float( self.numberOfRows - 1 ) ) )
-
-			elif item == -4.0:
-
-				b = bt.GenBitmapButton( self, -1, bitmap=self.iconBitmaps[ 'flag_crossed_mini' ],size = ( ( self.winWidth - self.margine/1.8 * (self.numberOfColumns) ) / float( self.numberOfColumns ), ( 0.7 * ( self.winHeight-20 ) - self.margine * (self.numberOfRows - 1) ) / float( self.numberOfRows - 1 ) ) )
 
 			else:
 
@@ -198,7 +201,7 @@ class sweeper_GUI( wx.Frame ):
 				b.SetBezelWidth( 3 )
 		                b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
                                 self.subSizer.Add( b, ( 0, 0 ), ( 1, self.numberOfColumns / 3 ), wx.EXPAND )
-
+				print self.numberOfColumns / 3
                         elif index_2 == 1:
 				if not self.winstate and not self.failstate:
 					b = bt.GenBitmapButton( self, -1, bitmap = self.iconBitmaps[ 'restart' ] )
@@ -211,7 +214,7 @@ class sweeper_GUI( wx.Frame ):
 				b.SetBezelWidth( 3 )
 		                b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
                                 self.subSizer.Add( b, ( 0, self.numberOfColumns / 3 ), ( 1, self.numberOfColumns / 3 + self.numberOfColumns % 3 ), wx.EXPAND )
-
+				print '0, ' + str(self.numberOfColumns / 3) + '(1, ' + str(self.numberOfColumns / 3 + self.numberOfColumns % 3) + ' )'
                         else:
 				b = bt.GenBitmapButton( self, -1, bitmap = self.iconBitmaps[ 'exit' ] )
 				b.SetBackgroundColour( self.backgroundColour )
@@ -234,58 +237,10 @@ class sweeper_GUI( wx.Frame ):
 		self.Center( )
 
 	#-------------------------------------------------------------------------
-	def createBindings(self):
-		self.Bind( wx.EVT_CLOSE , self.OnCloseWindow )
-
-	#-------------------------------------------------------------------------	
-	def OnCloseWindow(self, event):
-
-		self.mousePosition = self.winWidth/1.85, self.winHeight/1.85	
-		self.mouseCursor.move( *self.mousePosition )	
-
-		dial = wx.MessageDialog(None, 'Czy napewno chcesz wyjść z programu?', 'Wyjście',
-					wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION | wx.STAY_ON_TOP)
-            
-		ret = dial.ShowModal( )
-		
-		if ret == wx.ID_YES:
-			try:
-				self.parent.parent.parent.Destroy()
-				self.parent.parent.Destroy()
-				self.parent.Destroy()
-				self.Destroy()
-
-			except AttributeError:
-				try:
-					self.parent.parent.Destroy()
-					self.parent.Destroy()
-					self.Destroy()
-
-				except AttributeError:
-					try:		
-						self.parent.Destroy()
-						self.Destroy()
-
-					except AttributeError:
-						self.Destroy()
-
-		else:
-			event.Veto( )
-			self.mousePosition = self.winWidth - 8, self.winHeight - 8
-			self.mouseCursor.move( *self.mousePosition )	
-
-	#-------------------------------------------------------------------------
-	def onExit( self ):
-
-		if __name__ == '__main__':
-			self.stoper.Stop( )
-			self.Destroy( )
-		else:
-			self.stoper.Stop( )
-			self.MakeModal( False )
-			self.parent.Show( True )
-			self.parent.stoper.Start( self.parent.timeGap )
-			self.Destroy( )
+	def OnExit(self, event):
+		self.stoper.Stop( )
+                self.MakeModal( False )
+                self.Destroy( )
 
 	#----------------------------------------------------------------------------
 	def onPress(self, event):
@@ -319,7 +274,7 @@ class sweeper_GUI( wx.Frame ):
 				except IndexError:
 					label = 'special'
 									
-				if (label == -1.0 or label == -3.0) and not self.failstate and not self.winstate: # checking for mines, updating buttons
+				if label == -1.0 and not self.failstate and not self.winstate: # checking for mines, updating buttons
 
 					if self.selection_mode == 'mines':
 						self.failstate = self.game.check_for_mines(self.columnIteration-1, self.rowIteration)
@@ -328,9 +283,9 @@ class sweeper_GUI( wx.Frame ):
 							self.failstate = self.game.check_for_mines(self.columnIteration-1, self.rowIteration)
 						self.first_move = False
         	
-						self.labels = self.game.displayfield.flatten( ) 
+						self.labels = self.game.displayfield.flatten() 
 					else:
-						self.winstate = self.game.flag_field( self.columnIteration - 1, self.rowIteration )
+						self.winstate = self.game.flag_field(self.columnIteration-1, self.rowIteration)
 
 					self.labels = self.game.displayfield.flatten()
 					self.mainSizer.Clear()
@@ -366,7 +321,7 @@ class sweeper_GUI( wx.Frame ):
 						self.countColumns = 0 
 
 					elif self.rowIteration * self.numberOfColumns + self.columnIteration - 1 == len(self.labels)+2:
-						self.onExit( )
+						self.OnExit(None)
 				
 
 				else:
@@ -392,9 +347,10 @@ class sweeper_GUI( wx.Frame ):
 	#-------------------------------------------------------------------------
 	def timerUpdate(self, event):
 
-		self.mouseCursor.move( *self.mousePosition )
+		self.mouseCursor.move( self.winWidth - 12, self.winHeight - 100 )
 		
 		self.numberOfPresses = 0		
+		print self.countRows
 
 		if self.flag == 'rest':
 			pass
@@ -451,13 +407,12 @@ class sweeper_GUI( wx.Frame ):
 	################################################################################################################################################
 
 						new_numberOfColumns = self.numberOfColumns
-
 						if self.rowIteration == self.numberOfRows - 1:
 							new_numberOfColumns = 3
 
 	################################################################################################################################################
 
-						if self.columnIteration == new_numberOfColumns - 1 or (self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns - 3 and self.rowIteration == self.numberOfRows - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns - 4 and self.rowIteration == self.numberOfRows - 1 ):
+						if self.columnIteration == self.numberOfColumns - 1 or (self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns - 3 and self.rowIteration == self.numberOfRows - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns - 4 and self.rowIteration == self.numberOfRows - 1 ):
 							self.countColumns += 1
 
 						if self.columnIteration == new_numberOfColumns or ( self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns - 2 and self.rowIteration == self.numberOfRows - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns - 3 and self.rowIteration == self.numberOfRows - 1 ):
@@ -490,7 +445,6 @@ class sweeper_GUI( wx.Frame ):
 				b = item.GetWindow( )
 				b.SetBackgroundColour( self.backgroundColour )
 				b.SetFocus( )
-
 
 #=============================================================================
 if __name__ == '__main__':

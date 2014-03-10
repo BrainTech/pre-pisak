@@ -88,7 +88,6 @@ class memory_GUI( wx.Frame ):
 		
 		self.options = [ 'restart', 'exit' ]
 		self.winstate = False
-		self.failstate = False
 		self.move_info = False
 		
 		self.revert = False
@@ -119,8 +118,8 @@ class memory_GUI( wx.Frame ):
 		
 		self.path = self.pathToATPlatform
 		
-		iconFiles = [ file for file in [ self.path + 'icons/games/atmemory/restart.png', self.path + 'icons/games/atmemory/exit.png' ] ]	
-		iconBitmapName = [ 'restart', 'exit' ]
+		iconFiles = [ file for file in [ self.path + 'icons/games/atmemory/restart.png', self.path + 'icons/games/atmemory/exit.png' ,self.path + 'icons/games/atmemory/empty.png' ] ]	
+		iconBitmapName = [ 'restart', 'exit', 'empty' ]
 
 		for i in self.indexes:
 			i = str( i )
@@ -143,11 +142,11 @@ class memory_GUI( wx.Frame ):
 		for index_1, item in enumerate( self.labels ):
 			if item in self.indexes:
 				name = str(int(item))
-				b = bt.GenBitmapButton( self, -1, bitmap = self.iconBitmaps[ name ], size = ( 0.985*self.winWidth / self.numberOfColumns, 0.79 * self.winHeight / self.numberOfRows ) )
+				b = bt.GenBitmapButton( self, -1, bitmap = self.iconBitmaps[ name ], size = ( 0.985*self.winWidth / self.numberOfColumns, 1. * self.winHeight / self.numberOfRows ) )#0.79
 			else:
 				if item == -1.0:
-					item = ' '			
-				b = bt.GenButton( self, -1, item, name = item, size = ( 0.985*self.winWidth / self.numberOfColumns, 0.79 * self.winHeight / self.numberOfRows ) )
+					name = 'empty'			
+				b = bt.GenBitmapButton( self, -1, bitmap = self.iconBitmaps[ name ], size = ( 0.985*self.winWidth / self.numberOfColumns, 1. * self.winHeight / self.numberOfRows ) )
 				b.SetFont( wx.Font( 65, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False ) )
 
 			
@@ -160,11 +159,17 @@ class memory_GUI( wx.Frame ):
 		for index_2, item in enumerate( self.options ):
 
                         if index_2==0:
-				b = bt.GenBitmapButton( self, -1, bitmap = self.iconBitmaps[ 'restart' ] )
+				if self.winstate:
+					b = bt.GenButton( self, -1, u'WYGRYWASZ!', size = ( 0.985*self.winWidth / self.numberOfColumns, 1. * self.winHeight / self.numberOfRows  ) )
+					b.SetFont( wx.Font(27, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False) )
+		
+				else:
+					b = bt.GenBitmapButton( self, -1, bitmap = self.iconBitmaps[ 'restart' ] )
+				
 				b.SetBackgroundColour( self.backgroundColour )
 				b.SetBezelWidth( 3 )
-		                b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
-                                self.subSizer.Add( b, ( ( index_1 + index_2 +1) / self.numberOfColumns, ( index_1 + index_2+1 ) % self.numberOfColumns ), (1,3), wx.EXPAND )
+				b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+		                self.subSizer.Add( b, ( ( index_1 + index_2 +1) / self.numberOfColumns, ( index_1 + index_2+1 ) % self.numberOfColumns ), (1,3), wx.EXPAND )
 
                         else:
 				b = bt.GenBitmapButton( self, -1, bitmap = self.iconBitmaps[ 'exit' ] )
@@ -172,14 +177,23 @@ class memory_GUI( wx.Frame ):
 				b.SetBezelWidth( 3 )
 		                b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
                                 self.subSizer.Add( b, ( ( index_1 + index_2+3 ) / self.numberOfColumns, ( index_1 + index_2 +3) % self.numberOfColumns), (1,2), wx.EXPAND )
-                        
-				    
+                        				    		    
 		self.mainSizer.Add( self.subSizer, proportion = 1, flag = wx.EXPAND )
 		self.SetSizer( self.mainSizer , deleteOld = True )
 		
 		self.Layout( )
 		self.Refresh( )
 		self.Center( )
+
+	#-------------------------------------------------------------------------
+	def updateGui(self,row,column,name):
+		item = self.subSizer.GetItem( ( row ) * self.numberOfColumns + column - 1 )
+		b = item.GetWindow( )
+		b.SetBitmapLabel(bitmap = self.iconBitmaps[ name ], createOthers=True)
+		b.Update( )		
+		self.Layout()
+		self.Refresh()
+		self.Center()
 
 	#-------------------------------------------------------------------------
 	def createBindings(self):
@@ -273,33 +287,27 @@ class memory_GUI( wx.Frame ):
 				except IndexError:
 					label = 'special'
 									
-				if label == -1.0 and not self.failstate and not self.winstate: # checking
+				if label == -1.0 and not self.winstate: # checking
 
 					self.move_info = self.game.check_field(self.columnIteration-1, self.rowIteration)
 
-					'''if self.selection_mode == 'mines':
-						self.failstate = self.game.check_for_mines(self.columnIteration-1, self.rowIteration)
-						while self.failstate and self.first_move:
-							self.game = minesweeper.Minesweeper_game(self.gamesize, self.number_of_mines)
-							self.failstate = self.game.check_for_mines(self.columnIteration-1, self.rowIteration)
-						self.first_move = False
-        	
-						self.labels = self.game.displayfield.flatten() 
-					else:
-						self.winstate = self.game.flag_field(self.columnIteration-1, self.rowIteration)'''
-
-					print self.game.displayfield
+					#print self.game.displayfield
 					self.labels = self.game.displayfield.flatten( )
 
-					self.createGui( )
+					self.updateGui(self.rowIteration, self.columnIteration,str(int(self.game.displayfield[self.rowIteration, self.columnIteration-1])))
 					#self.timerUpdate(None)
 					if self.move_info == 'second-miss':
+						
 						self.revert = True
-						'''time.sleep(1)
-						self.game.revert()
+						self.new_rowIteration, self.new_columnIteration = self.rowIteration, self.columnIteration 
 
-						self.labels = self.game.displayfield.flatten()
-						self.createGui()'''
+					elif self.move_info == 'first':
+						self.old_rowIteration, self.old_columnIteration = self.rowIteration, self.columnIteration
+					else:
+						if np.all(self.game.displayfield > -0.5):
+							self.winstate = True
+							self.createGui()
+
 					self.flag = 'row'
 					self.rowIteration = 0
 					self.columnIteration = 0
@@ -336,25 +344,23 @@ class memory_GUI( wx.Frame ):
 
 		self.stoper.Start( self.timeGap )
 	
-	#-------------------------------------------------------------------------
-	def screenUpdate(self):	
 
-			items = self.subSizer.GetChildren( )
-			for i,item in enumerate( items ):
-                                        b = item.GetWindow( )
-                                        b.Update( )
-		
 	#-------------------------------------------------------------------------
 	def timerUpdate(self, event):
 
 		if self.revert:
+			time.sleep(1)
 			self.game.revert( )
-			
-			self.labels = self.game.displayfield.flatten( )
-			time.sleep( 1 )
-			self.createGui( )
+			#print self.rowIteration, self.columnIteration, self.old_rowIteration, self.old_columnIteration			
+			self.updateGui(self.new_rowIteration, self.new_columnIteration,'empty')
+			self.updateGui(self.old_rowIteration, self.old_columnIteration,'empty')
 			
 			self.revert = False
+			self.flag = 'row'
+			self.rowIteration = self.numberOfRows - 1
+			self.columnIteration = 0
+			self.countColumns = 0
+
 			
 		self.mouseCursor.move( self.winWidth - 12, self.winHeight - 500 )
 		
@@ -427,7 +433,7 @@ class memory_GUI( wx.Frame ):
                                                         b.SetFocus( )
                                                         b.Update( )
 
-                                        item = self.subSizer.GetItem( self.rowIteration * self.numberOfColumns + self.columnIteration )
+                                        item = self.subSizer.GetItem( self.rowIteration * self.numberOfColumns + self.columnIteration)
                                         b = item.GetWindow( )
                                         b.SetBackgroundColour( self.scanningColour )
                                         b.SetFocus( )

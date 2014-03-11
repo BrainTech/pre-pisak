@@ -263,7 +263,7 @@ class memory_GUI( wx.Frame ):
 		self.numberOfPresses += 1
 
 		if self.numberOfPresses == 1:
-
+			#print self.game.displayfield
 			if self.flag == 'rest':
 				self.flag = 'row'
 				self.rowIteration = 0
@@ -282,20 +282,22 @@ class memory_GUI( wx.Frame ):
 				b.SetFocus( )
 				b.Update( )
 
+				self.labels = self.game.displayfield.flatten( )
 				try:
 					label = self.labels[ self.rowIteration * self.numberOfColumns + self.columnIteration - 1 ]
+					#print label
 				except IndexError:
 					label = 'special'
 									
 				if label == -1.0 and not self.winstate: # checking
-
+					#print 'checking'
 					self.move_info = self.game.check_field(self.columnIteration-1, self.rowIteration)
 
 					#print self.game.displayfield
 					self.labels = self.game.displayfield.flatten( )
 
 					self.updateGui(self.rowIteration, self.columnIteration,str(int(self.game.displayfield[self.rowIteration, self.columnIteration-1])))
-					#self.timerUpdate(None)
+
 					if self.move_info == 'second-miss':
 						
 						self.revert = True
@@ -314,7 +316,6 @@ class memory_GUI( wx.Frame ):
 					self.countColumns = 0
 
 				elif label == 'special':
-
 					if self.rowIteration * self.numberOfColumns + self.columnIteration - 1 == len( self.labels ): #restart
 						self.winstate = False
 						self.failstate = False
@@ -347,7 +348,7 @@ class memory_GUI( wx.Frame ):
 
 	#-------------------------------------------------------------------------
 	def timerUpdate(self, event):
-
+		self.numberOfPresses = 0		
 		if self.revert:
 			time.sleep(1)
 			self.game.revert( )
@@ -364,7 +365,7 @@ class memory_GUI( wx.Frame ):
 			
 		self.mouseCursor.move( self.winWidth - 12, self.winHeight - 500 )
 		
-		self.numberOfPresses = 0		
+
 		if self.flag == 'row':
 
 			self.rowIteration = self.rowIteration % self.numberOfRows

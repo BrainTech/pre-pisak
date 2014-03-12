@@ -93,7 +93,7 @@ class sweeper_GUI( wx.Frame ):
 		self.numberOfRows = self.gamesize[ 0 ] + 1
                 self.numberOfColumns = self.gamesize[ 1 ]
 
-		self.numberOfMines = 3
+		self.numberOfMines = 4
 		
 		if self.numberOfColumns < 3 or self.numberOfColumns * (self.numberOfRows-1) < self.numberOfMines:
 			print '\nZbyt mała liczba komórek lub kolumn. \nKomórek musi być więcej niż min, a minimalna liczba kolumn to 3. \n'
@@ -126,9 +126,9 @@ class sweeper_GUI( wx.Frame ):
         def initializeBitmaps(self):
 		
 		self.path=self.pathToATPlatform + 'icons/games/ATsweeper/'
-		iconFiles = [ file for file in [ self.path + 'mine.png', self.path + 'mines.png', self.path + 'flag.png', self.path + 'flag_mini.png', self.path + 'restart.png', self.path + 'exit.png', self.path + 'win.png', self.path + 'lose.png' ] ]
+		iconFiles = [ file for file in [ self.path + 'mine_mini.png', self.path + 'mines.png', self.path + 'flag.png', self.path + 'flag_mini.png', self.path + 'flag_crossed_mini.png', self.path + 'restart.png', self.path + 'exit.png', self.path + 'win.png', self.path + 'lose.png' ] ]
     
-		iconBitmapName = [ 'mine', 'mines', 'flag', 'flag_mini', 'restart', 'exit', 'win', 'lose' ]
+		iconBitmapName = [ 'mine', 'mines', 'flag', 'flag_mini', 'flag_crossed_mini', 'restart', 'exit', 'win', 'lose' ]
 		
 		self.iconBitmaps = { }
 
@@ -156,13 +156,17 @@ class sweeper_GUI( wx.Frame ):
 
 		for index_1, item in enumerate( self.labels ):
 
-			if item == -2.0 or item == -4.0:
+			if item == -2.0:
 
 				b = bt.GenBitmapButton( self, -1, bitmap = self.iconBitmaps[ 'mine' ], size = ( ( self.winWidth - self.margine/1.8 * (self.numberOfColumns) ) / float( self.numberOfColumns ), ( 0.7 * ( self.winHeight-20 ) - self.margine * (self.numberOfRows - 1) ) / float( self.numberOfRows - 1 ) ) )
 
 			elif item == -3.0:
 
 				b = bt.GenBitmapButton( self, -1, bitmap=self.iconBitmaps[ 'flag_mini' ],size = ( ( self.winWidth - self.margine/1.8 * (self.numberOfColumns) ) / float( self.numberOfColumns ), ( 0.7 * ( self.winHeight-20 ) - self.margine * (self.numberOfRows - 1) ) / float( self.numberOfRows - 1 ) ) )
+
+			elif item == -4.0:
+
+				b = bt.GenBitmapButton( self, -1, bitmap=self.iconBitmaps[ 'flag_crossed_mini' ],size = ( ( self.winWidth - self.margine/1.8 * (self.numberOfColumns) ) / float( self.numberOfColumns ), ( 0.7 * ( self.winHeight-20 ) - self.margine * (self.numberOfRows - 1) ) / float( self.numberOfRows - 1 ) ) )
 
 			else:
 
@@ -315,7 +319,7 @@ class sweeper_GUI( wx.Frame ):
 				except IndexError:
 					label = 'special'
 									
-				if label == -1.0 and not self.failstate and not self.winstate: # checking for mines, updating buttons
+				if (label == -1.0 or label == -3.0) and not self.failstate and not self.winstate: # checking for mines, updating buttons
 
 					if self.selection_mode == 'mines':
 						self.failstate = self.game.check_for_mines(self.columnIteration-1, self.rowIteration)

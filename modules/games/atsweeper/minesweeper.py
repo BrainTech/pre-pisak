@@ -94,14 +94,16 @@ class Minesweeper_game(object):
 				self.displayfield[ x, y ] = 0
 
 				for coords in self.neighbors( x, y):
-					self.check_for_mines( coords[ 1 ], coords[ 0 ] )
+					if self.displayfield[ coords[ 0 ], coords[ 1 ] ] != -3:
+	
+						self.check_for_mines( coords[ 1 ], coords[ 0 ] )
 								
 			else:						
 				self.displayfield[ x, y ] = self.infofield[ x, y ]		
 		
 	#-------------------------------------------------------------------------
 	def flag_field(self, y, x):
-
+		print self.displayfield
 		if self.displayfield[ x, y ] == -1:
 			self.numberOfFlags += 1	
 			self.displayfield[ x, y ] = -3

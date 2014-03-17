@@ -113,6 +113,8 @@ class memory_GUI( wx.Frame ):
 
 		self.mouseCursor = PyMouse( )
 				
+		self.SetBackgroundColour( 'black' )
+
 	#-------------------------------------------------------------------------
         def initializeBitmaps(self):
 		
@@ -142,11 +144,11 @@ class memory_GUI( wx.Frame ):
 		for index_1, item in enumerate( self.labels ):
 			if item in self.indexes:
 				name = str(int(item))
-				b = bt.GenBitmapButton( self, -1, bitmap = self.iconBitmaps[ name ], size = ( 0.985*self.winWidth / self.numberOfColumns, 1. * self.winHeight / self.numberOfRows ) )#0.79
+				b = bt.GenBitmapButton( self, -1, bitmap = self.iconBitmaps[ name ], size = ( 0.985*self.winWidth / self.numberOfColumns, 0.95 * self.winHeight / self.numberOfRows ) )#0.79
 			else:
 				if item == -1.0:
 					name = 'empty'			
-				b = bt.GenBitmapButton( self, -1, bitmap = self.iconBitmaps[ name ], size = ( 0.985*self.winWidth / self.numberOfColumns, 1. * self.winHeight / self.numberOfRows ) )
+				b = bt.GenBitmapButton( self, -1, bitmap = self.iconBitmaps[ name ], size = ( 0.985*self.winWidth / self.numberOfColumns, 0.95 * self.winHeight / self.numberOfRows ) )
 				b.SetFont( wx.Font( 65, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False ) )
 
 			
@@ -160,7 +162,7 @@ class memory_GUI( wx.Frame ):
 
                         if index_2==0:
 				if self.winstate:
-					b = bt.GenButton( self, -1, u'WYGRYWASZ!', size = ( 0.985*self.winWidth / self.numberOfColumns, 1. * self.winHeight / self.numberOfRows  ) )
+					b = bt.GenButton( self, -1, u'WYGRYWASZ!', size = ( 0.985*self.winWidth / self.numberOfColumns, 0.95 * self.winHeight / self.numberOfRows  ) )
 					b.SetFont( wx.Font(27, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False) )
 		
 				else:

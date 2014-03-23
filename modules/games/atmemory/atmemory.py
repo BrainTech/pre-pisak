@@ -352,7 +352,9 @@ class memory_GUI( wx.Frame ):
 	def timerUpdate(self, event):
 		self.numberOfPresses = 0		
 		if self.revert:
+			self.stoper.Stop()
 			time.sleep(1)
+			self.stoper.Start( self.timeGap )
 			self.game.revert( )
 			#print self.rowIteration, self.columnIteration, self.old_rowIteration, self.old_columnIteration			
 			self.updateGui(self.new_rowIteration, self.new_columnIteration,'empty')
@@ -360,7 +362,7 @@ class memory_GUI( wx.Frame ):
 			
 			self.revert = False
 			self.flag = 'row'
-			self.rowIteration = self.numberOfRows - 1
+			self.rowIteration = 0
 			self.columnIteration = 0
 			self.countColumns = 0
 

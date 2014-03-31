@@ -24,7 +24,7 @@ import wx, alsaaudio
 import wx.lib.buttons as bt
 
 from pymouse import PyMouse
-#from ewriting import eplatform
+from ewriting import eplatform
 import atgames
 
 #=============================================================================

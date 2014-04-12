@@ -108,42 +108,8 @@ class exercise( wx.Frame ):
 	#-------------------------------------------------------------------------	
         def initializeBitmaps(self):
 		
-		try:
-			self.path = self.pathToATPlatform + 'multimedia/movies/'
-			files = os.listdir( self.path )
-			files.sort( key=lambda f: os.path.getmtime( os.path.join(self.path, f) ) )
-
-			self.existingLogos, self.existingMedia = [ ], [ ]
-			for item in files:
-				fileExtension = item[ item.rfind('.')+1: ]
-				if fileExtension == 'png' or fileExtension == 'jpg' or fileExtension == 'jpeg':
-					self.existingLogos.append( item )
-				elif fileExtension == 'mp4' or fileExtension == 'avi' or fileExtension == 'AVI':
-					self.existingMedia.append( item )
-
-			self.existingLogos = sorted( self.existingLogos, key=lambda name: int(name.split( '_', 2 )[ 0 ]) )
-			self.existingMedia = sorted( self.existingMedia, key=lambda name: int(name.split( '_', 2 )[ 0 ]) )
-
-			self.numberOfPanels = 1 + len( self.existingMedia ) / ( ( self.numberOfRows[ 0 ]-1 ) * self.numberOfColumns[ 0 ] + 1 )
-
-			self.newHeight = 0.9*self.winHeight / self.numberOfRows[ 0 ]
-
-			self.panels = { }
-
-			for number in range( self.numberOfPanels ):
-				logoNames = self.existingLogos[ number * ( self.numberOfRows[ 0 ] - 1 ) * self.numberOfColumns[ 0 ] : ( number + 1 ) * ( self.numberOfRows[ 0 ] - 1 ) * self.numberOfColumns[ 0 ] ]
-				logoPaths = [ self.path + name for name in logoNames ]
-
-				logos = [ wx.ImageFromStream( open( logo, "rb" ) ) for logo in logoPaths ]
-				logos = [ logo.Rescale( logo.GetSize( )[ 0 ] * ( self.newHeight / float( logo.GetSize( )[ 1 ] ) ), self.newHeight, wx.IMAGE_QUALITY_HIGH ) for logo in logos ]
-				logoBitmaps = [ wx.BitmapFromImage( logo ) for logo in logos ]
-
-				self.panels[ number+1 ] = [ logoNames,  logoBitmaps ]
-
-		except OSError:
-			self.panels = { 1 : [ [], [] ] }
-			self.numberOfPanels = 1
-			print "Błąd w strukturze plików."
+		self.panels = { 1 : [ [], [] ] }
+		self.numberOfPanels = 1
 				
 		self.functionButtonPath = [ wx.BitmapFromImage( wx.ImageFromStream( open(self.pathToATPlatform + 'icons/back.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open(self.pathToATPlatform + 'icons/modules/games.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream(open(self.pathToATPlatform + 'icons/modules/writing.png', 'rb' ) ) ) ]
 
@@ -306,29 +272,6 @@ class exercise( wx.Frame ):
 					self.stoper.Stop( )
 					eplatform.cwiczenia( self, id = -1 ).Show( True )
 					self.Hide( )
-
-				# try:                                    					
-				# 	logo = self.panels[ self.panelIteration + 1 ][ 0 ][ self.position ]
-
-				# 	mediaIndex = self.existingLogos.index( logo )
-				# 	choice = self.existingMedia[ mediaIndex ]
-				# 	choicePath = self.path + choice
-
-				# 	self.stoper.Stop( )
-				# 	self.Hide( )
-					
-				# 	alsaaudio.Mixer( control = 'Master' ).setvolume( self.filmVolumeLevel, 0 )
-				# 	moviePilot.pilot( self, id=2 ).Show( True )
-				# 	os.system( 'smplayer -no-fullscreen  %s &' % choicePath.replace( ' ', r'\ ' ).replace( '(', r'\(' ).replace( ')', r'\)' ).replace( '[', r'\[' ).replace( ']', r'\]').replace( '&', r'\&' ) )
-				    
-				# 	os.system( 'sleep 2 && wid=`xdotool search --onlyvisible --name SMPlayer` && xdotool windowfocus $wid && xdotool key --window $wid f && sleep 1 && wid=`xdotool search --onlyvisible --name moviePilot` && xdotool windowactivate $wid &' )
-				
-				# except IndexError:
-				# 	selectedButton.SetBackgroundColour( 'red' )
-				# 	selectedButton.SetFocus( )
-					
-				# 	self.Update( )
-				# 	time.sleep( 1.5 )
 					
                                 if self.numberOfPanels == 1:
                                     self.flag = 'row'

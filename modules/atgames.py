@@ -108,42 +108,8 @@ class games( wx.Frame ):
 	#-------------------------------------------------------------------------	
         def initializeBitmaps(self):
 		
-		try:
-			self.path = self.pathToATPlatform + 'multimedia/movies/'
-			files = os.listdir( self.path )
-			files.sort( key=lambda f: os.path.getmtime( os.path.join(self.path, f) ) )
-
-			self.existingLogos, self.existingMedia = [ ], [ ]
-			for item in files:
-				fileExtension = item[ item.rfind('.')+1: ]
-				if fileExtension == 'png' or fileExtension == 'jpg' or fileExtension == 'jpeg':
-					self.existingLogos.append( item )
-				elif fileExtension == 'mp4' or fileExtension == 'avi' or fileExtension == 'AVI':
-					self.existingMedia.append( item )
-
-			self.existingLogos = sorted( self.existingLogos, key=lambda name: int(name.split( '_', 2 )[ 0 ]) )
-			self.existingMedia = sorted( self.existingMedia, key=lambda name: int(name.split( '_', 2 )[ 0 ]) )
-
-			self.numberOfPanels = 1 + len( self.existingMedia ) / ( ( self.numberOfRows[ 0 ]-1 ) * self.numberOfColumns[ 0 ] + 1 )
-
-			self.newHeight = 0.9*self.winHeight / self.numberOfRows[ 0 ]
-
-			self.panels = { }
-
-			for number in range( self.numberOfPanels ):
-				logoNames = self.existingLogos[ number * ( self.numberOfRows[ 0 ] - 1 ) * self.numberOfColumns[ 0 ] : ( number + 1 ) * ( self.numberOfRows[ 0 ] - 1 ) * self.numberOfColumns[ 0 ] ]
-				logoPaths = [ self.path + name for name in logoNames ]
-
-				logos = [ wx.ImageFromStream( open( logo, "rb" ) ) for logo in logoPaths ]
-				logos = [ logo.Rescale( logo.GetSize( )[ 0 ] * ( self.newHeight / float( logo.GetSize( )[ 1 ] ) ), self.newHeight, wx.IMAGE_QUALITY_HIGH ) for logo in logos ]
-				logoBitmaps = [ wx.BitmapFromImage( logo ) for logo in logos ]
-
-				self.panels[ number+1 ] = [ logoNames,  logoBitmaps ]
-
-		except OSError:
-			self.panels = { 1 : [ [], [] ] }
-			self.numberOfPanels = 1
-			print "Błąd w strukturze plików."
+		self.panels = { 1 : [ [], [] ] }
+		self.numberOfPanels = 1
 				
 		self.functionButtonPath = [ wx.BitmapFromImage( wx.ImageFromStream( open(self.pathToATPlatform + 'icons/back.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open(self.pathToATPlatform + 'icons/games/memo.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream(open(self.pathToATPlatform + 'icons/games/minesweeper.png', 'rb' ) ) ) ]
 
@@ -463,6 +429,6 @@ class games( wx.Frame ):
 if __name__ == '__main__':
 
 	app = wx.PySimpleApp( )
-	frame = exercise( parent = None, id = -1 )
+	frame = games( parent = None, id = -1 )
         frame.Show( True )
 	app.MainLoop( )

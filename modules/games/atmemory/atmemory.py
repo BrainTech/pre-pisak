@@ -447,7 +447,6 @@ class memory_GUI( wx.Frame ):
 					self.maxNumberOfColumns			
 					self.columnIteration += 1
 
-
 #=============================================================================
 if __name__ == '__main__':
 	app = wx.PySimpleApp( )

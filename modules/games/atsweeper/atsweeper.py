@@ -43,6 +43,7 @@ class sweeper_GUI( wx.Frame ):
 		self.initializeBitmaps( )
 		self.createGui( )
 		self.createBindings( )
+
 		self.initializeTimer( )
 
 	#-------------------------------------------------------------------------
@@ -68,6 +69,8 @@ class sweeper_GUI( wx.Frame ):
 					self.filmVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
 				elif line[ :line.find('=')-1 ] == 'musicVolume':
 					self.musicVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
+				elif line[ :line.find('=')-1 ] == 'control':
+					self.control = line[ line.rfind('=')+2:-1 ]
 			
 				elif not line.isspace( ):
 					print 'Niewłaściwie opisane parametry'
@@ -80,7 +83,8 @@ class sweeper_GUI( wx.Frame ):
 					self.selectionColour = '#9EE4EF'
 					self.filmVolumeLevel = 100
 					self.musicVolumeLevel = 70
-                
+					self.control = 'switch'
+
 		self.colorlegend = {'0':'#E5D9D9', '1': '#5545EA', '2': '#B229B7', '3': '#13CE1A', '4':'#CE1355', '5': '#F9F504', '6':'#FF7504', '7':'#FF0404', '8':'#000000'}
 
 		self.options = ['mode', 'restart', 'exit']
@@ -103,6 +107,8 @@ class sweeper_GUI( wx.Frame ):
 		self.labels = self.game.displayfield.flatten( )      
 
                 self.flag = 'row'						
+		self.pressFlag = False
+
                 self.rowIteration = self.numberOfRows - 1					
                 self.columnIteration = 0							
                 self.countRows = 0
@@ -117,13 +123,13 @@ class sweeper_GUI( wx.Frame ):
 
 		self.mouseCursor = PyMouse( )
 		self.mousePosition = self.winWidth - 8, self.winHeight - 8
-               	self.mouseCursor.move( *self.mousePosition )			
-
+               	self.mouseCursor.move( *self.mousePosition )
 
 		self.SetBackgroundColour( 'black' )
 
+		self.number = 0
 	#-------------------------------------------------------------------------
-        def initializeBitmaps(self):
+        def initializeBitmaps( self ):
 		
 		self.path=self.pathToATPlatform + 'icons/games/ATsweeper/'
 		iconFiles = [ file for file in [ self.path + 'mine_mini.png', self.path + 'mines.png', self.path + 'flag.png', self.path + 'flag_mini.png', self.path + 'flag_crossed_mini.png', self.path + 'restart.png', self.path + 'exit.png', self.path + 'win.png', self.path + 'lose.png' ] ]
@@ -136,9 +142,14 @@ class sweeper_GUI( wx.Frame ):
 			self.iconBitmaps[ iconBitmapName[i] ] = wx.BitmapFromImage( wx.ImageFromStream( open( iconFiles[i], 'rb' )))      
 
 	#-------------------------------------------------------------------------	
-	def createGui(self):
+	def createGui( self ):
 		
 		self.mainSizer = wx.BoxSizer( wx.VERTICAL )
+
+		if self.control != 'tracker':
+			event = eval('wx.EVT_LEFT_DOWN')
+		else:
+			event = eval('wx.EVT_BUTTON')
 
 		if self.winstate:
 			self.res = bt.GenButton( self, -1, u'WSZYSTKIE MINY OZNAKOWANE. WYGRYWASZ!', size = ( self.winWidth, 0.1 * ( self.winHeight-20 ) ) )
@@ -179,24 +190,25 @@ class sweeper_GUI( wx.Frame ):
 				b = bt.GenButton( self, -1, item, name = item, size = ( ( self.winWidth - self.margine/1.8 * ( self.numberOfColumns ) ) / float( self.numberOfColumns ), ( 0.7 * ( self.winHeight-20 ) - self.margine * ( self.numberOfRows - 1 ) ) / float( self.numberOfRows - 1 ) ) )
 				b.SetFont( wx.Font( 65, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False ) )
 			
+			b.position = ( index_1 / self.numberOfColumns ) + 1, ( index_1 % self.numberOfColumns ) + 1
 			b.SetBezelWidth( 1 )
 			b.SetBackgroundColour( self.backgroundColour )
 			
-			b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+			b.Bind( event, self.onPress )
 			self.subSizer.Add( b, ( index_1 / self.numberOfColumns + 1, index_1 % self.numberOfColumns ), wx.DefaultSpan, wx.EXPAND )
 			
 			if item in self.colorlegend.keys( ):
 				b.SetForegroundColour( self.colorlegend[ item ] )
 			else:
 				b.SetForegroundColour( self.textColour )
-				
+
 		for index_2, item in enumerate( self.options ):
 			
                         if index_2 == 0:
 				b = bt.GenBitmapButton( self, -1, bitmap = self.iconBitmaps[ self.selection_mode ] )
 				b.SetBackgroundColour( self.backgroundColour )
 				b.SetBezelWidth( 3 )
-		                b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+		                b.Bind( event, self.onPress )
                                 self.subSizer.Add( b, ( 0, 0 ), ( 1, self.numberOfColumns / 3 ), wx.EXPAND )
 
                         elif index_2 == 1:
@@ -209,21 +221,22 @@ class sweeper_GUI( wx.Frame ):
 
 				b.SetBackgroundColour( self.backgroundColour )
 				b.SetBezelWidth( 3 )
-		                b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+		                b.Bind( event, self.onPress )
                                 self.subSizer.Add( b, ( 0, self.numberOfColumns / 3 ), ( 1, self.numberOfColumns / 3 + self.numberOfColumns % 3 ), wx.EXPAND )
 
                         else:
 				b = bt.GenBitmapButton( self, -1, bitmap = self.iconBitmaps[ 'exit' ] )
 				b.SetBackgroundColour( self.backgroundColour )
 				b.SetBezelWidth( 3 )
-		                b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+		                b.Bind( event, self.onPress )
 
 				if self.numberOfColumns % 3 == 2: #just numerical problem
 
 					self.subSizer.Add( b, ( 0, 2 * self.numberOfColumns / 3 + self.numberOfColumns % 3 - 1 ), ( 1, self.numberOfColumns / 3 ), wx.EXPAND )
 				else:
 					self.subSizer.Add( b, ( 0, 2 * self.numberOfColumns / 3 + self.numberOfColumns % 3), ( 1, self.numberOfColumns / 3 ), wx.EXPAND )
-                        
+			b.position = ( (index_1+index_2+1) / self.numberOfColumns ) + 1, ( (index_1+index_2+1) % self.numberOfColumns ) + 1
+
 		self.mainSizer.Add( self.res, flag = wx.EXPAND | wx.TOP , border = 1 )				    
 		self.mainSizer.Add( self.subSizer, proportion = 1, flag = wx.EXPAND )
 
@@ -289,37 +302,30 @@ class sweeper_GUI( wx.Frame ):
 
 	#----------------------------------------------------------------------------
 	def onPress(self, event):
+		
+		if self.control == 'tracker':
+			if self.pressFlag == False:
+				self.button = event.GetEventObject()
+				self.button.SetBackgroundColour( self.selectionColour )
+				self.pressFlag = True
+				self.rowIteration, self.columnIteration = self.button.position[ 0 ]-1, self.button.position[ 1 ]
+				label = event.GetEventObject().GetName().encode( 'utf-8' )
+				# print label
+				# name = self.button.name
+				self.stoper.Start( 0.15 * self.timeGap )
 
-		self.numberOfPresses += 1
-
-		if self.numberOfPresses == 1:
-			
-			if self.flag == 'rest':
-
-				self.flag = 'row'
-				self.rowIteration = self.numberOfRows - 1
-				self.countRows = 0
-
-			elif self.flag == 'row':
-				
-				self.flag = 'columns' 
-				self.rowIteration -= 1
-				self.columnIteration = 0
-				self.countRows = 0
-
-			elif self.flag == 'columns':
-				
 				item = self.subSizer.GetItem( ( self.rowIteration ) * self.numberOfColumns + self.columnIteration - 1 )
 				b = item.GetWindow( )
 				b.SetBackgroundColour( self.selectionColour )
 				b.SetFocus( )
 				b.Update( )
+
 				try:
 					label = self.labels[ self.rowIteration * self.numberOfColumns + self.columnIteration - 1 ]
 				except IndexError:
 					label = 'special'
-									
-				if (label == -1.0 or label == -3.0) and not self.failstate and not self.winstate: # checking for mines, updating buttons
+
+				if label == -1.0 and not self.failstate and not self.winstate: # checking for mines, updating buttons
 
 					if self.selection_mode == 'mines':
 						self.failstate = self.game.check_for_mines(self.columnIteration-1, self.rowIteration)
@@ -327,7 +333,7 @@ class sweeper_GUI( wx.Frame ):
 							self.game = minesweeper.Minesweeper_game(self.gamesize, self.numberOfMines)
 							self.failstate = self.game.check_for_mines(self.columnIteration-1, self.rowIteration)
 						self.first_move = False
-        	
+
 						self.labels = self.game.displayfield.flatten( ) 
 					else:
 						self.winstate = self.game.flag_field( self.columnIteration - 1, self.rowIteration )
@@ -335,11 +341,17 @@ class sweeper_GUI( wx.Frame ):
 					self.labels = self.game.displayfield.flatten()
 					self.mainSizer.Clear()
 					self.createGui()
-					self.flag = 'row'
-					self.rowIteration = self.numberOfRows -1
-					self.columnIteration = 0
-					self.countColumns = 0
 
+				elif label == -3.0:
+					if self.selection_mode == 'mines':
+						pass
+					else:
+						self.winstate = self.game.flag_field( self.columnIteration - 1, self.rowIteration )
+
+						self.labels = self.game.displayfield.flatten()
+						self.mainSizer.Clear()
+						self.createGui()
+				
 				elif label == 'special':
 					if self.rowIteration * self.numberOfColumns + self.columnIteration - 1 == len(self.labels):
 						if self.selection_mode == 'mines':						
@@ -347,10 +359,6 @@ class sweeper_GUI( wx.Frame ):
 						else:
 							self.selection_mode = 'mines'
 						self.createGui()
-						self.flag = 'row'
-						self.rowIteration = self.numberOfRows -1
-						self.columnIteration = 0
-						self.countColumns = 0
 
 					elif self.rowIteration * self.numberOfColumns + self.columnIteration - 1 == len(self.labels)+1: #restart
 						self.selection_mode = 'mines'	
@@ -360,24 +368,116 @@ class sweeper_GUI( wx.Frame ):
 						self.game = minesweeper.Minesweeper_game(self.gamesize, self.numberOfMines)        	
 						self.labels = self.game.displayfield.flatten()  
 						self.createGui()
-						self.flag = 'row'
-						self.rowIteration = self.numberOfRows -1 
-						self.columnIteration = 0
-						self.countColumns = 0 
 
 					elif self.rowIteration * self.numberOfColumns + self.columnIteration - 1 == len(self.labels)+2:
 						self.onExit( )
-				
-
-				else:
-					self.flag = 'row'
-					self.rowIteration = self.numberOfRows -1
-					self.columnIteration = 0
-					self.countColumns = 0 
-					event.Skip( )
 
 		else:
-			event.Skip( )	
+			self.numberOfPresses += 1
+
+			if self.numberOfPresses == 1:
+
+				if self.flag == 'rest':
+
+					self.flag = 'row'
+					self.rowIteration = self.numberOfRows - 1
+					self.countRows = 0
+
+				elif self.flag == 'row':
+
+					self.flag = 'columns' 
+					self.rowIteration -= 1
+					self.columnIteration = 0
+					self.countRows = 0
+
+				elif self.flag == 'columns':
+
+					item = self.subSizer.GetItem( ( self.rowIteration ) * self.numberOfColumns + self.columnIteration - 1 )
+					b = item.GetWindow( )
+					b.SetBackgroundColour( self.selectionColour )
+					b.SetFocus( )
+					b.Update( )
+					try:
+						label = self.labels[ self.rowIteration * self.numberOfColumns + self.columnIteration - 1 ]
+					except IndexError:
+						label = 'special'
+
+					if label == -1.0 and not self.failstate and not self.winstate: # checking for mines, updating buttons
+
+						if self.selection_mode == 'mines':
+							self.failstate = self.game.check_for_mines(self.columnIteration-1, self.rowIteration)
+							while self.failstate and self.first_move:
+								self.game = minesweeper.Minesweeper_game(self.gamesize, self.numberOfMines)
+								self.failstate = self.game.check_for_mines(self.columnIteration-1, self.rowIteration)
+							self.first_move = False
+
+							self.labels = self.game.displayfield.flatten( ) 
+						else:
+							self.winstate = self.game.flag_field( self.columnIteration - 1, self.rowIteration )
+
+						self.labels = self.game.displayfield.flatten()
+						self.mainSizer.Clear()
+						self.createGui()
+						self.flag = 'row'
+						self.rowIteration = self.numberOfRows -1
+						self.columnIteration = 0
+						self.countColumns = 0
+
+					elif label == -3.0:
+						if self.selection_mode == 'mines':
+							self.flag = 'row'
+							self.rowIteration = self.numberOfRows -1
+							self.columnIteration = 0
+							self.countColumns = 0						
+							
+						else:
+							self.winstate = self.game.flag_field( self.columnIteration - 1, self.rowIteration )
+							self.labels = self.game.displayfield.flatten()
+							self.mainSizer.Clear()
+							self.createGui()
+
+							self.flag = 'row'
+							self.rowIteration = self.numberOfRows -1
+							self.columnIteration = 0
+							self.countColumns = 0						
+
+					elif label == 'special':
+						if self.rowIteration * self.numberOfColumns + self.columnIteration - 1 == len(self.labels):
+							if self.selection_mode == 'mines':						
+								self.selection_mode = 'flag'
+							else:
+								self.selection_mode = 'mines'
+							self.createGui()
+							self.flag = 'row'
+							self.rowIteration = self.numberOfRows -1
+							self.columnIteration = 0
+							self.countColumns = 0
+
+						elif self.rowIteration * self.numberOfColumns + self.columnIteration - 1 == len(self.labels)+1: #restart
+							self.selection_mode = 'mines'	
+							self.winstate = False
+							self.failstate = False
+							self.firstmove = True
+							self.game = minesweeper.Minesweeper_game(self.gamesize, self.numberOfMines)        	
+							self.labels = self.game.displayfield.flatten()  
+							self.createGui()
+							self.flag = 'row'
+							self.rowIteration = self.numberOfRows -1 
+							self.columnIteration = 0
+							self.countColumns = 0 
+
+						elif self.rowIteration * self.numberOfColumns + self.columnIteration - 1 == len(self.labels)+2:
+							self.onExit( )
+
+					else:
+						self.flag = 'row'
+						self.rowIteration = self.numberOfRows -1
+						self.columnIteration = 0
+						self.countColumns = 0 
+						event.Skip( )
+
+			else:
+				event.Skip( )	
 
 	#-------------------------------------------------------------------------
 	def initializeTimer(self):
@@ -387,109 +487,122 @@ class sweeper_GUI( wx.Frame ):
 		self.stoper = wx.Timer( self, id1 )
 		self.Bind( wx.EVT_TIMER, self.timerUpdate, self.stoper, id1 )
 
-		self.stoper.Start( self.timeGap )
+		if self.control != 'tracker':
+			self.stoper.Start( self.timeGap )
 
 	#-------------------------------------------------------------------------
 	def timerUpdate(self, event):
 
-		self.mouseCursor.move( *self.mousePosition )
-		
-		self.numberOfPresses = 0		
+		if self.control == 'tracker':
 
-		if self.flag == 'rest':
-			pass
-
-		elif self.countRows < self.maxNumberOfRows:
-
-			if self.flag == 'row':
-
-				self.rowIteration = self.rowIteration % self.numberOfRows
-
-				items = self.subSizer.GetChildren( )
-				for i,item in enumerate(items):
-						b = item.GetWindow( )
-						b.SetBackgroundColour( self.backgroundColour )
-						b.SetFocus( )
-						b.Update( )
-
-				if self.rowIteration == self.numberOfRows - 2:
-					self.countRows += 1
+			if self.button.GetBackgroundColour( ) == self.backgroundColour:
+				self.button.SetBackgroundColour( self.selectionColour )
 				
-				if self.rowIteration == self.numberOfRows - 1:
+			else:
+				self.button.SetBackgroundColour( self.backgroundColour )	
+		
+			self.stoper.Stop( )
+			self.pressFlag = False
 
-					buttonsToHighlight = range( self.rowIteration * self.numberOfColumns, self.rowIteration * self.numberOfColumns + 3 )
+		else:
+			self.mouseCursor.move( *self.mousePosition )
 
-				else:
-					buttonsToHighlight = range( self.rowIteration * self.numberOfColumns, self.rowIteration * self.numberOfColumns + self.numberOfColumns )
+			self.numberOfPresses = 0		
 
-				for i, button in enumerate( buttonsToHighlight ):
+			if self.flag == 'rest':
+				pass
 
-						item = self.subSizer.GetItem( button )
-						b = item.GetWindow( )
-						b.SetBackgroundColour( self.scanningColour )
-						b.SetFocus( )
-						b.Update( )
+			elif self.countRows < self.maxNumberOfRows:
 
-				self.rowIteration += 1
+				if self.flag == 'row':
 
-			elif self.flag == 'columns':
+					self.rowIteration = self.rowIteration % self.numberOfRows
 
-					if self.countColumns == self.maxNumberOfColumns:
-						self.flag = 'row'
+					items = self.subSizer.GetChildren( )
+					for i,item in enumerate(items):
+							b = item.GetWindow( )
+							b.SetBackgroundColour( self.backgroundColour )
+							b.SetFocus( )
+							b.Update( )
 
-						item = self.subSizer.GetItem( self.rowIteration * self.numberOfColumns + self.columnIteration - 1 )
+					if self.rowIteration == self.numberOfRows - 2:
+						self.countRows += 1
 
-						b = item.GetWindow( )
-						b.SetBackgroundColour( self.backgroundColour )
+					if self.rowIteration == self.numberOfRows - 1:
 
-						self.rowIteration = self.numberOfRows-1
-						self.columnIteration = 0
-						self.countColumns = 0
+						buttonsToHighlight = range( self.rowIteration * self.numberOfColumns, self.rowIteration * self.numberOfColumns + 3 )
 
 					else:
+						buttonsToHighlight = range( self.rowIteration * self.numberOfColumns, self.rowIteration * self.numberOfColumns + self.numberOfColumns )
 
-	################################################################################################################################################
+					for i, button in enumerate( buttonsToHighlight ):
 
-						new_numberOfColumns = self.numberOfColumns
+							item = self.subSizer.GetItem( button )
+							b = item.GetWindow( )
+							b.SetBackgroundColour( self.scanningColour )
+							b.SetFocus( )
+							b.Update( )
 
-						if self.rowIteration == self.numberOfRows - 1:
-							new_numberOfColumns = 3
+					self.rowIteration += 1
 
-	################################################################################################################################################
+				elif self.flag == 'columns':
 
-						if self.columnIteration == new_numberOfColumns - 1 or (self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns - 3 and self.rowIteration == self.numberOfRows - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns - 4 and self.rowIteration == self.numberOfRows - 1 ):
-							self.countColumns += 1
+						if self.countColumns == self.maxNumberOfColumns:
+							self.flag = 'row'
 
-						if self.columnIteration == new_numberOfColumns or ( self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns - 2 and self.rowIteration == self.numberOfRows - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns - 3 and self.rowIteration == self.numberOfRows - 1 ):
+							item = self.subSizer.GetItem( self.rowIteration * self.numberOfColumns + self.columnIteration - 1 )
+
+							b = item.GetWindow( )
+							b.SetBackgroundColour( self.backgroundColour )
+
+							self.rowIteration = self.numberOfRows-1
 							self.columnIteration = 0
+							self.countColumns = 0
 
-						items = self.subSizer.GetChildren( )
-						for i,item in enumerate(items):
+						else:
 
-								b = item.GetWindow( )
-								b.SetBackgroundColour( self.backgroundColour )
-								b.SetFocus( )
-								b.Update( )
+		################################################################################################################################################
 
-						item = self.subSizer.GetItem( self.rowIteration * self.numberOfColumns + self.columnIteration )
-						b = item.GetWindow( )
-						b.SetBackgroundColour( self.scanningColour )
-						b.SetFocus( )
-						b.Update( )
+							new_numberOfColumns = self.numberOfColumns
 
-						self.columnIteration += 1
+							if self.rowIteration == self.numberOfRows - 1:
+								new_numberOfColumns = 3
 
-		elif self.countRows == self.maxNumberOfRows:
+		################################################################################################################################################
 
-			self.flag = 'rest'
-			self.countRows += 1
+							if self.columnIteration == new_numberOfColumns - 1 or (self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns - 3 and self.rowIteration == self.numberOfRows - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns - 4 and self.rowIteration == self.numberOfRows - 1 ):
+								self.countColumns += 1
 
-			items = self.subSizer.GetChildren( )
-			
-			for item in items:
-				b = item.GetWindow( )
-				b.SetBackgroundColour( self.backgroundColour )
-				b.SetFocus( )
+							if self.columnIteration == new_numberOfColumns or ( self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns - 2 and self.rowIteration == self.numberOfRows - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns - 3 and self.rowIteration == self.numberOfRows - 1 ):
+								self.columnIteration = 0
+
+							items = self.subSizer.GetChildren( )
+							for i,item in enumerate(items):
+
+									b = item.GetWindow( )
+									b.SetBackgroundColour( self.backgroundColour )
+									b.SetFocus( )
+									b.Update( )
+
+							item = self.subSizer.GetItem( self.rowIteration * self.numberOfColumns + self.columnIteration )
+							b = item.GetWindow( )
+							b.SetBackgroundColour( self.scanningColour )
+							b.SetFocus( )
+							b.Update( )
+
+							self.columnIteration += 1
+
+			elif self.countRows == self.maxNumberOfRows:
+
+				self.flag = 'rest'
+				self.countRows += 1
+
+				items = self.subSizer.GetChildren( )
+
+				for item in items:
+					b = item.GetWindow( )
+					b.SetBackgroundColour( self.backgroundColour )
+					b.SetFocus( )
 
 
 #=============================================================================

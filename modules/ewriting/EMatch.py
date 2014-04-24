@@ -50,8 +50,9 @@ class cwiczenia(wx.Frame):
 
 		self.initializeParameters( )
 		self.createGui( )
-		self.initializeTimer( )
 		self.createBindings( )
+
+		self.initializeTimer( )
 
 	#-------------------------------------------------------------------------
 	def initializeParameters(self):
@@ -76,6 +77,8 @@ class cwiczenia(wx.Frame):
 					self.filmVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
 				elif line[ :line.find('=')-1 ] == 'musicVolume':
 					self.musicVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
+				elif line[ :line.find('=')-1 ] == 'control':
+					self.control = line[ line.rfind('=')+2:-1 ]
 			
 				elif not line.isspace( ):
 					print 'Niewłaściwie opisane parametry'
@@ -88,6 +91,7 @@ class cwiczenia(wx.Frame):
 					self.selectionColour = '#9EE4EF'
 					self.filmVolumeLevel = 100
 					self.musicVolumeLevel = 70
+					self.control = 'switch'
 
 		with open( self.pathToATPlatform + 'spellerParameters', 'r' ) as parametersFile:
 			for line in parametersFile:
@@ -138,9 +142,12 @@ class cwiczenia(wx.Frame):
 					self.sex = 'D'
 
 		self.flaga = 0
+		self.pressFlag = True
 		self.PicNr = 0
 		self.result = 0
 
+		self.labels = [ 'speak', 'literuj', 'undo', 'exit' ]
+		
 		self.WordsList = os.listdir( self.pathToATPlatform + 'multimedia/ewriting/pictures' )
 		shuffle( self.WordsList )
                 self.poczatek = True
@@ -177,52 +184,80 @@ class cwiczenia(wx.Frame):
 	#-------------------------------------------------------------------------
 	def timerUpdate(self, event):
 
-                self.mouseCursor.move( *self.mousePosition )
+		if self.control == 'tracker':
+			
+			if not self.poczatek: 
+				try:
+					# if self.button.GetBackgroundColour( ) == self.backgroundColour:
+					# 	self.button.SetBackgroundColour( self.selectionColour )
 
-                self.numberOfPresses = 0
-                                
-                if self.flaga<= self.numberOfExtraWords + 1 and self.flaga > 0:
-                        item = self.wordSizer.GetChildren( )
-                        b = item[ self.flaga-1 ].GetWindow( )
-                        b.SetBackgroundColour( self.backgroundColour )
-                        b.SetFocus( )
+					# else:
+					self.button.SetBackgroundColour( self.backgroundColour )	
+					self.Update()
+					self.stoper.Stop( )
+					self.pressFlag = False
 
-                else:
-                        if self.flaga == 0:
-                                item = self.subSizer.GetChildren( )
-                                b = item[ len( item ) - 1 ].GetWindow( )
-                                b.SetBackgroundColour( self.backgroundColour )
-                                b.SetFocus( )
-                        else:
-                                item = self.subSizer.GetChildren( )
-				b = item[ self.flaga - self.numberOfExtraWords - 2 ].GetWindow( )
-                                b.SetBackgroundColour( self.backgroundColour )
-                                b.SetFocus( )
-
-                if self.poczatek:
-                        time.sleep( 1 )
-                        self.stoper.Stop( )
-                        mixer.music.load( self.pathToATPlatform + 'multimedia/ewriting/voices/' + str( self.word ) + '.ogg' )
-                        mixer.music.play( )
-                        time.sleep( 2 )
-                        self.stoper.Start( self.timeGap )
-                        self.poczatek = False
+				except AttributeError:
+					pass
 				
-                if self.flaga >= self.numberOfExtraWords + 1:
-                        item = self.subSizer.GetChildren( )
-                        b = item[ self.flaga - self.numberOfExtraWords - 1 ].GetWindow( )
-                        b.SetBackgroundColour( self.scanningColour )
-                        b.SetFocus( )
-                else:
-                        item = self.wordSizer.GetChildren( )
-                        b = item[ self.flaga ].GetWindow( )
-                        b.SetBackgroundColour( self.scanningColour )
-                        b.SetFocus( )
+			if self.poczatek:
+				time.sleep( 1 )
+				self.stoper.Stop( )
+				mixer.music.load( self.pathToATPlatform + 'multimedia/ewriting/voices/' + str( self.word ) + '.ogg' )
+				mixer.music.play( )
+				time.sleep( 2 )
+				self.stoper.Start( self.timeGap )
+				self.poczatek = False
+				self.pressFlag = False
 
-                if self.flaga == 3 + self.numberOfExtraWords + 1: 
-                        self.flaga = 0
-                else:
-                        self.flaga += 1			
+
+		else:
+			self.mouseCursor.move( *self.mousePosition )
+
+			self.numberOfPresses = 0
+
+			if self.flaga <= self.numberOfExtraWords + 1 and self.flaga > 0:
+				item = self.wordSizer.GetChildren( )
+				b = item[ self.flaga-1 ].GetWindow( )
+				b.SetBackgroundColour( self.backgroundColour )
+				b.SetFocus( )
+
+			else:
+				if self.flaga == 0:
+					item = self.subSizer.GetChildren( )
+					b = item[ len( item ) - 1 ].GetWindow( )
+					b.SetBackgroundColour( self.backgroundColour )
+					b.SetFocus( )
+				else:
+					item = self.subSizer.GetChildren( )
+					b = item[ self.flaga - self.numberOfExtraWords - 2 ].GetWindow( )
+					b.SetBackgroundColour( self.backgroundColour )
+					b.SetFocus( )
+
+			if self.poczatek:
+				time.sleep( 1 )
+				self.stoper.Stop( )
+				mixer.music.load( self.pathToATPlatform + 'multimedia/ewriting/voices/' + str( self.word ) + '.ogg' )
+				mixer.music.play( )
+				time.sleep( 2 )
+				self.stoper.Start( self.timeGap )
+				self.poczatek = False
+
+			if self.flaga >= self.numberOfExtraWords + 1:
+				item = self.subSizer.GetChildren( )
+				b = item[ self.flaga - self.numberOfExtraWords - 1 ].GetWindow( )
+				b.SetBackgroundColour( self.scanningColour )
+				b.SetFocus( )
+			else:
+				item = self.wordSizer.GetChildren( )
+				b = item[ self.flaga ].GetWindow( )
+				b.SetBackgroundColour( self.scanningColour )
+				b.SetFocus( )
+
+			if self.flaga == 3 + self.numberOfExtraWords + 1: 
+				self.flaga = 0
+			else:
+				self.flaga += 1			
 	
 	#-------------------------------------------------------------------------
 	def createGui(self):
@@ -230,6 +265,11 @@ class cwiczenia(wx.Frame):
                 if self.PicNr == len( self.WordsList ):
                         self.PicNr = 0
 
+		if self.control != 'tracker':
+			event = eval('wx.EVT_LEFT_DOWN')
+		else:
+			event = eval('wx.EVT_BUTTON')
+                                
 		self.picture = self.WordsList[ self.PicNr ]
                 self.PicNr += 1
 		self.path = self.pathToATPlatform + 'multimedia/ewriting/pictures/'
@@ -248,8 +288,8 @@ class cwiczenia(wx.Frame):
 		self.word = self.picture[ :self.picture.index( '.' ) ]
 		
 		self.WORD = self.word.upper( )
-	
-		self.extraWords=[ ] #wybiera dodatkowe slowa
+
+		self.extraWords = [ ] #wybiera dodatkowe slowa
 		while len( self.extraWords ) < self.numberOfExtraWords:
                         slowo = self.WordsList[ np.random.randint( 0, len( self.WordsList ), 1 )[ 0 ] ] 
                         slowo = slowo[ :slowo.index( '.' ) ]
@@ -257,9 +297,10 @@ class cwiczenia(wx.Frame):
                         if SLOWO not in self.extraWords and SLOWO != self.WORD:
                                 self.extraWords.append( SLOWO )
                                 
-		b = bt.GenBitmapButton( self, -1, bitmap = picture, name = 'picture' )
+		b = bt.GenBitmapButton( self, -1, bitmap = picture )
+		# b.name = 'picture'
 		# b.SetBackgroundColour( self.backgroundColour)
-		b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+		# b.Bind( event, self.onPress )
 
                 obiekty_wyrazow = [ ]
                 self.wyrazy_w_kolejnosci = [ ]
@@ -267,30 +308,33 @@ class cwiczenia(wx.Frame):
 
                 for i, j in enumerate( self.extraWords ):
                         be = bt.GenButton( self, -1, j )
+			be.name = j
                         be.SetFont( wx.Font(60, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False) )
                         be.SetBackgroundColour( self.backgroundColour )
-                        be.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+                        be.Bind( event, self.onPress )
                         obiekty_wyrazow.append( be )
                         self.wyrazy_w_kolejnosci.append( j )
 
                 be = bt.GenButton( self, -1, self.WORD )
                 be.SetFont( wx.Font(60, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False) )
+		be.name = self.WORD
                 be.SetBackgroundColour( self.backgroundColour )
-                be.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+                be.Bind( event, self.onPress )
                 obiekty_wyrazow.insert( gdzie_poprawne, be )
                 self.wyrazy_w_kolejnosci.insert( gdzie_poprawne, self.WORD )
                 
                 res = bt.GenButton( self, -1, u'TWÓJ WYNIK:   ' + str(self.result) + ' / ' + str( self.maxPoints ) )
 		res.SetFont( wx.Font(27, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False) )
+		# res.name = 'points'
 		# res.SetBackgroundColour( self.backgroundColour )
-		res.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+		# res.Bind( event, self.onPress )
 		
                 self.wordSizer = wx.GridSizer( self.numberOfExtraWords + 1, 1, 3, 3 )
-                for i in obiekty_wyrazow:
-                        self.wordSizer.Add( i, proportion = 1, flag = wx.EXPAND )                                
+                for item in obiekty_wyrazow:
+                        self.wordSizer.Add( item, proportion = 1, flag = wx.EXPAND )                                
 		
 		try:
-                        self.subSizerP.Hide( 0 )
+			self.subSizerP.Hide( 0 )
                         self.subSizerP.Remove( 0 )
                         self.subSizerP.Add( res, 0, wx.EXPAND ) #dodanie wyniku
                         self.subSizer0.Hide( 0 )
@@ -300,8 +344,8 @@ class cwiczenia(wx.Frame):
 		        self.subSizer0.Add( self.wordSizer, 0, wx.EXPAND ) #tutaj trzeba dodac caly zagniezdzony subsizer ze slowami
                         self.subSizer0.Add( b, 0, wx.EXPAND) #dodanie zdjecia
                         items=self.subSizer.GetChildren( )
-                        for i in items:
-                                b=i.GetWindow( )
+                        for item in items:
+                                b=item.GetWindow( )
                                 b.SetBackgroundColour( self.backgroundColour )
                                 b.Update
                         
@@ -324,10 +368,11 @@ class cwiczenia(wx.Frame):
                         for idx, icon in enumerate( self.icons ):
 
                                 if icon[ 0 ].isdigit( ):
-                                        i = wx.BitmapFromImage( wx.ImageFromStream( open(self.path+icon, "rb") ) )
-                                        b = bt.GenBitmapButton( self, -1, bitmap = i )
+                                        k = wx.BitmapFromImage( wx.ImageFromStream( open(self.path+icon, "rb") ) )
+                                        b = bt.GenBitmapButton( self, -1, bitmap = k )
+					b.name = self.labels[ idx ]
                                         b.SetBackgroundColour( self.backgroundColour )
-                                        b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+                                        b.Bind( event, self.onPress )
                                         self.subSizer.Add( b, 0,wx.EXPAND )
 
                         self. mainSizer.Add( self.subSizerP, 1, wx.EXPAND | wx.BOTTOM, 2 )
@@ -410,75 +455,151 @@ class cwiczenia(wx.Frame):
 	#-------------------------------------------------------------------------
 	def onPress(self, event):
 
-                self.numberOfPresses += 1
-		
-		if self.numberOfPresses == 1:
+		if self.control == 'tracker':
+			if self.pressFlag == False:
+				self.button = event.GetEventObject( )
+				self.button.SetBackgroundColour( self.selectionColour )
+				self.Update()
+				self.pressFlag = True
+				self.name = self.button.name
+				# print self.name
 
-                        if self.flaga == 0 :
-                                items = self.subSizer.GetChildren( )
-                                item=items[ 3 ]
+				# if self.flaga == 0 :
+				# 	items = self.subSizer.GetChildren( )
+				# 	item=items[ 3 ]
 
-                        else:
-                                if self.flaga >= self.numberOfExtraWords + 2:
-                                        items = self.subSizer.GetChildren( )
-                                        item=items[ self.flaga - self.numberOfExtraWords - 2 ]
-                                else:
-                                        items = self.wordSizer.GetChildren( )
-                                        item=items[ self.flaga -1 ]
-                        
-                        b = item.GetWindow( )
-                        b.SetBackgroundColour( self.selectionColour )
-                        b.SetFocus( )
-                        b.Update( )
-                
-                	if 'speller' in self.icons[ self.flaga - self.numberOfExtraWords - 2 ] and self.flaga >= self.numberOfExtraWords + 2:
-                                pass
-                                
-                	elif self.flaga == 0:
-				self.onExit( )
+				# else:
+				# 	if self.flaga >= self.numberOfExtraWords + 2:
+				# 		items = self.subSizer.GetChildren( )
+				# 		item=items[ self.flaga - self.numberOfExtraWords - 2 ]
+				# 	else:
+				# 		items = self.wordSizer.GetChildren( )
+				# 		item=items[ self.flaga -1 ]
 
-                        elif 'speak' in self.icons[ self.flaga - self.numberOfExtraWords - 2 ] and self.flaga >= self.numberOfExtraWords + 2:
-                        	time.sleep( 1 )
-                        	self.stoper.Stop( )
-                        	mixer.music.load( self.pathToATPlatform + 'multimedia/ewriting/voices/' + str( self.word ) + '.ogg' )
-                                mixer.music.play( )
-                                self.stoper4.Start( 2000 )
+				# b = item.GetWindow( )
+				# b.SetBackgroundColour( self.selectionColour )
+				# b.SetFocus( )
+				# b.Update( )
 
-                        elif 'literuj' in  self.icons[ self.flaga - self.numberOfExtraWords - 2 ] and self.flaga >= self.numberOfExtraWords + 2:
-                                self.stoper.Stop( )
-                                if str( self.word ) + '.ogg' not in os.listdir( self.pathToATPlatform + 'multimedia/ewriting/spelling/' ):        
-                                        command = 'sox -m ' + self.pathToATPlatform + 'sounds/phone/' + list( self.word )[ 0 ].swapcase( ) + '.wav'
-                                        ile = 0
-                                        for l in list( self.word )[ 1: ]:
-                                                ile += 2
-                                                command += ' "|sox ' + self.pathToATPlatform + 'sounds/phone/' + l.swapcase( ) + '.wav' + ' -p pad ' + str( ile ) + '"'
-                                        command += ' ' + self.pathToATPlatform + 'multimedia/ewriting/spelling/' + self.word + '.ogg'
-                                        wykonaj = sp.Popen( shlex.split( command ) )
+				# if 'speller' in self.icons[ self.flaga - self.numberOfExtraWords - 2 ] and self.flaga >= self.numberOfExtraWords + 2:
+				# 	pass
 
-                                time.sleep( 1.5 )
-                                do_literowania = mixer.Sound( self.pathToATPlatform + 'multimedia/ewriting/spelling/' + self.word + '.ogg' )
-                                do_literowania.play( )
-                                self.stoper4.Start( ( do_literowania.get_length( ) + 0.5 ) * 1000 )
-                                
-                        elif 'undo' in self.icons[ self.flaga - self.numberOfExtraWords - 2 ] and self.flaga >= self.numberOfExtraWords + 2 :
-			
-                        	self.stoper.Stop( )
-                        	
-                        	self.createGui( )			
-                        	self.stoper.Start( self.timeGap )
+				# if self.name == 'points' or self.name == 'picture':
+				# 	pass
 
-                        else:
-                                if self.wyrazy_w_kolejnosci[ self.flaga - 1 ] == self.WORD:
-                                        self.ownWord = self.WORD
+				if self.name == 'speak':
+					# time.sleep( 1 )
+					self.stoper.Stop( )
+					mixer.music.load( self.pathToATPlatform + 'multimedia/ewriting/voices/' + str( self.word ) + '.ogg' )
+					mixer.music.play( )
+					self.stoper4.Start( 2000 )
 
-                                else:
-                                        self.ownWord=''
+				elif self.name == 'literuj':
+					self.stoper.Stop( )
+					if str( self.word ) + '.ogg' not in os.listdir( self.pathToATPlatform + 'multimedia/ewriting/spelling/' ):        
+						command = 'sox -m ' + self.pathToATPlatform + 'sounds/phone/' + list( self.word )[ 0 ].swapcase( ) + '.wav'
+						ile = 0
+						for l in list( self.word )[ 1: ]:
+							ile += 2
+							command += ' "|sox ' + self.pathToATPlatform + 'sounds/phone/' + l.swapcase( ) + '.wav' + ' -p pad ' + str( ile ) + '"'
+						command += ' ' + self.pathToATPlatform + 'multimedia/ewriting/spelling/' + self.word + '.ogg'
+						wykonaj = sp.Popen( shlex.split( command ) )
 
-                                self.stoper.Stop( )
-                                self.check( )
+					# time.sleep( 1.5 )
+					do_literowania = mixer.Sound( self.pathToATPlatform + 'multimedia/ewriting/spelling/' + self.word + '.ogg' )
+					do_literowania.play( )
+					self.stoper4.Start( ( do_literowania.get_length( ) + 0.5 ) * 1000 )
 
-                else:
-                        event.Skip( )
+				elif self.name == 'undo':
+
+					self.stoper.Stop( )
+
+					self.createGui( )			
+					self.stoper.Start( self.timeGap )
+
+				elif self.name == 'exit':
+					self.onExit( )
+
+				else:
+					if self.name == self.WORD:
+						self.ownWord = self.WORD
+
+					else:
+						self.ownWord=''
+
+					self.stoper.Stop( )
+					self.check( )
+
+		else:
+			self.numberOfPresses += 1
+
+			if self.numberOfPresses == 1:
+
+				if self.flaga == 0 :
+					items = self.subSizer.GetChildren( )
+					item=items[ 3 ]
+
+				else:
+					if self.flaga >= self.numberOfExtraWords + 2:
+						items = self.subSizer.GetChildren( )
+						item=items[ self.flaga - self.numberOfExtraWords - 2 ]
+					else:
+						items = self.wordSizer.GetChildren( )
+						item=items[ self.flaga -1 ]
+
+				b = item.GetWindow( )
+				b.SetBackgroundColour( self.selectionColour )
+				b.SetFocus( )
+				b.Update( )
+
+				if 'speller' in self.icons[ self.flaga - self.numberOfExtraWords - 2 ] and self.flaga >= self.numberOfExtraWords + 2:
+					pass
+
+				elif self.flaga == 0:
+					self.onExit( )
+
+				elif 'speak' in self.icons[ self.flaga - self.numberOfExtraWords - 2 ] and self.flaga >= self.numberOfExtraWords + 2:
+					time.sleep( 1 )
+					self.stoper.Stop( )
+					mixer.music.load( self.pathToATPlatform + 'multimedia/ewriting/voices/' + str( self.word ) + '.ogg' )
+					mixer.music.play( )
+					self.stoper4.Start( 2000 )
+
+				elif 'literuj' in  self.icons[ self.flaga - self.numberOfExtraWords - 2 ] and self.flaga >= self.numberOfExtraWords + 2:
+					self.stoper.Stop( )
+					if str( self.word ) + '.ogg' not in os.listdir( self.pathToATPlatform + 'multimedia/ewriting/spelling/' ):        
+						command = 'sox -m ' + self.pathToATPlatform + 'sounds/phone/' + list( self.word )[ 0 ].swapcase( ) + '.wav'
+						ile = 0
+						for l in list( self.word )[ 1: ]:
+							ile += 2
+							command += ' "|sox ' + self.pathToATPlatform + 'sounds/phone/' + l.swapcase( ) + '.wav' + ' -p pad ' + str( ile ) + '"'
+						command += ' ' + self.pathToATPlatform + 'multimedia/ewriting/spelling/' + self.word + '.ogg'
+						wykonaj = sp.Popen( shlex.split( command ) )
+
+					time.sleep( 1.5 )
+					do_literowania = mixer.Sound( self.pathToATPlatform + 'multimedia/ewriting/spelling/' + self.word + '.ogg' )
+					do_literowania.play( )
+					self.stoper4.Start( ( do_literowania.get_length( ) + 0.5 ) * 1000 )
+
+				elif 'undo' in self.icons[ self.flaga - self.numberOfExtraWords - 2 ] and self.flaga >= self.numberOfExtraWords + 2 :
+
+					self.stoper.Stop( )
+
+					self.createGui( )			
+					self.stoper.Start( self.timeGap )
+
+				else:
+					if self.wyrazy_w_kolejnosci[ self.flaga - 1 ] == self.WORD:
+						self.ownWord = self.WORD
+
+					else:
+						self.ownWord=''
+
+					self.stoper.Stop( )
+					self.check( )
+
+			else:
+				event.Skip( )
 
 	#-------------------------------------------------------------------------
         def pomocniczyStoper(self, event):

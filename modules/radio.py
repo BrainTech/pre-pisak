@@ -47,8 +47,9 @@ class radio( wx.Frame ):
 
 	    self.initializeBitmaps( )
             self.createGui( )								
-            self.initializeTimer( )					
             self.createBindings( )						
+
+            self.initializeTimer( )					
 
 	#-------------------------------------------------------------------------
 	def initializeParameters(self):
@@ -73,7 +74,9 @@ class radio( wx.Frame ):
 					self.filmVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
 				elif line[ :line.find('=')-1 ] == 'musicVolume':
 					self.musicVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
-					
+				elif line[ :line.find('=')-1 ] == 'control':
+					self.control = line[ line.rfind('=')+2:-1 ]
+				
 				elif not line.isspace( ):
 					print 'Niewłaściwie opisane parametry'
 					print 'Błąd w linii', line
@@ -85,9 +88,12 @@ class radio( wx.Frame ):
 					self.selectionColour = '#9EE4EF'
 					self.filmVolumeLevel = 100
 					self.musicVolumeLevel = 70
+					self.control = 'switch'
 					
 		alsaaudio.Mixer( control = 'Master' ).setvolume( self.musicVolumeLevel, 0 )
+
 		self.flag = 'row'
+		self.pressFlag = False
 
 		self.numberOfRows = 4,
 		self.numberOfColumns = 5,
@@ -153,12 +159,14 @@ class radio( wx.Frame ):
 			self.numberOfPanels = 1
 			print "Błąd w strukturze plików."
 						
-			self.functionButtonPath = [ wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform + 'icons/volume down.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform + 'icons/volume up.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform + 'icons/show2.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open( '%sicons/delete.png' % self.pathToATPlatform, 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open( '%sicons/back.png' % self.pathToATPlatform, 'rb' ) ) ) ]
+		self.functionButtonPath = [ wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform + 'icons/volume down.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform + 'icons/volume up.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform + 'icons/show2.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open( '%sicons/delete.png' % self.pathToATPlatform, 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open( '%sicons/back.png' % self.pathToATPlatform, 'rb' ) ) ) ]
+
+		self.functionButtonName = [ 'volume_down', 'volume_up', 'show', 'delete', 'back' ]
 	
-			if self.numberOfPanels == 1:
-				self.flag = 'row'
-			else:
-				self.flag = 'panel'
+		if self.numberOfPanels == 1:
+			self.flag = 'row'
+		else:
+			self.flag = 'panel'
 	    
 	#-------------------------------------------------------------------------
 	def createGui(self):
@@ -167,6 +175,12 @@ class radio( wx.Frame ):
                 self.mainSizer = wx.BoxSizer( wx.VERTICAL )
                
 		self.numberOfCells = self.numberOfRows[ 0 ] * self.numberOfColumns[ 0 ]
+
+		if self.control != 'tracker':
+			event = eval('wx.EVT_LEFT_DOWN')
+		else:
+			event = eval('wx.EVT_BUTTON')
+
                 for panel in self.panels.keys( ):
 			
 			subSizer = wx.GridBagSizer( 4, 4 )
@@ -180,7 +194,7 @@ class radio( wx.Frame ):
 					b = bt.GenBitmapButton( self, -1, name = self.panels[ panel ][ 0 ][ index ], bitmap = logo )
 					b.SetBackgroundColour( self.backgroundColour )
 					b.SetBezelWidth( 3 )
-					b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+					b.Bind( event, self.onPress )
 					subSizer.Add( b, ( index / self.numberOfColumns[ 0 ], index % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
 			else:
 				index = -1
@@ -188,39 +202,39 @@ class radio( wx.Frame ):
 			index_2 = 0
 			while index + index_2 < self.numberOfCells - 6:
 				index_2 += 1
-				b = bt.GenButton( self, -1 )
-				b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+				b = bt.GenButton( self, -1, name = 'empty' )
+				b.Bind( event, self.onPress )
 				b.SetBackgroundColour( self.backgroundColour )
 				subSizer.Add( b, ( ( index + index_2 ) / self.numberOfColumns[ 0 ], ( index + index_2 ) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
 			
-			b = bt.GenBitmapButton( self, -1, bitmap = self.functionButtonPath[ 0 ] )
+			b = bt.GenBitmapButton( self, -1, bitmap = self.functionButtonPath[ 0 ], name = self.functionButtonName[ 0 ] )
 			b.SetBackgroundColour( self.backgroundColour )
 			b.SetBezelWidth( 3 )
-			b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+			b.Bind( event, self.onPress )
 			subSizer.Add( b, ( ( index + index_2 + 1 ) / self.numberOfColumns[ 0 ], ( index + index_2 + 1 ) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
 
-			b = bt.GenBitmapButton( self, -1, bitmap = self.functionButtonPath[ 1 ] )
+			b = bt.GenBitmapButton( self, -1, bitmap = self.functionButtonPath[ 1 ], name = self.functionButtonName[ 1 ] )
 			b.SetBackgroundColour( self.backgroundColour )
 			b.SetBezelWidth( 3 )
-			b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+			b.Bind( event, self.onPress )
 			subSizer.Add( b, ( ( index + index_2 + 2 ) / self.numberOfColumns[ 0 ], ( index + index_2 + 2 ) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
 
-			b = bt.GenBitmapButton( self, -1, bitmap = self.functionButtonPath[ 2 ] )
+			b = bt.GenBitmapButton( self, -1, bitmap = self.functionButtonPath[ 2 ], name = self.functionButtonName[ 2 ] )
 			b.SetBackgroundColour( self.backgroundColour )
 			b.SetBezelWidth( 3 )
-			b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+			b.Bind( event, self.onPress )
 			subSizer.Add( b, ( ( index + index_2 + 3 ) / self.numberOfColumns[ 0 ], ( index + index_2 + 3 ) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
 
-			b = bt.GenBitmapButton( self, -1, bitmap = self.functionButtonPath[ 3 ] )
+			b = bt.GenBitmapButton( self, -1, bitmap = self.functionButtonPath[ 3 ], name = self.functionButtonName[ 3 ] )
 			b.SetBackgroundColour( self.backgroundColour )
 			b.SetBezelWidth( 3 )
-			b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+			b.Bind( event, self.onPress )
 			subSizer.Add( b, ( ( index + index_2 + 4 ) / self.numberOfColumns[ 0 ], ( index + index_2 + 4 ) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
 
-			b = bt.GenBitmapButton( self, -1, bitmap = self.functionButtonPath[ 4 ] )
+			b = bt.GenBitmapButton( self, -1, bitmap = self.functionButtonPath[ 4 ], name = self.functionButtonName[ 4 ] )
 			b.SetBackgroundColour( self.backgroundColour )
 			b.SetBezelWidth( 3 )
-			b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+			b.Bind( event, self.onPress )
 			subSizer.Add( b, ( ( index + index_2 + 5 ) / self.numberOfColumns[ 0 ], ( index + index_2 + 5 ) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
 				
 			for number in range( self.numberOfRows[ 0 ] - 1 ):
@@ -244,7 +258,9 @@ class radio( wx.Frame ):
 	def initializeTimer(self):
 		self.stoper = wx.Timer( self )
 		self.Bind( wx.EVT_TIMER , self.timerUpdate , self.stoper )
-		self.stoper.Start( self.timeGap )
+
+		if self.control != 'tracker':
+			self.stoper.Start( self.timeGap )
 	
 	#-------------------------------------------------------------------------
 	def createBindings(self):
@@ -289,136 +305,216 @@ class radio( wx.Frame ):
 	#-------------------------------------------------------------------------
         def onPress(self, event):
 
-		self.numberOfPresses += 1
+		if self.control == 'tracker':
+			if self.pressFlag == False:
+				self.button = event.GetEventObject()
+				self.button.SetBackgroundColour( self.selectionColour )
+				self.pressFlag = True
+				self.label = event.GetEventObject().GetName().encode( 'utf-8' )
+				self.stoper.Start( 0.15 * self.timeGap )
+				print self.label
 
-                if self.numberOfPresses == 1:
-           
-			if self.flag == 'rest':
-
-				if self.numberOfPanels == 1:
-					self.flag = 'row'
-				else:
-					self.flag = 'panel'
-
-			elif self.flag == 'panel':
-				items = self.subSizers[ self.panelIteration ].GetChildren( )			
-
-				for item in items:
-					b = item.GetWindow( )
-                                        b.SetBackgroundColour( self.scanningColour )
-                                        b.SetFocus( )
+			if self.label == 'volume_down':
+				try:
+					recentVolume = alsaaudio.Mixer( control = 'Master' ).getvolume( )[ 0 ] 
+					alsaaudio.Mixer( control = 'Master' ).setvolume( recentVolume - 15, 0 )
+							
+				except alsaaudio.ALSAAudioError:
+					self.button.SetBackgroundColour( 'red' )
+					self.button.SetFocus( )
 					
-				self.flag = 'row'
-			
-			elif self.flag == 'row':
-                                
-				buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ], ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] )
-			
-				for button in buttonsToHighlight:
-					item = self.subSizers[ self.panelIteration ].GetItem( button )
-					b = item.GetWindow( )
-					b.SetBackgroundColour( self.selectionColour )
-					b.SetFocus( )
+					self.Update( )
+
+			elif self.label == 'volume_up':
+				try:
+					recentVolume = alsaaudio.Mixer( control = 'Master' ).getvolume( )[ 0 ] 
+					alsaaudio.Mixer( control = 'Master' ).setvolume( recentVolume + 15, 0 )
+							
+				except alsaaudio.ALSAAudioError:
+					self.button.SetBackgroundColour( 'red' )
+					self.button.SetFocus( )
 					
-                                self.flag = 'columns'
+					self.Update( )
+						
+			elif self.label == 'show':
+				self.stoper.Stop( )
+				radioPilot.pilot( self, id = 2 ).Show( True )
+				self.Hide( )
 				
-			elif self.flag == 'columns':
+			elif self.label == 'delete':
+				os.system( 'smplayer -send-action quit &')
 				
-				self.position = ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.columnIteration - 1
+			elif self.label == 'back':
+				self.onExit( )
 
-                                item = self.subSizers[ self.panelIteration ].GetItem( self.position )
-				selectedButton = item.GetWindow( )
-				selectedButton.SetBackgroundColour( self.selectionColour )
-				selectedButton.SetFocus( )
-                                
-                                self.Update( )
-				
-				if self.rowIteration == self.numberOfRows[ 0 ]:
+			elif self.label == 'empty':
+				self.button.SetBackgroundColour( 'red' )
+				self.button.SetFocus( )
 					
-					if self.columnIteration == 1:
-						try:
-							recentVolume = alsaaudio.Mixer( control = 'Master' ).getvolume( )[ 0 ] 
-							alsaaudio.Mixer( control = 'Master' ).setvolume( recentVolume - 15, 0 )
-							time.sleep( 1.5 )
-							
-						except alsaaudio.ALSAAudioError:
-							selectedButton.SetBackgroundColour( 'red' )
-							selectedButton.SetFocus( )
-							
-							self.Update( )
-							time.sleep( 1.5 )
+				self.Update( )
+				# time.sleep( 1.5 )
 
-					elif self.columnIteration == 2:
-						try:
-							recentVolume = alsaaudio.Mixer( control = 'Master' ).getvolume( )[ 0 ] 
-							alsaaudio.Mixer( control = 'Master' ).setvolume( recentVolume + 15, 0 )
-							time.sleep( 1.5 )
-							
-						except alsaaudio.ALSAAudioError:
-							selectedButton.SetBackgroundColour( 'red' )
-							selectedButton.SetFocus( )
-							
-							self.Update( )
-							time.sleep( 1.5 )
-						
-					elif self.columnIteration == 3:
-						self.stoper.Stop( )
-						radioPilot.pilot( self, id = 2 ).Show( True )
-						self.Hide( )
+			else:
+				try:
 
-					elif self.columnIteration == 4:
-						os.system( 'smplayer -send-action quit &')
-						
-					elif self.columnIteration == 5:
-						self.onExit( )
-				else:
-					try:
-						# print self.panelIteration
-						# print self.position
+					os.system('milena_say %s' % self.label[ self.label.find('_') + 1 : self.label.rfind('.') ] )
+					mediaIndex = self.existingLogos.index( self.label )
+					choice = self.radioURL[ mediaIndex ]
+					# print choice
 
-						logo = self.panels[ self.panelIteration + 1 ][ 0 ][ self.position ]
-
-						os.system('milena_say %s' % logo[ logo.find('_') + 1 : logo.rfind('.') ] )
-						
-						mediaIndex = self.existingLogos.index( logo )
-						choice = self.radioURL[ mediaIndex ]
-						# print choice
-
-						os.system( 'smplayer -pos 0 0 %s &' % choice )
-						
-					except IndexError:
-						selectedButton.SetBackgroundColour( 'red' )
-						selectedButton.SetFocus( )
-						
-						self.Update( )
-						time.sleep( 1.5 )
-
-				if self.numberOfPanels == 1:
-                                    self.flag = 'row'
-				    self.panelIteration = 0
-                                else:
-                                    self.flag = 'panel'
-				    self.panelIteration = -1
-								    
-				self.rowIteration = 0
-				self.columnIteration = 0
+					os.system( 'smplayer -pos 0 0 %s &' % choice )
 				
-				self.emptyPanelIteration = -1
-				self.emptyRowIteration = 0
-				self.emptyColumnIteration = 0
+				except IndexError:
+					self.button.SetBackgroundColour( 'red' )
+					self.button.SetFocus( )
+					
+					self.Update( )
+					# time.sleep( 1.5 )
 
-				selectedButton = item.GetWindow( )
-				selectedButton.SetBackgroundColour( self.backgroundColour )
-				selectedButton.SetFocus( )
-                        
 		else:
-			pass
 
-		# print self.numberOfPresses
+			self.numberOfPresses += 1
+
+			if self.numberOfPresses == 1:
+
+				if self.flag == 'rest':
+
+					if self.numberOfPanels == 1:
+						self.flag = 'row'
+					else:
+						self.flag = 'panel'
+
+				elif self.flag == 'panel':
+					items = self.subSizers[ self.panelIteration ].GetChildren( )			
+
+					for item in items:
+						b = item.GetWindow( )
+						b.SetBackgroundColour( self.scanningColour )
+						b.SetFocus( )
+
+					self.flag = 'row'
+
+				elif self.flag == 'row':
+
+					buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ], ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] )
+
+					for button in buttonsToHighlight:
+						item = self.subSizers[ self.panelIteration ].GetItem( button )
+						b = item.GetWindow( )
+						b.SetBackgroundColour( self.selectionColour )
+						b.SetFocus( )
+
+					self.flag = 'columns'
+
+				elif self.flag == 'columns':
+
+					self.position = ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.columnIteration - 1
+
+					item = self.subSizers[ self.panelIteration ].GetItem( self.position )
+					selectedButton = item.GetWindow( )
+					selectedButton.SetBackgroundColour( self.selectionColour )
+					selectedButton.SetFocus( )
+
+					self.Update( )
+
+					if self.rowIteration == self.numberOfRows[ 0 ]:
+
+						if self.columnIteration == 1:
+							try:
+								recentVolume = alsaaudio.Mixer( control = 'Master' ).getvolume( )[ 0 ] 
+								alsaaudio.Mixer( control = 'Master' ).setvolume( recentVolume - 15, 0 )
+								time.sleep( 1.5 )
+
+							except alsaaudio.ALSAAudioError:
+								selectedButton.SetBackgroundColour( 'red' )
+								selectedButton.SetFocus( )
+
+								self.Update( )
+								time.sleep( 1.5 )
+
+						elif self.columnIteration == 2:
+							try:
+								recentVolume = alsaaudio.Mixer( control = 'Master' ).getvolume( )[ 0 ] 
+								alsaaudio.Mixer( control = 'Master' ).setvolume( recentVolume + 15, 0 )
+								time.sleep( 1.5 )
+
+							except alsaaudio.ALSAAudioError:
+								selectedButton.SetBackgroundColour( 'red' )
+								selectedButton.SetFocus( )
+
+								self.Update( )
+								time.sleep( 1.5 )
+
+						elif self.columnIteration == 3:
+							self.stoper.Stop( )
+							radioPilot.pilot( self, id = 2 ).Show( True )
+							self.Hide( )
+
+						elif self.columnIteration == 4:
+							os.system( 'smplayer -send-action quit &')
+
+						elif self.columnIteration == 5:
+							self.onExit( )
+					else:
+						try:
+							# print self.panelIteration
+							# print self.position
+
+							logo = self.panels[ self.panelIteration + 1 ][ 0 ][ self.position ]
+
+							os.system('milena_say %s' % logo[ logo.find('_') + 1 : logo.rfind('.') ] )
+
+							mediaIndex = self.existingLogos.index( logo )
+							choice = self.radioURL[ mediaIndex ]
+							# print choice
+
+							os.system( 'smplayer -pos 0 0 %s &' % choice )
+
+						except IndexError:
+							selectedButton.SetBackgroundColour( 'red' )
+							selectedButton.SetFocus( )
+
+							self.Update( )
+							time.sleep( 1.5 )
+
+					if self.numberOfPanels == 1:
+					    self.flag = 'row'
+					    self.panelIteration = 0
+					else:
+					    self.flag = 'panel'
+					    self.panelIteration = -1
+
+					self.rowIteration = 0
+					self.columnIteration = 0
+
+					self.emptyPanelIteration = -1
+					self.emptyRowIteration = 0
+					self.emptyColumnIteration = 0
+
+					selectedButton = item.GetWindow( )
+					selectedButton.SetBackgroundColour( self.backgroundColour )
+					selectedButton.SetFocus( )
+
+			else:
+				pass
+
+			# print self.numberOfPresses
 
 	#-------------------------------------------------------------------------
 	def timerUpdate(self , event):
 
+		if self.control == 'tracker':
+
+			if self.button.GetBackgroundColour( ) == self.backgroundColour:
+				self.button.SetBackgroundColour( self.selectionColour )
+				
+			else:
+				self.button.SetBackgroundColour( self.backgroundColour )	
+		
+			self.stoper.Stop( )
+			self.pressFlag = False
+
+		else:
 		        self.mouseCursor.move( *self.mousePosition )	
 
                         self.numberOfPresses = 0

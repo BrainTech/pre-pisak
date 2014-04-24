@@ -46,6 +46,7 @@ class cwiczenia(wx.Frame):
 		self.initializeBitmaps( )
 		self.createGui( )
 		self.createBindings( )
+
 		self.initializeTimer( )
 
 	#-------------------------------------------------------------------------	
@@ -71,7 +72,9 @@ class cwiczenia(wx.Frame):
 					self.filmVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
 				elif line[ :line.find('=')-1 ] == 'musicVolume':
 					self.musicVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
-			
+				elif line[ :line.find('=')-1 ] == 'control':
+					self.control = line[ line.rfind('=')+2:-1 ]
+
 				elif not line.isspace( ):
 					print 'Niewłaściwie opisane parametry'
 					print 'Błąd w linii', line
@@ -83,6 +86,7 @@ class cwiczenia(wx.Frame):
 					self.selectionColour = '#9EE4EF'
 					self.filmVolumeLevel = 100
 					self.musicVolumeLevel = 70
+					self.control = 'switch'
 
                 with open( self.pathToATPlatform + 'ewritingParameters', 'r' ) as parametersFile:
 			for line in parametersFile:                                                                
@@ -115,6 +119,8 @@ class cwiczenia(wx.Frame):
 					self.maxPoints = 2
 					self.sex = 'D'
 
+		self.pressFlag = False
+
 		self.numberOfRows = 3,
 		self.numberOfColumns = 1,
 
@@ -132,6 +138,8 @@ class cwiczenia(wx.Frame):
             
 		self.functionButtonPath = [ wx.BitmapFromImage( wx.ImageFromStream( open(self.pathToATPlatform + 'icons/back.png', 'rb' ) ) ) ]
 
+		self.functionButtonName = [ 'back' ]
+
 	#-------------------------------------------------------------------------	
 	def initializeTimer(self):
 
@@ -139,8 +147,9 @@ class cwiczenia(wx.Frame):
                 wx.RegisterId( id1 )
 		self.stoper = wx.Timer( self, id1 )
 		self.Bind( wx.EVT_TIMER, self.timerUpdate, self.stoper,id1 )
-		
-		self.stoper.Start( self.timeGap )
+
+		if self.control != 'tracker':
+			self.stoper.Start( self.timeGap )
 
 	#-------------------------------------------------------------------------	
 	def createGui(self):
@@ -159,7 +168,7 @@ class cwiczenia(wx.Frame):
 			b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
                         self.mainSizer.Add( b, ( index, 0 ), wx.DefaultSpan, wx.EXPAND )
 
-		b = bt.GenBitmapButton( self, -1, bitmap = self.functionButtonPath[ 0 ] )
+		b = bt.GenBitmapButton( self, -1, bitmap = self.functionButtonPath[ 0 ], name = self.functionButtonName[ 0 ] )
 		b.SetBackgroundColour( self.backgroundColour )
 		b.SetBezelWidth( 3 )
 		b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
@@ -235,65 +244,101 @@ class cwiczenia(wx.Frame):
 	#-------------------------------------------------------------------------	
 	def onPress(self, event):
 
-                self.numberOfPresses += 1
-		
-		if self.numberOfPresses == 1:
+		if self.control == 'tracker':
+			if self.pressFlag == False:
+				self.button = event.GetEventObject()
+				self.button.SetBackgroundColour( self.selectionColour )
+				self.pressFlag = True
+				self.label = event.GetEventObject().GetName().encode( 'utf-8' )
+				self.stoper.Start( 0.15 * self.timeGap )
 
-                        items = self.mainSizer.GetChildren( )
+				if self.label == 'UZUPEŁNIJ LUKĘ':
+					self.stoper.Stop( )
+					EGaps.cwiczenia( self, id = -1 ).Show( True )
+					self.MakeModal( False )
+					self.Hide( )
 
-                        if self.flaga == 0:
-                                b = items[ 2 ].GetWindow( )
-                        
-			elif self.flaga == 1:
-			       b = items[ 0 ].GetWindow( )
-			
-			elif self.flaga == 2:
-				b = items[ 1 ].GetWindow( )
+				elif self.label == 'NAZWIJ OBRAZEK':
+					self.stoper.Stop( )
+					EMatch.cwiczenia( self, id = -1 ).Show( True )
+					self.MakeModal( False )
+					self.Hide( )
 
-                        b.SetBackgroundColour( self.selectionColour )
-                        b.SetFocus( )
-                        b.Update( )
+				if self.label == 'back':
+					self.onExit( )
 
-                	if self.flaga == 0 :
-				self.onExit( )
+		else:
+			self.numberOfPresses += 1
 
-                	if self.flaga == 1 :
-                		self.stoper.Stop( )
-                		EGaps.cwiczenia( self, id = -1 ).Show( True )
-                                self.MakeModal( False )
-                                self.Hide( )
+			if self.numberOfPresses == 1:
 
-                        if self.flaga == 2 :
-                		self.stoper.Stop( )
-                		EMatch.cwiczenia( self, id = -1 ).Show( True )
-                                self.MakeModal( False )
-                                self.Hide( )
+				items = self.mainSizer.GetChildren( )
 
-                else:
-                        event.Skip( )
+				if self.flaga == 0:
+					b = items[ 2 ].GetWindow( )
+
+				elif self.flaga == 1:
+				       b = items[ 0 ].GetWindow( )
+
+				elif self.flaga == 2:
+					b = items[ 1 ].GetWindow( )
+
+				b.SetBackgroundColour( self.selectionColour )
+				b.SetFocus( )
+				b.Update( )
+
+				if self.flaga == 0 :
+					self.onExit( )
+
+				if self.flaga == 1 :
+					self.stoper.Stop( )
+					EGaps.cwiczenia( self, id = -1 ).Show( True )
+					self.MakeModal( False )
+					self.Hide( )
+
+				if self.flaga == 2 :
+					self.stoper.Stop( )
+					EMatch.cwiczenia( self, id = -1 ).Show( True )
+					self.MakeModal( False )
+					self.Hide( )
+
+			else:
+				event.Skip( )
 
 	#-------------------------------------------------------------------------	
 	def timerUpdate(self, event):
- 
-                self.mouseCursor.move( *self.mousePosition )
 
-                self.numberOfPresses = 0
-                		
-		for i in range( 3 ):
-			item = self.mainSizer.GetItem( i )
-                        b = item.GetWindow( )
-                        b.SetBackgroundColour( self.backgroundColour )
-                        b.SetFocus( )
-                   
-                item = self.mainSizer.GetItem( self.flaga )
-                b = item.GetWindow( )
-                b.SetBackgroundColour( self.scanningColour )
-                b.SetFocus( )
+		if self.control == 'tracker':
+			
+			if self.button.GetBackgroundColour( ) == self.backgroundColour:
+				self.button.SetBackgroundColour( self.selectionColour )
+				
+			else:
+				self.button.SetBackgroundColour( self.backgroundColour )	
+		
+			self.stoper.Stop( )
+			self.pressFlag = False
 
-                if self.flaga == 2:
-                        self.flaga = 0
-                else:
-                        self.flaga += 1			
+		else:
+			self.mouseCursor.move( *self.mousePosition )
+
+			self.numberOfPresses = 0
+
+			for i in range( 3 ):
+				item = self.mainSizer.GetItem( i )
+				b = item.GetWindow( )
+				b.SetBackgroundColour( self.backgroundColour )
+				b.SetFocus( )
+
+			item = self.mainSizer.GetItem( self.flaga )
+			b = item.GetWindow( )
+			b.SetBackgroundColour( self.scanningColour )
+			b.SetFocus( )
+
+			if self.flaga == 2:
+				self.flaga = 0
+			else:
+				self.flaga += 1			
 	
 #=============================================================================
 if __name__ == '__main__':

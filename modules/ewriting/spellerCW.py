@@ -66,6 +66,8 @@ class speller( wx.Frame ):
 					self.filmVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
 				elif line[ :line.find('=')-1 ] == 'musicVolume':
 					self.musicVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
+				elif line[ :line.find('=')-1 ] == 'control':
+					self.control = line[ line.rfind('=')+2:-1 ]
 			
 				elif not line.isspace( ):
 					print 'Niewłaściwie opisane parametry'
@@ -78,6 +80,7 @@ class speller( wx.Frame ):
 					self.selectionColour = '#9EE4EF'
 					self.filmVolumeLevel = 100
 					self.musicVolumeLevel = 70
+					self.control = 'switch'
 
 		with open( self.pathToATPlatform + 'spellerParameters', 'r' ) as parametersFile:
 			for line in parametersFile:
@@ -140,6 +143,7 @@ class speller( wx.Frame ):
                 self.numberOfColumns = [ 8, 9 ]
 				
                 self.flag = 'row'						
+		self.pressFlag = False
                 self.rowIteration = 0						
                 self.columnIteration = 0							
                 self.countRows = 0
@@ -196,6 +200,11 @@ class speller( wx.Frame ):
 		
 		subSizer = wx.GridBagSizer( 3, 3 )
 
+		if self.control != 'tracker':
+			event = eval('wx.EVT_LEFT_DOWN')
+		else:
+			event = eval('wx.EVT_BUTTON')
+
 		for index_1, item in enumerate( self.labels[ 0 ][ :-7 ] ):
 			b = bt.GenButton( self.parent, -1, item, name = item, size = ( 0.985*self.winWidth / self.numberOfColumns[ 0 ], 0.79 * self.winHeight / self.numberOfRows[ 0 ] ) )
 			b.SetFont( wx.Font( 35, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False ) )
@@ -207,14 +216,14 @@ class speller( wx.Frame ):
 			else:
 				b.SetForegroundColour( self.textColour )
 
-			b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+			b.Bind( event, self.onPress )
 			subSizer.Add( b, ( index_1 / self.numberOfColumns[ 0 ], index_1 % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
 
 		for index_2, item in enumerate( self.labels[ 0 ][ -7 : ] ):
-			b = bt.GenBitmapButton( self.parent, -1, bitmap = self.labelBitmaps[ item ] )
+			b = bt.GenBitmapButton( self.parent, -1, name = item, bitmap = self.labelBitmaps[ item ] )
 			b.SetBackgroundColour( self.backgroundColour )
 			b.SetBezelWidth( 3 )
-                        b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+                        b.Bind( event, self.onPress )
 
                         if index_2 == 3:
                                 subSizer.Add( b, ( ( index_1 + index_2 +1) / self.numberOfColumns[ 0 ], ( index_1 + index_2+1 ) % self.numberOfColumns[ 0 ] ), (1,3), wx.EXPAND )
@@ -235,14 +244,14 @@ class speller( wx.Frame ):
 			b.SetBezelWidth( 3 )
 			b.SetBackgroundColour( self.backgroundColour )
 			b.SetForegroundColour( self.textColour )
-			b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+			b.Bind( event, self.onPress )
 			subSizer2.Add( b, ( index_1 / self.numberOfColumns[ 1 ], index_1 % self.numberOfColumns[ 1 ] ), wx.DefaultSpan, wx.EXPAND )
 
 		for index_2, item in enumerate( self.labels[ 1 ][ -6 :  ] ):
-			b = bt.GenBitmapButton( self.parent, -1, bitmap = self.labelBitmaps2[ item ] )
+			b = bt.GenBitmapButton( self.parent, -1, name = item, bitmap = self.labelBitmaps2[ item ] )
 			b.SetBackgroundColour( self.backgroundColour )
 			b.SetBezelWidth( 3 )
-                        b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+                        b.Bind( event, self.onPress )
 
 			if index_2 == 2:
                                 subSizer2.Add( b, ( ( index_1 + index_2 +1) / self.numberOfColumns[ 1 ], ( index_1 + index_2 +1) % self.numberOfColumns[ 1 ] ), (1,4), wx.EXPAND )
@@ -297,46 +306,17 @@ class speller( wx.Frame ):
 	#----------------------------------------------------------------------------
 	def onPress(self, event):
 
-		self.numberOfPresses += 1
-		
-		if self.numberOfPresses == 1:
+		if self.control == 'tracker':
+			if self.pressFlag == False:
+				self.button = event.GetEventObject( )
+				self.button.SetBackgroundColour( self.selectionColour )
+				self.pressFlag = True
+				self.label = event.GetEventObject().GetName().encode( 'utf-8' )
+				# print self.label
+				# exit()
+				self.parent.stoper2.Start( 0.15 * self.timeGap )
 
-			if self.flag == 'rest':
-				self.flag = 'row'
-				self.rowIteration = 0
-
-			elif self.flag == 'row':
-				
-				if self.rowIteration != self.numberOfRows[ self.subSizerNumber ]:
-					buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ self.subSizerNumber ], ( self.rowIteration - 1 ) * self.numberOfColumns[ self.subSizerNumber ] + self.numberOfColumns[ self.subSizerNumber ] )
-				else:
-					buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ self.subSizerNumber ], ( self.rowIteration - 1 ) * self.numberOfColumns[ self.subSizerNumber ] + 6 )
-			
-				for i, button in enumerate( buttonsToHighlight ):
-                                        if self.rowIteration - 1 == self.numberOfRows[ self.subSizerNumber ] - 1 and i == len( buttonsToHighlight ) - 2 and self.voice:
-                                                pass
-                                        else:
-                                                item = self.subSizers[ self.subSizerNumber ].GetItem( button )
-                                                b = item.GetWindow( )
-                                                b.SetBackgroundColour( self.selectionColour )
-                                                b.SetFocus( )
-                                                b.Update( )
-
-				self.flag = 'columns' 
-				self.rowIteration -= 1
-				self.columnIteration = 0
-			
-			elif self.flag == 'columns' and self.rowIteration != self.numberOfRows[ self.subSizerNumber ] - 1:
-
-				item = self.subSizers[ self.subSizerNumber ].GetItem( ( self.rowIteration ) * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration - 1 )
-				b = item.GetWindow( )
-				b.SetBackgroundColour( self.selectionColour )
-				b.SetFocus( )
-				b.Update( )
-
-				label = self.labels[ self.subSizerNumber ][ self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration - 1 ]
-				
-				if label == 'SPECIAL_CHARACTERS':								
+				if self.label == 'SPECIAL_CHARACTERS':								
 
 					self.subSizerNumber = 1
 
@@ -345,230 +325,391 @@ class speller( wx.Frame ):
 					self.parent.SetSizer( self.parent.mainSizer )
 					self.parent.Layout( )
 					if self.voice:
-                                                item = self.subSizers[ self.subSizerNumber ].GetItem( self.numberOfRows[self.subSizerNumber ] * self.numberOfColumns[ self.subSizerNumber ] - 5 )
-                                                b = item.GetWindow( )
-                                                b.SetBackgroundColour( 'indian red' )
-                                                b.SetFocus( )
-                                                b.Update( )
-                                        else:
-                                                item = self.subSizers[ self.subSizerNumber ].GetItem( self.numberOfRows[self.subSizerNumber ] * self.numberOfColumns[ self.subSizerNumber ] - 5 )
-                                                b = item.GetWindow( )
-                                                b.SetBackgroundColour( self.backgroundColour )
-                                                b.SetFocus( )
-                                                b.Update( )
+						item = self.button
+						b = item.GetWindow( )
+						b.SetBackgroundColour( 'indian red' )
+						b.SetFocus( )
+						b.Update( )
+					else:
+						item = self.button
+						b = item.GetWindow( )
+						b.SetBackgroundColour( self.backgroundColour )
+						b.SetFocus( )
+						b.Update( )
 
-				else:
-					if self.ilejuz < self.ileLuk:
-                                                self.typewriterKeySound.play( )
-                                                self.textField.SetInsertionPoint( self.ktore[ self.ilejuz ] )
-                                                self.textField.Remove( self.textField.GetInsertionPoint( ), self.textField.GetInsertionPoint( ) + 1 )
-                                                self.textField.WriteText( label )
-                                                self.ilejuz += 1
-                                                self.czyjuz = True
-				
-				self.flag = 'row'
-				self.rowIteration = 0
-				self.columnIteration = 0
-				self.countColumns = 0
+				elif self.label == 'DELETE':
+					if self.ilejuz > 0 and self.czyjuz: 
+						self.typewriterForwardSound.play( )
+						self.textField.Replace( self.textField.GetInsertionPoint( ) - 1, self.textField.GetInsertionPoint( ), '_' )
+						self.ilejuz -= 1
+						self.czyjuz = False
 
-			elif self.flag == 'columns' and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1:
-			
-				item = self.subSizers[ self.subSizerNumber ].GetItem( ( self.rowIteration ) * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration-1 )
-				b = item.GetWindow( )
-				b.SetBackgroundColour( self.selectionColour )
-				b.SetFocus( )
-				b.Update( )
-				
-				label = self.labels[ self.subSizerNumber ][ self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration-1 ]
-				
-				if label == 'DELETE':
-                                        if self.ilejuz > 0 and self.czyjuz: 
-                                                self.typewriterForwardSound.play( )
-                                                self.textField.Replace( self.textField.GetInsertionPoint( ) - 1, self.textField.GetInsertionPoint( ), '_' )
-                                                self.ilejuz -= 1
-                                                self.czyjuz = False
-				
-				elif label == 'SPEAK':
-                                        if not self.voice:
-                                                self.voice = True
-                                                b.SetBackgroundColour( 'indian red' )
-                                                b.SetFocus( )
-                                                b.Update( )
-                                        else:
-                                                b.SetBackgroundColour( self.backgroundColour )
-                                                b.SetFocus( )
-                                                b.Update( )
-                                                self.voice = False
-				
-				elif label == 'ORISPEAK':
-                                        self.parent.stoper2.Stop( )
-                                        if str( self.parent.word ) + '.ogg' not in os.listdir( self.pathToATPlatform + 'multimedia/ewriting/spelling/' ):
-                                                command = 'sox -m ' + self.pathToATPlatform + 'sounds/phone/' + list( self.parent.word )[ 0 ].swapcase( ) + '.wav'
-                                                ile = 0
-                                                for l in list( self.parent.word )[ 1: ]:
-                                                        ile += 2
-                                                        command += ' "|sox ' + self.pathToATPlatform + 'sounds/phone/' + l.swapcase() + '.wav' + ' -p pad ' + str( ile ) + '"'
-                                                command += ' ' + self.pathToATPlatform + 'multimedia/ewriting/spelling/' + self.parent.word + '.ogg'
-                                                wykonaj = sp.Popen( shlex.split( command ) )
+				elif self.label == 'SPEAK':
+					if not self.voice:
+						self.voice = True
+						b = self.button
+						b.SetBackgroundColour( 'indian red' )
+						b.SetFocus( )
+						b.Update( )
+					else:
+						b.SetBackgroundColour( self.backgroundColour )
+						b.SetFocus( )
+						b.Update( )
+						self.voice = False
 
-                                        time.sleep( 1.5 )
-                                        do_literowania = mixer.Sound( self.pathToATPlatform + 'multimedia/ewriting/spelling/' + self.parent.word + '.ogg' )
-                                        do_literowania.play( )
-                                        self.parent.stoper4.Start( ( do_literowania.get_length( ) + 0.5 ) * 1000 )
+				elif self.label == 'ORISPEAK':
+					self.parent.stoper2.Stop( )
+					if str( self.parent.word ) + '.ogg' not in os.listdir( self.pathToATPlatform + 'multimedia/ewriting/spelling/' ):
+						command = 'sox -m ' + self.pathToATPlatform + 'sounds/phone/' + list( self.parent.word )[ 0 ].swapcase( ) + '.wav'
+						ile = 0
+						for l in list( self.parent.word )[ 1: ]:
+							ile += 2
+							command += ' "|sox ' + self.pathToATPlatform + 'sounds/phone/' + l.swapcase() + '.wav' + ' -p pad ' + str( ile ) + '"'
+						command += ' ' + self.pathToATPlatform + 'multimedia/ewriting/spelling/' + self.parent.word + '.ogg'
+						wykonaj = sp.Popen( shlex.split( command ) )
 
-				elif label == 'TRASH':
-                                        text = self.textField.GetValue( )
+					time.sleep( 1.5 )
+					do_literowania = mixer.Sound( self.pathToATPlatform + 'multimedia/ewriting/spelling/' + self.parent.word + '.ogg' )
+					do_literowania.play( )
+					self.parent.stoper4.Start( ( do_literowania.get_length( ) + 0.5 ) * 1000 )
 
-                                        if text.count( '_' ) < self.ileLuk:
-                                                self.typewriterForwardSound.play( )
-                                                for i in self.ktore:
-                                                        self.textField.Replace( i, i + 1, '_' )
-                                                        self.ilejuz = 0
+				elif self.label == 'TRASH':
+					text = self.textField.GetValue( )
 
-	 			elif label == 'EXIT':
+					if text.count( '_' ) < self.ileLuk:
+						self.typewriterForwardSound.play( )
+						for i in self.ktore:
+							self.textField.Replace( i, i + 1, '_' )
+							self.ilejuz = 0
+
+				elif self.label == 'EXIT':
 
 					if self.subSizerNumber == 0:
 						self.onExit( )
 
 					else:	
-                                                self.parent.mainSizer.Show( item = self.subSizers[ self.subSizerNumber ], show = False, recursive = True )
-                                            
-                                                self.subSizerNumber = 0
-                                                self.parent.mainSizer.Show( item = self.subSizers[ self.subSizerNumber ], show = True, recursive = True )
-                                            
-                                                self.parent.SetSizer( self.parent.mainSizer )
-                                                self.parent.Layout( )
+						self.parent.mainSizer.Show( item = self.subSizers[ self.subSizerNumber ], show = False, recursive = True )
 
-                                                if self.voice:
-                                                        item = self.subSizers[ 0 ].GetItem( self.numberOfRows[ self.subSizerNumber ] * self.numberOfColumns[ self.subSizerNumber ] -4 )
-                                                        b = item.GetWindow( )
-                                                        b.SetBackgroundColour( 'indian red' )
-                                                        b.SetFocus( )
-                                                        b.Update( )
-                                                else:
-                                                        item = self.subSizers[ 0 ].GetItem( self.numberOfRows[ self.subSizerNumber ] * self.numberOfColumns[ self.subSizerNumber ] - 4 )
-                                                        b = item.GetWindow( )
-                                                        b.SetBackgroundColour( self.backgroundColour )
-                                                        b.SetFocus( )
-                                                        b.Update( )
-                                                
-				else:
+						self.subSizerNumber = 0
+						self.parent.mainSizer.Show( item = self.subSizers[ self.subSizerNumber ], show = True, recursive = True )
+
+						self.parent.SetSizer( self.parent.mainSizer )
+						self.parent.Layout( )
+
+						if self.voice:
+							b = self.button
+							# b = item.GetWindow( )
+							b.SetBackgroundColour( 'indian red' )
+							b.SetFocus( )
+							b.Update( )
+						else:
+							b = self.button
+							# b = item.GetWindow( )
+							b.SetBackgroundColour( self.backgroundColour )
+							b.SetFocus( )
+							b.Update( )
+
+				elif self.label == 'CHECK':
 					self.parent.stoper2.Stop( )
-                                        self.parent.ownWord = self.textField.GetValue( )
-                                        self.parent.check( )
+					self.parent.ownWord = self.textField.GetValue( )
+					self.parent.check( )
 
-                                self.flag = 'row'
-				self.rowIteration = 0
-				self.columnIteration = 0
-				self.countRows = 0
-				self.countColumns = 0
+				else:
+					if self.ilejuz < self.ileLuk:
+						self.typewriterKeySound.play( )
+						self.textField.SetInsertionPoint( self.ktore[ self.ilejuz ] )
+						self.textField.Remove( self.textField.GetInsertionPoint( ), self.textField.GetInsertionPoint( ) + 1 )
+						self.textField.WriteText( self.label )
+						self.ilejuz += 1
+						self.czyjuz = True
 
 		else:
-			event.Skip( )		
-	
-	#-------------------------------------------------------------------------
-	def timerUpdate(self, event):
+			self.numberOfPresses += 1
 
-		self.mouseCursor.move( *self.mousePosition )
-		
-		self.numberOfPresses = 0		
+			if self.numberOfPresses == 1:
 
-		if self.flag == 'row':
-
-			self.rowIteration = self.rowIteration % self.numberOfRows[ self.subSizerNumber ]
-
-			items = self.subSizers[ self.subSizerNumber ].GetChildren( )
-
-			for i, item in enumerate( items ):
-                                if self.voice and i == len( items ) - 2:
-                                        pass
-
-                                else:
-                                        b = item.GetWindow( )
-                                        b.SetBackgroundColour( self.backgroundColour )
-                                        b.SetFocus( )
-                                        b.Update( )
-
-			if self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1:
-				self.countRows += 1
-				buttonsToHighlight = range( self.rowIteration * self.numberOfColumns[ self.subSizerNumber ], self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + 6 )
-				
-			else:
-				buttonsToHighlight = range( self.rowIteration * self.numberOfColumns[ self.subSizerNumber ], self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.numberOfColumns[ self.subSizerNumber ] )
-					
-			for i, button in enumerate( buttonsToHighlight ):
-
-                                if self.voice and i == len( buttonsToHighlight ) - 2 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1:
-                                        pass
-                                else:
-                                        item = self.subSizers[ self.subSizerNumber ].GetItem( button )
-                                        b = item.GetWindow( )
-                                        b.SetBackgroundColour( self.scanningColour )
-                                        b.SetFocus( )
-                                        b.Update( )
-
-			self.rowIteration += 1
-
-		elif self.flag == 'columns':
-
-				if self.countColumns == self.maxNumberOfColumns:
+				if self.flag == 'rest':
 					self.flag = 'row'
+					self.rowIteration = 0
 
-					item = self.subSizers[ self.subSizerNumber ].GetItem( self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration - 1 )
-                                        
+				elif self.flag == 'row':
+
+					if self.rowIteration != self.numberOfRows[ self.subSizerNumber ]:
+						buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ self.subSizerNumber ], ( self.rowIteration - 1 ) * self.numberOfColumns[ self.subSizerNumber ] + self.numberOfColumns[ self.subSizerNumber ] )
+					else:
+						buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ self.subSizerNumber ], ( self.rowIteration - 1 ) * self.numberOfColumns[ self.subSizerNumber ] + 6 )
+
+					for i, button in enumerate( buttonsToHighlight ):
+						if self.rowIteration - 1 == self.numberOfRows[ self.subSizerNumber ] - 1 and i == len( buttonsToHighlight ) - 2 and self.voice:
+							pass
+						else:
+							item = self.subSizers[ self.subSizerNumber ].GetItem( button )
+							b = item.GetWindow( )
+							b.SetBackgroundColour( self.selectionColour )
+							b.SetFocus( )
+							b.Update( )
+
+					self.flag = 'columns' 
+					self.rowIteration -= 1
+					self.columnIteration = 0
+
+				elif self.flag == 'columns' and self.rowIteration != self.numberOfRows[ self.subSizerNumber ] - 1:
+
+					item = self.subSizers[ self.subSizerNumber ].GetItem( ( self.rowIteration ) * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration - 1 )
 					b = item.GetWindow( )
-					b.SetBackgroundColour( self.backgroundColour )
+					b.SetBackgroundColour( self.selectionColour )
+					b.SetFocus( )
+					b.Update( )
 
+					label = self.labels[ self.subSizerNumber ][ self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration - 1 ]
+
+					if label == 'SPECIAL_CHARACTERS':								
+
+						self.subSizerNumber = 1
+
+						self.parent.mainSizer.Show( item = self.subSizers[ 1 ], show = True, recursive = True )
+						self.parent.mainSizer.Show( item = self.subSizers[ 0 ], show = False, recursive = True )					
+						self.parent.SetSizer( self.parent.mainSizer )
+						self.parent.Layout( )
+						if self.voice:
+							item = self.subSizers[ self.subSizerNumber ].GetItem( self.numberOfRows[self.subSizerNumber ] * self.numberOfColumns[ self.subSizerNumber ] - 5 )
+							b = item.GetWindow( )
+							b.SetBackgroundColour( 'indian red' )
+							b.SetFocus( )
+							b.Update( )
+						else:
+							item = self.subSizers[ self.subSizerNumber ].GetItem( self.numberOfRows[self.subSizerNumber ] * self.numberOfColumns[ self.subSizerNumber ] - 5 )
+							b = item.GetWindow( )
+							b.SetBackgroundColour( self.backgroundColour )
+							b.SetFocus( )
+							b.Update( )
+
+					else:
+						if self.ilejuz < self.ileLuk:
+							self.typewriterKeySound.play( )
+							self.textField.SetInsertionPoint( self.ktore[ self.ilejuz ] )
+							self.textField.Remove( self.textField.GetInsertionPoint( ), self.textField.GetInsertionPoint( ) + 1 )
+							self.textField.WriteText( label )
+							self.ilejuz += 1
+							self.czyjuz = True
+
+					self.flag = 'row'
 					self.rowIteration = 0
 					self.columnIteration = 0
 					self.countColumns = 0
 
-				else:
-					if self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 1 or (self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 3 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 4 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ):
-						self.countColumns += 1
+				elif self.flag == 'columns' and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1:
 
-					if self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] or ( self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 2 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 3 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ):
+					item = self.subSizers[ self.subSizerNumber ].GetItem( ( self.rowIteration ) * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration-1 )
+					b = item.GetWindow( )
+					b.SetBackgroundColour( self.selectionColour )
+					b.SetFocus( )
+					b.Update( )
 
-						self.columnIteration = 0
+					label = self.labels[ self.subSizerNumber ][ self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration-1 ]
 
-					items = self.subSizers[ self.subSizerNumber ].GetChildren( )
+					if label == 'DELETE':
+						if self.ilejuz > 0 and self.czyjuz: 
+							self.typewriterForwardSound.play( )
+							self.textField.Replace( self.textField.GetInsertionPoint( ) - 1, self.textField.GetInsertionPoint( ), '_' )
+							self.ilejuz -= 1
+							self.czyjuz = False
 
-					for i, item in enumerate( items ):
-                                                 
-						if self.voice and i == len(items)-2:
-                                                        b = item.GetWindow( )
-                                                        b.SetBackgroundColour( 'indian red' )
-                                                        b.SetFocus( )
-                                                        b.Update( )
+					elif label == 'SPEAK':
+						if not self.voice:
+							self.voice = True
+							b.SetBackgroundColour( 'indian red' )
+							b.SetFocus( )
+							b.Update( )
 						else:
-                                                        b = item.GetWindow( )
-                                                        b.SetBackgroundColour( self.backgroundColour )
-                                                        b.SetFocus( )
-                                                        b.Update( )
+							b.SetBackgroundColour( self.backgroundColour )
+							b.SetFocus( )
+							b.Update( )
+							self.voice = False
 
-                                        if self.voice and self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration == self.numberOfRows[ self.subSizerNumber ] * self.numberOfColumns[ self.subSizerNumber ] - ( 4 + self.subSizerNumber ):
-                                                item = self.subSizers[ self.subSizerNumber ].GetItem( self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration )
-                                                b = item.GetWindow( )
-                                                b.SetBackgroundColour( 'orange red')
-                                                b.SetFocus( )
-                                                b.Update( )
+					elif label == 'ORISPEAK':
+						self.parent.stoper2.Stop( )
+						if str( self.parent.word ) + '.ogg' not in os.listdir( self.pathToATPlatform + 'multimedia/ewriting/spelling/' ):
+							command = 'sox -m ' + self.pathToATPlatform + 'sounds/phone/' + list( self.parent.word )[ 0 ].swapcase( ) + '.wav'
+							ile = 0
+							for l in list( self.parent.word )[ 1: ]:
+								ile += 2
+								command += ' "|sox ' + self.pathToATPlatform + 'sounds/phone/' + l.swapcase() + '.wav' + ' -p pad ' + str( ile ) + '"'
+							command += ' ' + self.pathToATPlatform + 'multimedia/ewriting/spelling/' + self.parent.word + '.ogg'
+							wykonaj = sp.Popen( shlex.split( command ) )
+
+						time.sleep( 1.5 )
+						do_literowania = mixer.Sound( self.pathToATPlatform + 'multimedia/ewriting/spelling/' + self.parent.word + '.ogg' )
+						do_literowania.play( )
+						self.parent.stoper4.Start( ( do_literowania.get_length( ) + 0.5 ) * 1000 )
+
+					elif label == 'TRASH':
+						text = self.textField.GetValue( )
+
+						if text.count( '_' ) < self.ileLuk:
+							self.typewriterForwardSound.play( )
+							for i in self.ktore:
+								self.textField.Replace( i, i + 1, '_' )
+								self.ilejuz = 0
+
+					elif label == 'EXIT':
+
+						if self.subSizerNumber == 0:
+							self.onExit( )
+
+						else:	
+							self.parent.mainSizer.Show( item = self.subSizers[ self.subSizerNumber ], show = False, recursive = True )
+
+							self.subSizerNumber = 0
+							self.parent.mainSizer.Show( item = self.subSizers[ self.subSizerNumber ], show = True, recursive = True )
+
+							self.parent.SetSizer( self.parent.mainSizer )
+							self.parent.Layout( )
+
+							if self.voice:
+								item = self.subSizers[ 0 ].GetItem( self.numberOfRows[ self.subSizerNumber ] * self.numberOfColumns[ self.subSizerNumber ] -4 )
+								b = item.GetWindow( )
+								b.SetBackgroundColour( 'indian red' )
+								b.SetFocus( )
+								b.Update( )
+							else:
+								item = self.subSizers[ 0 ].GetItem( self.numberOfRows[ self.subSizerNumber ] * self.numberOfColumns[ self.subSizerNumber ] - 4 )
+								b = item.GetWindow( )
+								b.SetBackgroundColour( self.backgroundColour )
+								b.SetFocus( )
+								b.Update( )
+
 					else:
-                                                item = self.subSizers[ self.subSizerNumber ].GetItem( self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration )
-                                                b = item.GetWindow( )
-                                                b.SetBackgroundColour( self.scanningColour )
-                                                b.SetFocus( )
-                                                b.Update( )
-                
-					if self.voice and self.subSizerNumber == 0 and self.rowIteration != self.numberOfRows[ 0 ] - 1:
+						self.parent.stoper2.Stop( )
+						self.parent.ownWord = self.textField.GetValue( )
+						self.parent.check( )
 
-                                                self.parent.stoper2.Stop( )
-                                                label = self.labels[ 0 ][ self.rowIteration * self.numberOfColumns[ 0 ]+ self.columnIteration ]
+					self.flag = 'row'
+					self.rowIteration = 0
+					self.columnIteration = 0
+					self.countRows = 0
+					self.countColumns = 0
 
-                                                if label != 'SPECIAL_CHARACTERS':
-                                                        self.czytajLitere( label )
-                                                else:
-                                                        time.sleep( 1.5 )
+			else:
+				event.Skip( )		
+	
+	#-------------------------------------------------------------------------
+	def timerUpdate(self, event):
 
-                                                self.parent.stoper2.Start( self.timeGap )
-					
-					self.columnIteration += 1
+		if self.control == 'tracker':
+			try:
+				if self.button.GetBackgroundColour( ) == self.backgroundColour:
+					self.button.SetBackgroundColour( self.selectionColour )
+
+				else:
+					self.button.SetBackgroundColour( self.backgroundColour )	
+
+				self.parent.stoper2.Stop( )
+				self.pressFlag = False
+			except AttributeError:
+				pass
+		else:
+
+			self.mouseCursor.move( *self.mousePosition )
+
+			self.numberOfPresses = 0		
+
+			if self.flag == 'row':
+
+				self.rowIteration = self.rowIteration % self.numberOfRows[ self.subSizerNumber ]
+
+				items = self.subSizers[ self.subSizerNumber ].GetChildren( )
+
+				for i, item in enumerate( items ):
+					if self.voice and i == len( items ) - 2:
+						pass
+
+					else:
+						b = item.GetWindow( )
+						b.SetBackgroundColour( self.backgroundColour )
+						b.SetFocus( )
+						b.Update( )
+
+				if self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1:
+					self.countRows += 1
+					buttonsToHighlight = range( self.rowIteration * self.numberOfColumns[ self.subSizerNumber ], self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + 6 )
+
+				else:
+					buttonsToHighlight = range( self.rowIteration * self.numberOfColumns[ self.subSizerNumber ], self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.numberOfColumns[ self.subSizerNumber ] )
+
+				for i, button in enumerate( buttonsToHighlight ):
+
+					if self.voice and i == len( buttonsToHighlight ) - 2 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1:
+						pass
+					else:
+						item = self.subSizers[ self.subSizerNumber ].GetItem( button )
+						b = item.GetWindow( )
+						b.SetBackgroundColour( self.scanningColour )
+						b.SetFocus( )
+						b.Update( )
+
+				self.rowIteration += 1
+
+			elif self.flag == 'columns':
+
+					if self.countColumns == self.maxNumberOfColumns:
+						self.flag = 'row'
+
+						item = self.subSizers[ self.subSizerNumber ].GetItem( self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration - 1 )
+
+						b = item.GetWindow( )
+						b.SetBackgroundColour( self.backgroundColour )
+
+						self.rowIteration = 0
+						self.columnIteration = 0
+						self.countColumns = 0
+
+					else:
+						if self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 1 or (self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 3 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 4 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ):
+							self.countColumns += 1
+
+						if self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] or ( self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 2 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 3 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ):
+
+							self.columnIteration = 0
+
+						items = self.subSizers[ self.subSizerNumber ].GetChildren( )
+
+						for i, item in enumerate( items ):
+
+							if self.voice and i == len(items)-2:
+								b = item.GetWindow( )
+								b.SetBackgroundColour( 'indian red' )
+								b.SetFocus( )
+								b.Update( )
+							else:
+								b = item.GetWindow( )
+								b.SetBackgroundColour( self.backgroundColour )
+								b.SetFocus( )
+								b.Update( )
+
+						if self.voice and self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration == self.numberOfRows[ self.subSizerNumber ] * self.numberOfColumns[ self.subSizerNumber ] - ( 4 + self.subSizerNumber ):
+							item = self.subSizers[ self.subSizerNumber ].GetItem( self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration )
+							b = item.GetWindow( )
+							b.SetBackgroundColour( 'orange red')
+							b.SetFocus( )
+							b.Update( )
+						else:
+							item = self.subSizers[ self.subSizerNumber ].GetItem( self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration )
+							b = item.GetWindow( )
+							b.SetBackgroundColour( self.scanningColour )
+							b.SetFocus( )
+							b.Update( )
+
+						if self.voice and self.subSizerNumber == 0 and self.rowIteration != self.numberOfRows[ 0 ] - 1:
+
+							self.parent.stoper2.Stop( )
+							label = self.labels[ 0 ][ self.rowIteration * self.numberOfColumns[ 0 ]+ self.columnIteration ]
+
+							if label != 'SPECIAL_CHARACTERS':
+								self.czytajLitere( label )
+							else:
+								time.sleep( 1.5 )
+
+							self.parent.stoper2.Start( self.timeGap )
+
+						self.columnIteration += 1

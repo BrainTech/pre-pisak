@@ -45,8 +45,9 @@ class main_menu( wx.Frame ):
 		self.initializeParameters( )
                 self.initializeBitmaps( )
                 self.createGui( )
-		self.initializeTimer( )
                 self.createBindings( )
+
+		self.initializeTimer( )
 
 	#-------------------------------------------------------------------------	
 	def initializeParameters(self):
@@ -78,6 +79,8 @@ class main_menu( wx.Frame ):
 					self.musicVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
 				elif line[ :line.find('=')-1 ] == 'filmVolume':
 					self.filmVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
+				elif line[ :line.find('=')-1 ] == 'control':
+					self.control = line[ line.rfind('=')+2:-1 ]
 
 				elif not line.isspace( ):
 					print '\nNiewłaściwie opisany parametr. Błąd w linii:\n%s' % line
@@ -89,10 +92,12 @@ class main_menu( wx.Frame ):
 					self.selectionColour = '#9EE4EF'
 					self.filmVolumeLevel = 100
 					self.musicVolumeLevel = 40
+					self.control = switch
 
 		self.labels = 'SPELLER EXERCISES AUDIOBOOKS MUSIC MOVIES RADIO'.split( )
 
 		self.flag = 'row'
+		self.pressFlag = False
 
 		self.numberOfRows = [2]
 		self.numberOfColumns = [3]
@@ -125,10 +130,16 @@ class main_menu( wx.Frame ):
 	def createGui(self):
 		self.vbox = wx.BoxSizer( wx.VERTICAL )
                 self.sizer = wx.GridSizer( self.numberOfRows[ 0 ], self.numberOfColumns[ 0 ], 3, 3 )
+
+		if self.control != 'tracker':
+			event = eval('wx.EVT_LEFT_DOWN')
+		else:
+			event = eval('wx.EVT_BUTTON')
+			
 		for i in self.labels:
-			b = bt.GenBitmapButton( self , -1 , bitmap = self.labelbitmaps[ i ] )
-           		b.SetBackgroundColour( self.scanningColour )
-			b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+			b = bt.GenBitmapButton( self , -1, bitmap = self.labelbitmaps[ i ], name = i )
+           		b.SetBackgroundColour( self.backgroundColour )
+			b.Bind( event, self.onPress )
 			self.sizer.Add( b, 0, wx.EXPAND )
 		self.vbox.Add( self.sizer, proportion=1, flag=wx.EXPAND )
 		self.SetSizer( self.vbox )
@@ -137,12 +148,14 @@ class main_menu( wx.Frame ):
 	def initializeTimer(self):
 		self.stoper = wx.Timer( self )
 		self.Bind( wx.EVT_TIMER , self.timerUpdate , self.stoper )
-		self.stoper.Start( self.timeGap )
+
+		if self.control != 'tracker':
+			self.stoper.Start( self.timeGap )
 
 	#-------------------------------------------------------------------------
 	def createBindings(self):
 		self.Bind( wx.EVT_CLOSE , self.OnCloseWindow )
-
+		
 	#-------------------------------------------------------------------------
 	def OnCloseWindow(self , event):
 
@@ -162,123 +175,144 @@ class main_menu( wx.Frame ):
 			self.mouseCursor.move( *self.mousePosition )	
 
 	#-------------------------------------------------------------------------
-	def onPress(self, event):
-			
-		self.numberOfPresses += 1
-		self.countRows = 0
+	def onPress( self, event ):
 
-		if self.numberOfPresses == 1:
-			
-                    if self.flag == 'rest':
-			    self.flag = 'row'
-			    self.rowIteration = 0
-			    self.colIteration = 0 
-			    self.countRows = 0
-
-		    elif self.flag == 'row':
+		if self.control == 'tracker':
+                    if self.pressFlag == False:
+			    self.button = event.GetEventObject()
+			    self.button.SetBackgroundColour( self.selectionColour )
+			    self.pressFlag = True
+			    self.label = event.GetEventObject().GetName().encode( 'utf-8' )			
+			    self.stoper.Start( 0.15 * self.timeGap )
 			    
-			    buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ], ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] )
-			    for button in buttonsToHighlight:
-				    item = self.sizer.GetItem( button )
-				    b = item.GetWindow( )
-				    b.SetBackgroundColour( self.selectionColour )
-				    b.SetFocus( )
+		    if self.label == 'SPELLER':
+			    speller.speller( parent = self, id = -1 ).Show( True )
+			    self.Hide( )
 
-			    self.flag = 'columns'
-			    self.colIteration = 0
+		    elif self.label == 'EXERCISES':
+			    exercise.exercise( self, id = -1 ).Show( True )
+			    self.Hide( )
+
+		    elif self.label == 'AUDIOBOOKS':
+			    audiobook.audiobook( parent = self, id = -1 ).Show( True )
+			    self.Hide( )
+
+		    elif self.label == 'MUSIC':
+			    music.music( self, id = -1 ).Show( True )
+			    self.Hide( )
+
+		    elif self.label == 'MOVIES':
+			    movie.movie( self, id = -1 ).Show( True )
+			    self.Hide( )
+
+		    elif self.label == 'RADIO':
+			    radio.radio( parent = self, id = -1 ).Show( True )
+			    self.Hide( )
 			    
-		    elif self.flag == 'columns':
-			    
-			    self.position = ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.colIteration - 1
+		    # if self.control != 'tracer':
+		    # 	    self.stoper.Stop()
+		else:	
+			self.numberOfPresses += 1
+			self.countRows = 0
 
-			    item = self.sizer.GetItem( self.position )
-			    selectedButton = item.GetWindow( )
-			    selectedButton.SetBackgroundColour( self.selectionColour )
-			    selectedButton.SetFocus( )
-			    self.Update( )
-			    
-			    label = self.labels[ self.position ]			    
+			if self.numberOfPresses == 1:
 
-			    if label == 'SPELLER':
-				    self.stoper.Stop( )
-				    speller.speller( parent = self, id = -1 ).Show( True )
-				    self.Hide( )
-			    
-			    elif label == 'EXERCISES':
-				    self.stoper.Stop( )
-				    exercise.exercise( self, id = -1 ).Show( True )
-				    self.Hide( )
+			    if self.flag == 'rest':
+				    self.flag = 'row'
+				    self.rowIteration = 0
+				    self.colIteration = 0 
+				    self.countRows = 0
 
-			    elif label == 'AUDIOBOOKS':
-				    self.stoper.Stop( )
-				    audiobook.audiobook( parent = self, id = -1 ).Show( True )
-				    self.Hide( )
+			    elif self.flag == 'row':
 
-			    elif label == 'MUSIC':
-				    self.stoper.Stop( )
-				    music.music( self, id = -1 ).Show( True )
-				    self.Hide( )
+				    buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ], ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] )
+				    for button in buttonsToHighlight:
+					    item = self.sizer.GetItem( button )
+					    b = item.GetWindow( )
+					    b.SetBackgroundColour( self.selectionColour )
+					    b.SetFocus( )
 
-			    elif label == 'MOVIES':
-				    self.stoper.Stop( )
-				    movie.movie( self, id = -1 ).Show( True )
-				    self.Hide( )
+				    self.flag = 'columns'
+				    self.colIteration = 0
 
-			    elif label == 'RADIO':
-				    self.stoper.Stop( )
-				    radio.radio( parent = self, id = -1 ).Show( True )
-				    self.Hide( )
+			    elif self.flag == 'columns':
 
-			    self.flag = 'row'
-			    self.rowIteration = 0
-			    self.colIteration = 0
-			    self.countColumns = 0
-			    self.countRows = 0
+				    self.position = ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.colIteration - 1
 
-		else:
-			pass
+				    item = self.sizer.GetItem( self.position )
+				    selectedButton = item.GetWindow( )
+				    selectedButton.SetBackgroundColour( self.selectionColour )
+				    selectedButton.SetFocus( )
+				    self.Update( )
+				    
+				    label = self.labels[ self.position ]			    
+				    
+				    if label == 'SPELLER':
+					    self.stoper.Stop( )
+					    speller.speller( parent = self, id = -1 ).Show( True )
+					    self.Hide( )
+
+				    elif label == 'EXERCISES':
+					    self.stoper.Stop( )
+					    exercise.exercise( self, id = -1 ).Show( True )
+					    self.Hide( )
+
+				    elif label == 'AUDIOBOOKS':
+					    self.stoper.Stop( )
+					    audiobook.audiobook( parent = self, id = -1 ).Show( True )
+					    self.Hide( )
+
+				    elif label == 'MUSIC':
+					    self.stoper.Stop( )
+					    music.music( self, id = -1 ).Show( True )
+					    self.Hide( )
+
+				    elif label == 'MOVIES':
+					    self.stoper.Stop( )
+					    movie.movie( self, id = -1 ).Show( True )
+					    self.Hide( )
+
+				    elif label == 'RADIO':
+					    self.stoper.Stop( )
+					    radio.radio( parent = self, id = -1 ).Show( True )
+					    self.Hide( )
+
+				    self.flag = 'row'
+				    self.rowIteration = 0
+				    self.colIteration = 0
+				    self.countColumns = 0
+				    self.countRows = 0
+
+			else:
+				pass
 
 	#-------------------------------------------------------------------------
 	def timerUpdate(self , event):
-		
-		self.mouseCursor.move( *self.mousePosition )	
-		self.numberOfPresses = 0
 
-		if self.flag == 'rest':
-			pass
-		
-		elif self.countRows < self.maxRows[ 0 ]:
-
-			if self.flag == 'row':
+		if self.control == 'tracker':
+			
+			if self.button.GetBackgroundColour( ) == self.backgroundColour:
+				self.button.SetBackgroundColour( self.selectionColour )
 				
-				self.rowIteration = self.rowIteration % self.numberOfRows[ 0 ]
+			else:
+				self.button.SetBackgroundColour( self.backgroundColour )	
 
-				items = self.sizer.GetChildren( )
-				for item in items:
-					b = item.GetWindow( )
-					b.SetBackgroundColour( self.backgroundColour )
-					b.SetFocus( )
+			self.stoper.Stop( )
+			self.pressFlag = False
 
-				buttonsToHighlight = range( self.rowIteration * self.numberOfColumns[ 0 ], self.rowIteration * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] )
-				for button in buttonsToHighlight:
-					item = self.sizer.GetItem( button )
-					b = item.GetWindow( )
-					b.SetBackgroundColour( self.scanningColour )
-					b.SetFocus( )
+		else:
 
-				self.rowIteration += 1
-				self.countRows += 1
+			self.mouseCursor.move( *self.mousePosition )	
+			self.numberOfPresses = 0
 
-			elif self.flag == 'columns':
-				if self.countColumns == self.maxColumns[ 0 ]:
-					self.flag = 'row'
-					self.rowIteration = 0
-					self.colIteration = 0
- 					self.countColumns = 0
-					self.countRows = 0
-				else:
+			if self.flag == 'rest':
+				pass
 
-					self.colIteration = self.colIteration % self.numberOfColumns[ 0 ]					
+			elif self.countRows < self.maxRows[ 0 ]:
+
+				if self.flag == 'row':
+
+					self.rowIteration = self.rowIteration % self.numberOfRows[ 0 ]
 
 					items = self.sizer.GetChildren( )
 					for item in items:
@@ -286,29 +320,56 @@ class main_menu( wx.Frame ):
 						b.SetBackgroundColour( self.backgroundColour )
 						b.SetFocus( )
 
-					item = self.sizer.GetItem( ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.colIteration )
+					buttonsToHighlight = range( self.rowIteration * self.numberOfColumns[ 0 ], self.rowIteration * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] )
+					for button in buttonsToHighlight:
+						item = self.sizer.GetItem( button )
+						b = item.GetWindow( )
+						b.SetBackgroundColour( self.scanningColour )
+						b.SetFocus( )
+
+					self.rowIteration += 1
+					self.countRows += 1
+
+				elif self.flag == 'columns':
+					if self.countColumns == self.maxColumns[ 0 ]:
+						self.flag = 'row'
+						self.rowIteration = 0
+						self.colIteration = 0
+						self.countColumns = 0
+						self.countRows = 0
+					else:
+
+						self.colIteration = self.colIteration % self.numberOfColumns[ 0 ]					
+
+						items = self.sizer.GetChildren( )
+						for item in items:
+							b = item.GetWindow( )
+							b.SetBackgroundColour( self.backgroundColour )
+							b.SetFocus( )
+
+						item = self.sizer.GetItem( ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.colIteration )
+						b = item.GetWindow( )
+						b.SetBackgroundColour( self.scanningColour )
+						b.SetFocus( )
+
+						self.colIteration += 1
+						self.countColumns += 1
+
+			elif self.countRows == self.maxRows[ 0 ]:
+				self.flag = 'rest'
+				self.countRows += 1
+
+				items = self.sizer.GetChildren( )
+
+				for item in items:
 					b = item.GetWindow( )
-					b.SetBackgroundColour( self.scanningColour )
+					b.SetBackgroundColour( self.backgroundColour )
 					b.SetFocus( )
 
-					self.colIteration += 1
-					self.countColumns += 1
+			else:
+				pass
 
-		elif self.countRows == self.maxRows[ 0 ]:
-			self.flag = 'rest'
-			self.countRows += 1
-
-			items = self.sizer.GetChildren( )
-			
-			for item in items:
-				b = item.GetWindow( )
-				b.SetBackgroundColour( self.backgroundColour )
-				b.SetFocus( )
-
-		else:
-			pass
-
-		# print self.rowIteration, self.colIteration
+			# print self.rowIteration, self.colIteration
 
 
 #=============================================================================

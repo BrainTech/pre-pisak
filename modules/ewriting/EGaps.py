@@ -50,6 +50,7 @@ class cwiczenia(wx.Frame):
 		self.initializeParameters( )
 		self.createGui( )
 		self.createBindings( )
+
 		self.initializeTimer( )
 		
 	#-------------------------------------------------------------------------	
@@ -75,7 +76,9 @@ class cwiczenia(wx.Frame):
 					self.filmVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
 				elif line[ :line.find('=')-1 ] == 'musicVolume':
 					self.musicVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
-			
+				elif line[ :line.find('=')-1 ] == 'control':
+					self.control = line[ line.rfind('=')+2:-1 ]
+
 				elif not line.isspace( ):
 					print 'Niewłaściwie opisane parametry'
 					print 'Błąd w linii', line
@@ -87,6 +90,7 @@ class cwiczenia(wx.Frame):
 					self.selectionColour = '#9EE4EF'
 					self.filmVolumeLevel = 100
 					self.musicVolumeLevel = 70
+					self.control = 'switch'
 
                 with open( self.pathToATPlatform + 'ewritingParameters', 'r' ) as parametersFile:
 			for line in parametersFile:                                                                
@@ -131,6 +135,7 @@ class cwiczenia(wx.Frame):
 		self.czyBack = False
 
 		self.numberOfPresses = 1
+		self.pressFlag = False
 
 		self.mouseCursor = PyMouse( )
 		self.mousePosition = self.winWidth - 8, self.winHeight - 8
@@ -159,10 +164,13 @@ class cwiczenia(wx.Frame):
                 self.stoper4=wx.Timer( self, self.id4 )
                 self.Bind( wx.EVT_TIMER, self.pomocniczyStoper, self.stoper4, self.id4 )
                 
-		self.stoper.Start( self.timeGap )
+		# if self.control != 'tracker':
+		self.stoper.Start( self.timeGap * 0.15 )
 
 	#-------------------------------------------------------------------------		
-	def createGui(self):
+	def createGui( self ):
+
+		self.pressFlag = False
 
                 if self.PicNr == len( self.WordsList ):
                         self.PicNr = 0
@@ -171,6 +179,11 @@ class cwiczenia(wx.Frame):
                 self.PicNr += 1
 
 		self.path = self.pathToATPlatform + 'multimedia/ewriting/pictures/'
+
+		if self.control != 'tracker':
+			event = eval('wx.EVT_LEFT_DOWN')
+		else:
+			event = eval('wx.EVT_BUTTON')
 
                 im = wx.ImageFromStream( open( self.path + self.picture, "rb" ) )
 
@@ -188,19 +201,19 @@ class cwiczenia(wx.Frame):
 		self.word = self.picture[ :self.picture.index( '.' ) ]
 		self.WORD = self.word.upper( )
 
-		b = bt.GenBitmapButton( self, -1, bitmap=picture, name='picture' )
+		b = bt.GenBitmapButton( self, -1, bitmap=picture )
 		# b.SetBackgroundColour( self.backgroundColour )
-		b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+		b.Bind( event, self.onPress )
 
                 be = bt.GenButton( self, -1, self.WORD )
 		be.SetFont( wx.Font( self.textSize, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False ) )
 		# be.SetBackgroundColour( self.backgroundColour )
-		be.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+		be.Bind( event, self.onPress )
 
                 res = bt.GenButton( self, -1, u'TWÓJ WYNIK:   ' + str( self.result ) + ' / ' + str( self.maxPoints ) )
 		res.SetFont( wx.Font(27, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False) )
 		# res.SetBackgroundColour( self.backgroundColour )
-		res.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+		res.Bind( event, self.onPress )
 		
 		try:
                         self.subSizerP.Hide( 0 )
@@ -241,7 +254,8 @@ class cwiczenia(wx.Frame):
                                         i = wx.BitmapFromImage( wx.ImageFromStream( open(self.path+icon, "rb") ) )
                                         b = bt.GenBitmapButton( self, -1, bitmap = i )
                                         b.SetBackgroundColour( self.backgroundColour )
-                                        b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+					b.name = idx
+                                        b.Bind( event, self.onPress )
                                         self.subSizer.Add( b, 0, wx.EXPAND )
 
                         self. mainSizer.Add( self.subSizerP, proportion = 1, flag = wx.EXPAND | wx.BOTTOM, border = 2 )
@@ -307,7 +321,7 @@ class cwiczenia(wx.Frame):
 			self.mouseCursor.move( *self.mousePosition )	
 
 	#-------------------------------------------------------------------------	
-	def onExit(self):
+	def onExit( self ):
 
 		if __name__ == '__main__':
 			self.stoper.Stop( )
@@ -320,62 +334,118 @@ class cwiczenia(wx.Frame):
 			self.Destroy( )
 
 	#-------------------------------------------------------------------------	
-	def onPress(self,event):
+	def onPress( self, event ):
 
-                self.numberOfPresses += 1
-		
-		if self.numberOfPresses == 1:
+		if self.control == 'tracker':
+			if self.pressFlag == False:
+				try:
+					self.button = event.GetEventObject( )
+					self.name = self.button.name
+					self.button.SetBackgroundColour( self.selectionColour )
+					self.Update()
+					self.pressFlag = True
 
-                        item = self.subSizer.GetItem( self.flaga - 1 )
-                        b = item.GetWindow( )
-                        b.SetBackgroundColour( self.selectionColour )
-                        b.SetFocus( )
-                        b.Update( )
-                
-                	if 'speller' in self.icons[ self.flaga - 1 ]:
-                		self.stoper.Stop( )
-                		self.mainSizer.Clear( deleteWindows = True )
-                		self.spellerW = spellerCW.speller( self )
-                		self.Bind( wx.EVT_TIMER, self.spellerW.timerUpdate, self.stoper2, self.id2 )
-                                self.stoper2.Start( self.spellerW.timeGap )
-                                
-                	if 'cancel' in self.icons[ self.flaga - 1 ] or self.flaga == 0:
-				self.onExit( )
+					if self.name == 0:
+						self.stoper.Stop( )
+						self.mainSizer.Clear( deleteWindows = True )
+						self.spellerW = spellerCW.speller( self )
+						self.Bind( wx.EVT_TIMER, self.spellerW.timerUpdate, self.stoper2, self.id2 )
+						self.stoper2.Start( self.spellerW.timeGap )
 
-                        if 'speak' in self.icons[ self.flaga - 1 ]:
-                        	time.sleep( 1 )
-                        	self.stoper.Stop( )
-                        	mixer.music.load( self.pathToATPlatform + 'multimedia/ewriting/voices/' + str( self.word ) + '.ogg' )
-                                mixer.music.play( )
-                                self.stoper4.Start( 2000 )
+					if self.name == 4:
+						self.onExit( )
 
-                        if 'literuj' in  self.icons[ self.flaga - 1 ]:
-                                self.stoper.Stop( )
+					if self.name == 1:
+						# time.sleep( 0.5 )
+						# self.stoper.Stop( )
+						mixer.music.load( self.pathToATPlatform + 'multimedia/ewriting/voices/' + str( self.word ) + '.ogg' )
+						mixer.music.play( )
+						self.stoper.Start( self.timeGap )
+						# self.stoper4.Start( 2000 )
 
-                                if str( self.word ) + '.ogg' not in os.listdir( self.pathToATPlatform + 'multimedia/ewriting/spelling/' ):        
-                                        command = 'sox -m '+ self.pathToATPlatform + 'sounds/phone/' + list( self.word )[ 0 ].swapcase( ) + '.wav'
-                                        ile = 0
-                                        
-					for l in list( self.word )[ 1: ]:
-                                                ile += 2
-                                                command += ' "|sox ' + self.pathToATPlatform + 'sounds/phone/' + l.swapcase() + '.wav' + ' -p pad ' + str( ile ) + '"'
+					if self.name == 2:
+						self.stoper.Stop( )
 
-                                        command += ' ' + self.pathToATPlatform + 'multimedia/ewriting/spelling/' + self.word + '.ogg'
-                                        wykonaj = sp.Popen( shlex.split( command ) )
+						if str( self.word ) + '.ogg' not in os.listdir( self.pathToATPlatform + 'multimedia/ewriting/spelling/' ):        
+							command = 'sox -m '+ self.pathToATPlatform + 'sounds/phone/' + list( self.word )[ 0 ].swapcase( ) + '.wav'
+							ile = 0
 
-                                time.sleep( 1.5 )
-                                do_literowania = mixer.Sound( self.pathToATPlatform + 'multimedia/ewriting/spelling/' + self.word + '.ogg' )
-                                do_literowania.play( )
-                                self.stoper4.Start( ( do_literowania.get_length( ) + 0.5 ) * 1000 )
-                                		
-                        if 'undo' in self.icons[ self.flaga - 1 ]:
-			
-                        	self.stoper.Stop( )
-                        	self.createGui( )			
-                        	self.stoper.Start( self.timeGap )
+							for l in list( self.word )[ 1: ]:
+								ile += 2
+								command += ' "|sox ' + self.pathToATPlatform + 'sounds/phone/' + l.swapcase() + '.wav' + ' -p pad ' + str( ile ) + '"'
 
-                else:
-                        event.Skip( )
+							command += ' ' + self.pathToATPlatform + 'multimedia/ewriting/spelling/' + self.word + '.ogg'
+							wykonaj = sp.Popen( shlex.split( command ) )
+
+						# time.sleep( 1.5 )
+						do_literowania = mixer.Sound( self.pathToATPlatform + 'multimedia/ewriting/spelling/' + self.word + '.ogg' )
+						do_literowania.play( )
+						self.stoper4.Start( ( do_literowania.get_length( ) + 0.5 ) * 1000 )
+
+					if self.name == 3:
+						# self.button = event.GetEventObject( )
+						# self.button.SetBackgroundColour( self.selectionColour )
+						self.stoper.Stop( )
+						self.createGui( )
+						self.stoper.Start( self.timeGap*0.15 )
+
+				except AttributeError:
+					pass
+		else:
+			self.numberOfPresses += 1
+
+			if self.numberOfPresses == 1:
+
+				item = self.subSizer.GetItem( self.flaga - 1 )
+				b = item.GetWindow( )
+				b.SetBackgroundColour( self.selectionColour )
+				b.SetFocus( )
+				b.Update( )
+
+				if 'speller' in self.icons[ self.flaga - 1 ]:
+					self.stoper.Stop( )
+					self.mainSizer.Clear( deleteWindows = True )
+					self.spellerW = spellerCW.speller( self )
+					self.Bind( wx.EVT_TIMER, self.spellerW.timerUpdate, self.stoper2, self.id2 )
+					self.stoper2.Start( self.spellerW.timeGap )
+
+				if 'cancel' in self.icons[ self.flaga - 1 ] or self.flaga == 0:
+					self.onExit( )
+
+				if 'speak' in self.icons[ self.flaga - 1 ]:
+					time.sleep( 1 )
+					self.stoper.Stop( )
+					mixer.music.load( self.pathToATPlatform + 'multimedia/ewriting/voices/' + str( self.word ) + '.ogg' )
+					mixer.music.play( )
+					self.stoper4.Start( 2000 )
+
+				if 'literuj' in  self.icons[ self.flaga - 1 ]:
+					self.stoper.Stop( )
+
+					if str( self.word ) + '.ogg' not in os.listdir( self.pathToATPlatform + 'multimedia/ewriting/spelling/' ):        
+						command = 'sox -m '+ self.pathToATPlatform + 'sounds/phone/' + list( self.word )[ 0 ].swapcase( ) + '.wav'
+						ile = 0
+
+						for l in list( self.word )[ 1: ]:
+							ile += 2
+							command += ' "|sox ' + self.pathToATPlatform + 'sounds/phone/' + l.swapcase() + '.wav' + ' -p pad ' + str( ile ) + '"'
+
+						command += ' ' + self.pathToATPlatform + 'multimedia/ewriting/spelling/' + self.word + '.ogg'
+						wykonaj = sp.Popen( shlex.split( command ) )
+
+					time.sleep( 1.5 )
+					do_literowania = mixer.Sound( self.pathToATPlatform + 'multimedia/ewriting/spelling/' + self.word + '.ogg' )
+					do_literowania.play( )
+					self.stoper4.Start( ( do_literowania.get_length( ) + 0.5 ) * 1000 )
+
+				if 'undo' in self.icons[ self.flaga - 1 ]:
+
+					self.stoper.Stop( )
+					self.createGui( )		
+					self.stoper.Start( self.timeGap )
+
+			else:
+				event.Skip( )
 
 	#-------------------------------------------------------------------------	
         def pomocniczyStoper(self, event):
@@ -409,42 +479,64 @@ class cwiczenia(wx.Frame):
 		self.stoper.Start( self.timeGap )
 
 	#-------------------------------------------------------------------------	
-	def timerUpdate(self,event):
+	def timerUpdate( self, event ):
 
-                self.mouseCursor.move( *self.mousePosition )
+		if self.control == 'tracker':
+			try:
+				# if self.button.GetBackgroundColour( ) == self.backgroundColour:
+				# 	self.button.SetBackgroundColour( self.selectionColour )
 
-                self.numberOfPresses = 0
+				# else:
+				self.button.SetBackgroundColour( self.backgroundColour )	
+					
+				self.stoper.Stop( )
+				self.pressFlag = False
 
-                if self.poczatek:
-                        time.sleep( 1 )
-                        self.stoper.Stop( )
-                        mixer.music.load( self.pathToATPlatform+'multimedia/ewriting/voices/' + str( self.word ) + '.ogg' )
-                        mixer.music.play( )
-                        time.sleep( 2 )
-                        self.stoper.Start( self.timeGap )
-                        self.poczatek = False
-                		
-		for i in range( 5 ):
-			item = self.subSizer.GetItem( i )
-                        b = item.GetWindow( )
-                        b.SetBackgroundColour( self.backgroundColour )
-                        b.SetFocus( )
+			except AttributeError:
+				pass
 
-                if self.flaga == 5:
-                        item = self.subSizer.GetItem( 0 )
-                        b = item.GetWindow( )
-                        b.SetBackgroundColour( self.scanningColour )
-                        b.SetFocus( )
+			if self.poczatek:
+				# time.sleep(  )
+				self.stoper.Stop( )
+				mixer.music.load( self.pathToATPlatform+'multimedia/ewriting/voices/' + str( self.word ) + '.ogg' )
+				mixer.music.play( )
+				self.poczatek = False
 
-                        self.flaga = 1
-				
-                else:
-                        item = self.subSizer.GetItem( self.flaga )
-                        b = item.GetWindow( )
-                        b.SetBackgroundColour( self.scanningColour )
-                        b.SetFocus( )
+		else:
+			self.mouseCursor.move( *self.mousePosition )
 
-                        self.flaga += 1
+			self.numberOfPresses = 0
+
+			if self.poczatek:
+				time.sleep( 1 )
+				self.stoper.Stop( )
+				mixer.music.load( self.pathToATPlatform+'multimedia/ewriting/voices/' + str( self.word ) + '.ogg' )
+				mixer.music.play( )
+				time.sleep( 2 )
+				self.stoper.Start( self.timeGap )
+				self.poczatek = False
+
+			for i in range( 5 ):
+				item = self.subSizer.GetItem( i )
+				b = item.GetWindow( )
+				b.SetBackgroundColour( self.backgroundColour )
+				b.SetFocus( )
+
+			if self.flaga == 5:
+				item = self.subSizer.GetItem( 0 )
+				b = item.GetWindow( )
+				b.SetBackgroundColour( self.scanningColour )
+				b.SetFocus( )
+
+				self.flaga = 1
+
+			else:
+				item = self.subSizer.GetItem( self.flaga )
+				b = item.GetWindow( )
+				b.SetBackgroundColour( self.scanningColour )
+				b.SetFocus( )
+
+				self.flaga += 1
 
 		
 #=============================================================================

@@ -64,7 +64,9 @@ class check(wx.Frame):
 					self.filmVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
 				elif line[ :line.find('=')-1 ] == 'musicVolume':
 					self.musicVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
-			
+				elif line[ :line.find('=')-1 ] == 'control':
+					self.control = line[ line.rfind('=')+2:-1 ]
+
 				elif not line.isspace( ):
 					print 'Niewłaściwie opisane parametry'
 					print 'Błąd w linii', line
@@ -76,6 +78,7 @@ class check(wx.Frame):
 					self.selectionColour = '#9EE4EF'
 					self.filmVolumeLevel = 100
 					self.musicVolumeLevel = 70
+					self.control = 'switch'
 
 		with open( self.pathToATPlatform + 'spellerParameters', 'r' ) as parametersFile:
 			for line in parametersFile:
@@ -132,7 +135,12 @@ class check(wx.Frame):
 	
                 self.subSizer = wx.GridSizer( 1, 1, 0, 0 )
                 self.subSizer2 = wx.GridSizer( 1, 1, 0, 0 )
-	
+
+		if self.control != 'tracker':
+			self.event = eval('wx.EVT_LEFT_DOWN')
+		else:
+			self.event = eval('wx.EVT_BUTTON')
+
                 if self.parent.ownWord == self.parent.WORD:
                         self.parent.result += 1
 
@@ -143,14 +151,13 @@ class check(wx.Frame):
                                 else:
                                         text = u'BRAWO! \n \nZDOBYŁAŚ WSZYSTKIE PUNKTY. \n \nPRZYCIŚNIJ ŻEBY ODEBRAĆ NAGRODĘ.'
 
-                                self.parent.result = 0
                                 kolor = 'dark slate blue'
                                 self.app = False
                                 self.oklaski = True
                                 i = wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform+'/icons/ewriting/thumbup.png', "rb" ) ) )
                                 be = bt.GenBitmapButton( self.parent, -1, bitmap = i )
                                 be.SetBackgroundColour( 'white' )
-                                be.Bind( wx.EVT_LEFT_DOWN, self.reward )
+                                be.Bind( self.event, self.reward )
 
                         else:
                                 if self.sex =='M':
@@ -164,7 +171,7 @@ class check(wx.Frame):
                                 i=wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform + '/icons/ewriting/thumbup.png', "rb" ) ) )
                                 be = bt.GenBitmapButton( self.parent, -1, bitmap = i )
                                 be.SetBackgroundColour( 'white' )
-				be.Bind( wx.EVT_LEFT_DOWN, self.zamknij )
+				be.Bind( self.event, self.zamknij )
 
                 else:
                         text = u'NIESTETY. \n \nSPRÓBUJ JESZCZE RAZ!'
@@ -176,15 +183,22 @@ class check(wx.Frame):
 			i = wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform + '/icons/ewriting/sad.png', "rb" ) ) )
                         be = bt.GenBitmapButton( self.parent, -1, bitmap = i )
                         be.SetBackgroundColour( 'white' )
-			be.Bind( wx.EVT_LEFT_DOWN, self.zamknij )
+			be.Bind( self.event, self.zamknij )
 			
 		b = bt.GenButton( self.parent, -1, text )
 		b.SetFont( wx.Font(50, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False) )
 		b.SetBezelWidth( 3 )
+		
+		if self.parent.result == self.parent.maxPoints:
+			self.parent.result = 0
+			b.Bind( self.event, self.reward )
+		else:
+			b.Bind( self.event, self.zamknij )
+
 		b.SetBackgroundColour( 'white' )
 		b.SetForegroundColour( kolor)
 		b.SetFocus( )
-
+		
 		self.subSizer.Add( b, 0, wx.EXPAND )
 		self.subSizer2.Add( be, 0, wx.EXPAND )
 		self.parent.mainSizer.Add( self.subSizer, proportion = 7, flag = wx.EXPAND )
@@ -212,7 +226,7 @@ class check(wx.Frame):
 		b.SetFont( wx.Font(25, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False) )
 		b.SetBezelWidth( 3 )
 		b.SetBackgroundColour( 'white' )
-		b.Bind( wx.EVT_LEFT_DOWN, self.OnExit)
+		b.Bind( self.event, self.OnExit)
 
 		self.subSizer.Add( b, 0, wx.EXPAND )
                 self.parent.mainSizer.Add( self.subSizer, proportion = 1, flag = wx.EXPAND )

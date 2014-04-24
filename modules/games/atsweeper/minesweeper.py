@@ -103,7 +103,7 @@ class Minesweeper_game(object):
 		
 	#-------------------------------------------------------------------------
 	def flag_field(self, y, x):
-		print self.displayfield
+		# print self.displayfield
 		if self.displayfield[ x, y ] == -1:
 			self.numberOfFlags += 1	
 			self.displayfield[ x, y ] = -3

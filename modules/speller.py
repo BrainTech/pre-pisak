@@ -46,8 +46,9 @@ class speller( wx.Frame ):
 		self.initializeParameters( )
 		self.initializeBitmaps( )
 		self.createGui( )
-		self.initializeTimer( )
 		self.createBindings( )
+
+		self.initializeTimer( )
 
 	#-------------------------------------------------------------------------
 	def initializeParameters(self):
@@ -72,7 +73,9 @@ class speller( wx.Frame ):
 				    self.filmVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
 			    elif line[ :line.find('=')-1 ] == 'musicVolume':
 			    	    self.musicVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
-			
+			    elif line[ :line.find('=')-1 ] == 'control':
+				    self.control = line[ line.rfind('=')+2:-1 ]
+			    
 			    elif not line.isspace( ):
 				    print 'Niewłaściwie opisane parametry'
 				    print 'Błąd w pliku parameters w linii', line
@@ -84,6 +87,7 @@ class speller( wx.Frame ):
 				    self.selectionColour = '#9EE4EF'
 				    self.filmVolumeLevel = 100
 				    self.musicVolumeLevel = 40
+				    self.control = 'switch'
 
 	    with open( self.pathToATPlatform + 'spellerParameters', 'r' ) as parametersFile:
 		    for line in parametersFile:
@@ -109,6 +113,8 @@ class speller( wx.Frame ):
 	    self.numberOfColumns = [ 8, 9 ]
 				
 	    self.flag = 'row'						
+	    self.pressFlag = False
+
 	    self.rowIteration = 0						
 	    self.columnIteration = 0							
 	    self.countRows = 0
@@ -121,8 +127,9 @@ class speller( wx.Frame ):
 	    self.subSizerNumber = 0
 
 	    self.mouseCursor = PyMouse( )
-	    self.mousePosition = self.winWidth - 8, self.winHeight - 8
-	    self.mouseCursor.move( *self.mousePosition )			
+	    if self.control == 'switch':
+		    self.mousePosition = self.winWidth - 8, self.winHeight - 8
+		    self.mouseCursor.move( *self.mousePosition )			
 
 	    mixer.init( )
 	    self.typewriterKeySound = mixer.Sound( self.pathToATPlatform + 'sounds/typewriter_key.wav' )
@@ -135,7 +142,7 @@ class speller( wx.Frame ):
 		    self.sounds = [ mixer.Sound( self.sound ) for self.sound in self.phones ]
 	    
 	    self.SetBackgroundColour( 'black' )
-		
+
 	#-------------------------------------------------------------------------
         def initializeBitmaps(self):
             
@@ -176,20 +183,25 @@ class speller( wx.Frame ):
 		
 		subSizer = wx.GridBagSizer( 3, 3 )
 
+		if self.control != 'tracker':
+			event = eval('wx.EVT_LEFT_DOWN')
+		else:
+			event = eval('wx.EVT_BUTTON')
+
 		for index_1, item in enumerate( self.labels[ 0 ][ :-7 ] ):
 			b = bt.GenButton( self, -1, item, name = item, size = ( self.buttonsBoardWidth / float( self.numberOfColumns[ 0 ] ), self.buttonsBoardHeight / float( self.numberOfRows[ 0 ] ) ) )
 			b.SetFont( wx.Font( 35, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False ) )
 			b.SetBezelWidth( 3 )
 			b.SetBackgroundColour( self.backgroundColour )
 			b.SetForegroundColour( self.textColour )
-			b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+			b.Bind( event, self.onPress )
 			subSizer.Add( b, ( index_1 / self.numberOfColumns[ 0 ], index_1 % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
 
 		for index_2, item in enumerate( self.labels[ 0 ][ -7 : -3 ], start = 1 ):
-			b = bt.GenBitmapButton( self, -1, bitmap = self.labelBitmaps[ item ], size = ( self.buttonsBoardWidth / float( self.numberOfColumns[ 0 ] ), self.buttonsBoardHeight / float( self.numberOfRows[ 0 ] ) ) )
+			b = bt.GenBitmapButton( self, -1, name = item, bitmap = self.labelBitmaps[ item ], size = ( self.buttonsBoardWidth / float( self.numberOfColumns[ 0 ] ), self.buttonsBoardHeight / float( self.numberOfRows[ 0 ] ) ) )
 			b.SetBackgroundColour( self.backgroundColour )
 			b.SetBezelWidth( 3 )
-                        b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+                        b.Bind( event, self.onPress )
 			subSizer.Add( b, ( ( index_1 + index_2 ) / self.numberOfColumns[ 0 ], ( index_1 + index_2 ) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
 
 		for item in ( self.labels[ 0 ][ -3 ], ):
@@ -198,14 +210,14 @@ class speller( wx.Frame ):
 			b.SetBezelWidth( 3 )
 			b.SetBackgroundColour( self.backgroundColour )
 			b.SetForegroundColour( self.textColour )
-			b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+			b.Bind( event, self.onPress )
 			subSizer.Add( b, ( ( index_1 + index_2 ) / self.numberOfColumns[ 0 ], ( index_1 + index_2 + 1 ) % self.numberOfColumns[ 0 ] ), ( 1, 3 ), wx.EXPAND )
 
 		for index_3, item in enumerate( self.labels[ 0 ][ -2: ], start = 4 ):
-			b = bt.GenBitmapButton( self, -1, bitmap = self.labelBitmaps[ item ], size = ( self.buttonsBoardWidth / float( self.numberOfColumns[ 0 ] ), self.buttonsBoardHeight / float( self.numberOfRows[ 0 ] ) ) )
+			b = bt.GenBitmapButton( self, -1, name = item, bitmap = self.labelBitmaps[ item ], size = ( self.buttonsBoardWidth / float( self.numberOfColumns[ 0 ] ), self.buttonsBoardHeight / float( self.numberOfRows[ 0 ] ) ) )
 			b.SetBackgroundColour( self.backgroundColour )
 			b.SetBezelWidth( 3 )
-                        b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+                        b.Bind( event, self.onPress )
 			subSizer.Add( b, ( ( index_1 + index_2 + index_3 ) / self.numberOfColumns[ 0 ], ( index_1 + index_2 + index_3 ) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
 
 		self.subSizers.append( subSizer )		    
@@ -221,14 +233,14 @@ class speller( wx.Frame ):
 			b.SetBezelWidth( 3 )
 			b.SetBackgroundColour( self.backgroundColour )
 			b.SetForegroundColour( self.textColour )
-			b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+			b.Bind( event, self.onPress )
 			subSizer2.Add( b, ( index_1 / self.numberOfColumns[ 1 ], index_1 % self.numberOfColumns[ 1 ] ), wx.DefaultSpan, wx.EXPAND )
 
 		for index_2, item in enumerate( self.labels[ 1 ][ -6 : -3 ], start = 1 ):
-			b = bt.GenBitmapButton( self, -1, bitmap = self.labelBitmaps2[ item ] )
+			b = bt.GenBitmapButton( self, -1, name = item, bitmap = self.labelBitmaps2[ item ] )
 			b.SetBackgroundColour( self.backgroundColour )
 			b.SetBezelWidth( 3 )
-                        b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+                        b.Bind( event, self.onPress )
 			subSizer2.Add( b, ( ( index_1 + index_2 ) / self.numberOfColumns[ 1 ], ( index_1 + index_2 ) % self.numberOfColumns[ 1 ] ), wx.DefaultSpan, wx.EXPAND )
 
 		for item in ( self.labels[ 1 ][ -3 ], ):
@@ -237,14 +249,14 @@ class speller( wx.Frame ):
 			b.SetBezelWidth( 3 )
 			b.SetBackgroundColour( self.backgroundColour )
 			b.SetForegroundColour( self.textColour )
-			b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+			b.Bind( event, self.onPress )
 			subSizer2.Add( b, ( ( index_1 + index_2 ) / self.numberOfColumns[ 1 ], ( index_1 + index_2 + 1 ) % self.numberOfColumns[ 1 ] ), ( 1, 4 ), wx.EXPAND )
 
 		for index_3, item in enumerate( self.labels[ 1 ][ -2: ], start = 5 ):
-			b = bt.GenBitmapButton( self, -1, bitmap = self.labelBitmaps2[ item ] )
+			b = bt.GenBitmapButton( self, -1, name = item, bitmap = self.labelBitmaps2[ item ] )
 			b.SetBackgroundColour( self.backgroundColour )
 			b.SetBezelWidth( 3 )
-                        b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+                        b.Bind( event, self.onPress )
 			subSizer2.Add( b, ( ( index_1 + index_2 + index_3 ) / self.numberOfColumns[ 1 ], ( index_1 + index_2 + index_3 ) % self.numberOfColumns[ 1 ] ), wx.DefaultSpan, wx.EXPAND )
 
 		self.subSizers.append( subSizer2 )		   
@@ -257,7 +269,9 @@ class speller( wx.Frame ):
 	def initializeTimer(self):
 		self.stoper = wx.Timer( self )
 		self.Bind( wx.EVT_TIMER, self.timerUpdate, self.stoper )
-		self.stoper.Start( self.timeGap )
+
+		if self.control != 'tracker':
+			self.stoper.Start( self.timeGap )
 	
 	#-------------------------------------------------------------------------
 	def createBindings(self):
@@ -288,7 +302,7 @@ class speller( wx.Frame ):
 	#-------------------------------------------------------------------------
 	def onExit(self):
 		if __name__ == '__main__':
-			self.stoper.Stop ( )
+			self.stoper.Stop( )
 			self.Destroy( )
 		else:
 			self.stoper.Stop( )
@@ -299,77 +313,32 @@ class speller( wx.Frame ):
 		
 	#-------------------------------------------------------------------------
 	def onPress(self, event):
-
-		self.numberOfPresses += 1
 		
-		if self.numberOfPresses == 1:
+		if self.control == 'tracker':
+			if self.pressFlag == False:
+				self.button = event.GetEventObject()
+				self.button.SetBackgroundColour( self.selectionColour )
+				self.pressFlag = True
+				self.label = event.GetEventObject().GetName().encode( 'utf-8' )			
+				self.stoper.Start( 0.15 * self.timeGap )
 
-			if self.flag == 'rest':
-				self.flag = 'row'
-				self.rowIteration = 0
-
-			elif self.flag == 'row':
-				
-				if self.rowIteration != self.numberOfRows[ self.subSizerNumber ]:
-					buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ self.subSizerNumber ], ( self.rowIteration - 1 ) * self.numberOfColumns[ self.subSizerNumber ] + self.numberOfColumns[ self.subSizerNumber ] )
-				else:
-					buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ self.subSizerNumber ], ( self.rowIteration - 1 ) * self.numberOfColumns[ self.subSizerNumber ] + 6 )
-			
-				for button in buttonsToHighlight:
-					item = self.subSizers[ self.subSizerNumber ].GetItem( button )
-					b = item.GetWindow( )
-					b.SetBackgroundColour( self.selectionColour )
-					b.SetFocus( )
-				
-				self.flag = 'columns' 
-				self.rowIteration -= 1
-				self.columnIteration = 0
-			
-			elif self.flag == 'columns' and self.rowIteration != self.numberOfRows[ self.subSizerNumber ] - 1:
-
-				item = self.subSizers[ self.subSizerNumber ].GetItem( ( self.rowIteration ) * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration - 1 )
-				b = item.GetWindow( )
-				b.SetBackgroundColour( self.selectionColour )
-				b.SetFocus( )
-
-				label = self.labels[ self.subSizerNumber ][ self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration - 1 ]
-				
-				if label == 'SPECIAL_CHARACTERS':								
+				if self.label == 'SPECIAL_CHARACTERS':								
 
 					self.subSizerNumber = 1
 
 					self.mainSizer.Show( item = self.subSizers[ 1 ], show = True, recursive = True )
 					self.mainSizer.Show( item = self.subSizers[ 0 ], show = False, recursive = True )					
 					self.SetSizer( self.mainSizer )
-					
+
 					self.Layout( )
 
-				else:
-					self.typewriterKeySound.play( )
-										
-					self.textField.AppendText( label )
-				
-				self.flag = 'row'
-				self.rowIteration = 0
-				self.columnIteration = 0
-				self.countColumns = 0
-
-			elif self.flag == 'columns' and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1:
-			
-				item = self.subSizers[ self.subSizerNumber ].GetItem( ( self.rowIteration ) * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration-1 )
-				b = item.GetWindow( )
-				b.SetBackgroundColour( self.selectionColour )
-				b.SetFocus( )
-
-				label = self.labels[ self.subSizerNumber ][ self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration-1 ]
-				
-				if label == 'UNDO':
+				elif self.label == 'UNDO':
 					self.typewriterForwardSound.play( )
 					self.textField.Remove( self.textField.GetLastPosition( ) - 1, self.textField.GetLastPosition( ) )
-				
-				elif label == 'SPEAK':								
+
+				elif self.label == 'SPEAK':								
 					text = str( self.textField.GetValue( ) )
-					
+
 					if text == '' or text.isspace( ):
 						pass
 
@@ -381,13 +350,13 @@ class speller( wx.Frame ):
 
 						replacements = { '-' : ' minus ', '+' : ' plus ', '*' : ' razy ', '/' : ' podzielić na ', '=' : ' równa się ', '%' : ' procent ' }
 						textToSpeech = reduce( lambda text, replacer: text.replace( *replacer ), replacements.iteritems( ), textToSpeech )
-						
+
 						time.sleep( 1 )
 						os.system( 'milena_say %s' %textToSpeech )
-				
-				elif label == 'SAVE':
+
+				elif self.label == 'SAVE':
 					text = str( self.textField.GetValue( ) )
-					
+
 					if text == '':
 						pass
 					else:
@@ -395,106 +364,195 @@ class speller( wx.Frame ):
 						f.write( self.textField.GetValue( ) )
 						f.close( )
 
-				elif label == 'SPACJA':
+				elif self.label == 'SPACJA':
 					self.typewriterSpaceSound.play( )
 					self.textField.AppendText( ' ' )
-				
-				elif label == 'OPEN':
+
+				elif self.label == 'OPEN':
 					try:
-						textToLoad = open( 'myFile.txt' ).read( )
+						textToLoad = open( 'myTextFile.txt' ).read( )
 						self.textField.Clear( )
+						print textToLoad
 						self.textField.AppendText( textToLoad )
 
 					except IOError:
 						pass
 
-	 			elif label == 'EXIT':
+				elif self.label == 'EXIT':
 					if self.subSizerNumber == 0:
 						self.onExit( )
 
 					else:	
-                                            self.mainSizer.Show( item = self.subSizers[ self.subSizerNumber ], show = False, recursive = True )
-                                            
-                                            self.subSizerNumber = 0
-                                            self.mainSizer.Show( item = self.subSizers[ self.subSizerNumber ], show = True, recursive = True )
-                                            
-                                            self.SetSizer( self.mainSizer )
-                                            self.Layout( )
-                                            
-                                self.flag = 'row'
-				self.rowIteration = 0
-				self.columnIteration = 0
-				self.countRows = 0
-				self.countColumns = 0
+					    self.mainSizer.Show( item = self.subSizers[ self.subSizerNumber ], show = False, recursive = True )
 
-		else:
-			event.Skip( ) #Event skip use in else statement here!			
-	
-	#-------------------------------------------------------------------------
-	def timerUpdate(self, event):
+					    self.subSizerNumber = 0
+					    self.mainSizer.Show( item = self.subSizers[ self.subSizerNumber ], show = True, recursive = True )
 
-		self.mouseCursor.move( *self.mousePosition )
-		
-		self.numberOfPresses = 0		
+					    self.SetSizer( self.mainSizer )
+					    self.Layout( )
 
-		if self.flag == 'row':
-
-			if self.countRows == self.maxNumberOfRows:
-				self.flag = 'rest'
-				self.countRows = 0
-				
-				items = self.subSizers[ self.subSizerNumber ].GetChildren( )
-				for item in items:
-					b = item.GetWindow( )
-					b.SetBackgroundColour( self.backgroundColour )
-					b.SetFocus( )
-
-			else:
-				self.rowIteration = self.rowIteration % self.numberOfRows[ self.subSizerNumber ]
-
-				items = self.subSizers[ self.subSizerNumber ].GetChildren( )
-				for item in items:
-					b = item.GetWindow( )
-					b.SetBackgroundColour( self.backgroundColour )
-					b.SetFocus( )
-
-				if self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1:
-					self.countRows += 1
-					buttonsToHighlight = range( self.rowIteration * self.numberOfColumns[ self.subSizerNumber ], self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + 6 )
-				
 				else:
-					buttonsToHighlight = range( self.rowIteration * self.numberOfColumns[ self.subSizerNumber ], self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.numberOfColumns[ self.subSizerNumber ] )
-					
-				for button in buttonsToHighlight:
-					item = self.subSizers[ self.subSizerNumber ].GetItem( button )
+					self.typewriterKeySound.play( )
+
+					self.textField.AppendText( self.label )
+			else:
+				pass
+		else:
+			
+                        self.numberOfPresses += 1
+
+			if self.numberOfPresses == 1:
+
+				if self.flag == 'rest':
+					self.flag = 'row'
+					self.rowIteration = 0
+
+				elif self.flag == 'row':
+
+					if self.rowIteration != self.numberOfRows[ self.subSizerNumber ]:
+						buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ self.subSizerNumber ], ( self.rowIteration - 1 ) * self.numberOfColumns[ self.subSizerNumber ] + self.numberOfColumns[ self.subSizerNumber ] )
+					else:
+						buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ self.subSizerNumber ], ( self.rowIteration - 1 ) * self.numberOfColumns[ self.subSizerNumber ] + 6 )
+
+					for button in buttonsToHighlight:
+						item = self.subSizers[ self.subSizerNumber ].GetItem( button )
+						b = item.GetWindow( )
+						b.SetBackgroundColour( self.selectionColour )
+						b.SetFocus( )
+
+					self.flag = 'columns' 
+					self.rowIteration -= 1
+					self.columnIteration = 0
+
+				elif self.flag == 'columns' and self.rowIteration != self.numberOfRows[ self.subSizerNumber ] - 1:
+
+					item = self.subSizers[ self.subSizerNumber ].GetItem( ( self.rowIteration ) * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration - 1 )
 					b = item.GetWindow( )
-					b.SetBackgroundColour( self.scanningColour )
+					b.SetBackgroundColour( self.selectionColour )
 					b.SetFocus( )
 
-				self.rowIteration += 1
-				
-				if self.voice == 'True':
-					os.system( 'milena_say %i' % ( self.rowIteration ) )
+					label = self.labels[ self.subSizerNumber ][ self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration - 1 ]
 
-		elif self.flag == 'columns':
+					if label == 'SPECIAL_CHARACTERS':								
 
-				if self.countColumns == self.maxNumberOfColumns:
+						self.subSizerNumber = 1
+
+						self.mainSizer.Show( item = self.subSizers[ 1 ], show = True, recursive = True )
+						self.mainSizer.Show( item = self.subSizers[ 0 ], show = False, recursive = True )					
+						self.SetSizer( self.mainSizer )
+
+						self.Layout( )
+
+					else:
+						self.typewriterKeySound.play( )
+
+						self.textField.AppendText( label )
+
 					self.flag = 'row'
-
-					item = self.subSizers[ self.subSizerNumber ].GetItem( self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration - 1 )
-					b = item.GetWindow( )
-					b.SetBackgroundColour( self.backgroundColour )
-
 					self.rowIteration = 0
 					self.columnIteration = 0
 					self.countColumns = 0
 
-				else:
-					if self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 1 or (self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 3 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 4 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ):
-						self.countColumns += 1
+				elif self.flag == 'columns' and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1:
 
-					if self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] or ( self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 2 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 3 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ):
-						self.columnIteration = 0
+					item = self.subSizers[ self.subSizerNumber ].GetItem( ( self.rowIteration ) * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration-1 )
+					b = item.GetWindow( )
+					b.SetBackgroundColour( self.selectionColour )
+					b.SetFocus( )
+
+					label = self.labels[ self.subSizerNumber ][ self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration-1 ]
+
+					if label == 'UNDO':
+						self.typewriterForwardSound.play( )
+						self.textField.Remove( self.textField.GetLastPosition( ) - 1, self.textField.GetLastPosition( ) )
+
+					elif label == 'SPEAK':								
+						text = str( self.textField.GetValue( ) )
+
+						if text == '' or text.isspace( ):
+							pass
+
+						else:
+							inputTable = '~!#$&( )[]{}<>;:"\|'
+							outputTable = ' ' * len( inputTable )
+							translateTable = maketrans( inputTable, outputTable )
+							textToSpeech = text.translate( translateTable )
+
+							replacements = { '-' : ' minus ', '+' : ' plus ', '*' : ' razy ', '/' : ' podzielić na ', '=' : ' równa się ', '%' : ' procent ' }
+							textToSpeech = reduce( lambda text, replacer: text.replace( *replacer ), replacements.iteritems( ), textToSpeech )
+
+							time.sleep( 1 )
+							os.system( 'milena_say %s' %textToSpeech )
+
+					elif label == 'SAVE':
+						text = str( self.textField.GetValue( ) )
+
+						if text == '':
+							pass
+						else:
+							f = open( 'myTextFile.txt', 'w' )
+							f.write( self.textField.GetValue( ) )
+							f.close( )
+
+					elif label == 'SPACJA':
+						self.typewriterSpaceSound.play( )
+						self.textField.AppendText( ' ' )
+
+					elif label == 'OPEN':
+						try:
+							textToLoad = open( 'myFile.txt' ).read( )
+							self.textField.Clear( )
+							self.textField.AppendText( textToLoad )
+
+						except IOError:
+							pass
+
+					elif label == 'EXIT':
+						if self.subSizerNumber == 0:
+							self.onExit( )
+
+						else:	
+						    self.mainSizer.Show( item = self.subSizers[ self.subSizerNumber ], show = False, recursive = True )
+
+						    self.subSizerNumber = 0
+						    self.mainSizer.Show( item = self.subSizers[ self.subSizerNumber ], show = True, recursive = True )
+
+						    self.SetSizer( self.mainSizer )
+						    self.Layout( )
+
+					self.flag = 'row'
+					self.rowIteration = 0
+					self.columnIteration = 0
+					self.countRows = 0
+					self.countColumns = 0
+
+			else:
+				event.Skip( ) #Event skip use in else statement here!			
+
+	#-------------------------------------------------------------------------
+	def timerUpdate(self, event):
+
+		if self.control == 'tracker':
+
+			if self.button.GetBackgroundColour( ) == self.backgroundColour:
+				self.button.SetBackgroundColour( self.selectionColour )
+				
+			else:
+				self.button.SetBackgroundColour( self.backgroundColour )	
+
+			self.stoper.Stop( )
+			self.pressFlag = False
+
+		else:
+			self.mouseCursor.move( *self.mousePosition )
+
+			self.numberOfPresses = 0		
+
+			if self.flag == 'row':
+
+				if self.countRows == self.maxNumberOfRows:
+					self.flag = 'rest'
+					self.countRows = 0
 
 					items = self.subSizers[ self.subSizerNumber ].GetChildren( )
 					for item in items:
@@ -502,26 +560,79 @@ class speller( wx.Frame ):
 						b.SetBackgroundColour( self.backgroundColour )
 						b.SetFocus( )
 
-					item = self.subSizers[ self.subSizerNumber ].GetItem( self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration )
-					b = item.GetWindow( )
-					b.SetBackgroundColour( self.scanningColour )
-					b.SetFocus( )
+				else:
+					self.rowIteration = self.rowIteration % self.numberOfRows[ self.subSizerNumber ]
+
+					items = self.subSizers[ self.subSizerNumber ].GetChildren( )
+					for item in items:
+						b = item.GetWindow( )
+						b.SetBackgroundColour( self.backgroundColour )
+						b.SetFocus( )
+
+					if self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1:
+						self.countRows += 1
+						buttonsToHighlight = range( self.rowIteration * self.numberOfColumns[ self.subSizerNumber ], self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + 6 )
+
+					else:
+						buttonsToHighlight = range( self.rowIteration * self.numberOfColumns[ self.subSizerNumber ], self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.numberOfColumns[ self.subSizerNumber ] )
+
+					for button in buttonsToHighlight:
+						item = self.subSizers[ self.subSizerNumber ].GetItem( button )
+						b = item.GetWindow( )
+						b.SetBackgroundColour( self.scanningColour )
+						b.SetFocus( )
+
+					self.rowIteration += 1
 
 					if self.voice == 'True':
-						label = self.labels[ self.subSizerNumber ][ self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration ]
+						os.system( 'milena_say %i' % ( self.rowIteration ) )
 
-						try:
-							soundIndex = self.phoneLabels.index( [ item for item in self.phoneLabels if item == label ][ 0 ] )
-							sound = self.sounds[ soundIndex ]
-							sound.play( )
-							
-						except IndexError:
-							pass
+			elif self.flag == 'columns':
 
-					self.columnIteration += 1
+					if self.countColumns == self.maxNumberOfColumns:
+						self.flag = 'row'
 
-		else:
-			pass
+						item = self.subSizers[ self.subSizerNumber ].GetItem( self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration - 1 )
+						b = item.GetWindow( )
+						b.SetBackgroundColour( self.backgroundColour )
+
+						self.rowIteration = 0
+						self.columnIteration = 0
+						self.countColumns = 0
+
+					else:
+						if self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 1 or (self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 3 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 4 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ):
+							self.countColumns += 1
+
+						if self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] or ( self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 2 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 3 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ):
+							self.columnIteration = 0
+
+						items = self.subSizers[ self.subSizerNumber ].GetChildren( )
+						for item in items:
+							b = item.GetWindow( )
+							b.SetBackgroundColour( self.backgroundColour )
+							b.SetFocus( )
+
+						item = self.subSizers[ self.subSizerNumber ].GetItem( self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration )
+						b = item.GetWindow( )
+						b.SetBackgroundColour( self.scanningColour )
+						b.SetFocus( )
+
+						if self.voice == 'True':
+							label = self.labels[ self.subSizerNumber ][ self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration ]
+
+							try:
+								soundIndex = self.phoneLabels.index( [ item for item in self.phoneLabels if item == label ][ 0 ] )
+								sound = self.sounds[ soundIndex ]
+								sound.play( )
+
+							except IndexError:
+								pass
+
+						self.columnIteration += 1
+
+			else:
+				pass
 
 
 #=============================================================================

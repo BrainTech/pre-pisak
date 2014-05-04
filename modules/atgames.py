@@ -162,7 +162,7 @@ class games( wx.Frame ):
 			b.Bind( event, self.onPress )
 			subSizer.Add( b, ( ( index + 1 ) / self.numberOfColumns[ 0 ], ( index + 1 ) % self.numberOfColumns[ 0 ] ), (1, 2), wx.EXPAND )
 				
-			for number in range( self.numberOfRows[ 0 ] - 1 ):
+			for number in range( self.numberOfRows[ 0 ] ):
 				subSizer.AddGrowableRow( number )
 			for number in range( self.numberOfColumns[ 0 ] ):
 				subSizer.AddGrowableCol( number )

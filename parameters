@@ -1,11 +1,11 @@
-timeGap = 700
+timeGap = 600
 
 backgroundColour = white
 textColour = black
-scanningColour = #CFECEC
-selectionColour = #B7CEEC
+scanningColour = #0033FF
+selectionColour = #0099FF
 
-filmVolume = 100
-musicVolume = 100
+filmVolume = 50
+musicVolume = 50
 
 control = tracker

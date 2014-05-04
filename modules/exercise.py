@@ -162,7 +162,7 @@ class exercise( wx.Frame ):
 			b.Bind( event, self.onPress )
 			subSizer.Add( b, ( ( index + 1 ) / self.numberOfColumns[ 0 ], ( index + 1 ) % self.numberOfColumns[ 0 ] ), (1, 2), wx.EXPAND )
 				
-			for number in range( self.numberOfRows[ 0 ] - 1 ):
+			for number in range( self.numberOfRows[ 0 ] ):
 				subSizer.AddGrowableRow( number )
 			for number in range( self.numberOfColumns[ 0 ] ):
 				subSizer.AddGrowableCol( number )
@@ -175,7 +175,7 @@ class exercise( wx.Frame ):
 			self.Center( True )
                         
 			if panel != 1:
-				self.mainSizer.Show( item = self.subSizers[ panel - 1 ], show = False, recursive = True )
+				self.mainSizer.Show( item = self.subSizers[ panel - 1 ], show = True, recursive = True )
                     
 			self.SetSizer( self.mainSizer )
                 

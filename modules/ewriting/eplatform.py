@@ -175,7 +175,7 @@ class cwiczenia(wx.Frame):
 		b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
 		self.mainSizer.Add( b, ( index + 1, 0 ), wx.DefaultSpan, wx.EXPAND )
 		
-		for number in range( self.numberOfRows[ 0 ] - 1 ):
+		for number in range( self.numberOfRows[ 0 ] ):
 			self.mainSizer.AddGrowableRow( number )
 		for number in range( self.numberOfColumns[ 0 ] ):
 			self.mainSizer.AddGrowableCol( number )

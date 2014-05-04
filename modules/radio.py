@@ -238,7 +238,7 @@ class radio( wx.Frame ):
 			b.Bind( event, self.onPress )
 			subSizer.Add( b, ( ( index + index_2 + 5 ) / self.numberOfColumns[ 0 ], ( index + index_2 + 5 ) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
 				
-			for number in range( self.numberOfRows[ 0 ] - 1 ):
+			for number in range( self.numberOfRows[ 0 ] ):
 				subSizer.AddGrowableRow( number )
 			for number in range( self.numberOfColumns[ 0 ] ):
 				subSizer.AddGrowableCol( number )

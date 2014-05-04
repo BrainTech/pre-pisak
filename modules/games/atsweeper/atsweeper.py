@@ -119,11 +119,11 @@ class sweeper_GUI( wx.Frame ):
 	    
                 self.numberOfPresses = 1
                 self.subSizerNumber = 0
-		self.mouseCursor = PyMouse( )
 
-		self.mouseCursor = PyMouse( )
-		self.mousePosition = self.winWidth - 8, self.winHeight - 8
-               	self.mouseCursor.move( *self.mousePosition )
+		if self.control != 'tracker':
+			self.mouseCursor = PyMouse( )
+			self.mousePosition = self.winWidth - 8, self.winHeight - 8
+			self.mouseCursor.move( *self.mousePosition )
 
 		self.SetBackgroundColour( 'black' )
 
@@ -253,8 +253,9 @@ class sweeper_GUI( wx.Frame ):
 	#-------------------------------------------------------------------------	
 	def OnCloseWindow(self, event):
 
-		self.mousePosition = self.winWidth/1.85, self.winHeight/1.85	
-		self.mouseCursor.move( *self.mousePosition )	
+		if self.control != 'tracker':
+			self.mousePosition = self.winWidth/1.85, self.winHeight/1.85	
+			self.mouseCursor.move( *self.mousePosition )	
 
 		dial = wx.MessageDialog(None, 'Czy napewno chcesz wyjść z programu?', 'Wyjście',
 					wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION | wx.STAY_ON_TOP)
@@ -284,8 +285,10 @@ class sweeper_GUI( wx.Frame ):
 
 		else:
 			event.Veto( )
-			self.mousePosition = self.winWidth - 8, self.winHeight - 8
-			self.mouseCursor.move( *self.mousePosition )	
+
+			if self.control != 'tracker':
+				self.mousePosition = self.winWidth - 8, self.winHeight - 8
+				self.mouseCursor.move( *self.mousePosition )	
 
 	#-------------------------------------------------------------------------
 	def onExit( self ):
@@ -297,7 +300,11 @@ class sweeper_GUI( wx.Frame ):
 			self.stoper.Stop( )
 			self.MakeModal( False )
 			self.parent.Show( True )
-			self.parent.stoper.Start( self.parent.timeGap )
+			if self.control == 'tracker':
+				self.parent.stoper.Start( 0.15 * self.parent.timeGap )
+			else:
+				self.parent.stoper.Start( self.parent.timeGap )
+				
 			self.Destroy( )
 
 	#----------------------------------------------------------------------------
@@ -505,7 +512,9 @@ class sweeper_GUI( wx.Frame ):
 			self.pressFlag = False
 
 		else:
-			self.mouseCursor.move( *self.mousePosition )
+
+			if self.control != 'tracker':
+				self.mouseCursor.move( *self.mousePosition )
 
 			self.numberOfPresses = 0		
 

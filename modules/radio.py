@@ -110,9 +110,10 @@ class radio( wx.Frame ):
 
 		self.numberOfPresses = 1
 
-		self.mouseCursor = PyMouse( )
-		self.mousePosition = self.winWidth - 8, self.winHeight - 8
-               	self.mouseCursor.move( *self.mousePosition )			
+		if self.control != 'tracker':
+			self.mouseCursor = PyMouse( )
+			self.mousePosition = self.winWidth - 8, self.winHeight - 8
+			self.mouseCursor.move( *self.mousePosition )			
 
 		self.radioFlag = 'OFF'
 		self.SetBackgroundColour( 'black' )
@@ -269,8 +270,9 @@ class radio( wx.Frame ):
 	#-------------------------------------------------------------------------
 	def OnCloseWindow(self, event):
 
-		self.mousePosition = self.winWidth/1.85, self.winHeight/1.85	
-		self.mouseCursor.move( *self.mousePosition )	
+		if self.control != 'tracker':
+			self.mousePosition = self.winWidth/1.85, self.winHeight/1.85	
+			self.mouseCursor.move( *self.mousePosition )	
 
 		dial = wx.MessageDialog(None, 'Czy napewno chcesz wyjść z programu?', 'Wyjście',
 					wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION | wx.STAY_ON_TOP)
@@ -287,8 +289,10 @@ class radio( wx.Frame ):
 				self.Destroy( )
 		else:
 			event.Veto()
-			self.mousePosition = self.winWidth - 8, self.winHeight - 8
-			self.mouseCursor.move( *self.mousePosition )	
+			
+			if self.control != 'tracker':
+				self.mousePosition = self.winWidth - 8, self.winHeight - 8
+				self.mouseCursor.move( *self.mousePosition )	
 
 	#-------------------------------------------------------------------------
 	def onExit(self):
@@ -299,7 +303,9 @@ class radio( wx.Frame ):
 			self.stoper.Stop( )
 			self.MakeModal( False )
 			self.parent.Show( True )
-			self.parent.stoper.Start( self.parent.timeGap )
+			if self.control != 'tracker':
+				self.parent.stoper.Start( self.parent.timeGap )
+
 			self.Destroy( )
 		
 	#-------------------------------------------------------------------------
@@ -312,7 +318,6 @@ class radio( wx.Frame ):
 				self.pressFlag = True
 				self.label = event.GetEventObject().GetName().encode( 'utf-8' )
 				self.stoper.Start( 0.15 * self.timeGap )
-				print self.label
 
 			if self.label == 'volume_down':
 				try:
@@ -357,12 +362,12 @@ class radio( wx.Frame ):
 			else:
 				try:
 
-					os.system('milena_say %s' % self.label[ self.label.find('_') + 1 : self.label.rfind('.') ] )
 					mediaIndex = self.existingLogos.index( self.label )
 					choice = self.radioURL[ mediaIndex ]
 					# print choice
 
 					os.system( 'smplayer -pos 0 0 %s &' % choice )
+					os.system('milena_say %s' % self.label[ self.label.find('_') + 1 : self.label.rfind('.') ] )
 				
 				except IndexError:
 					self.button.SetBackgroundColour( 'red' )
@@ -515,7 +520,8 @@ class radio( wx.Frame ):
 			self.pressFlag = False
 
 		else:
-		        self.mouseCursor.move( *self.mousePosition )	
+			if self.control != 'tracker':
+				self.mouseCursor.move( *self.mousePosition )	
 
                         self.numberOfPresses = 0
             

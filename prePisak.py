@@ -19,7 +19,7 @@
 import wxversion
 wxversion.select( '2.8' )
 
-import wx
+import wx, os
 import wx.lib.buttons as bt
 import subprocess as sp
 
@@ -110,10 +110,12 @@ class main_menu( wx.Frame ):
 		self.countColumns = 0
 
 		self.numberOfPresses = 1
-		
 		self.mouseCursor = PyMouse( )
-		self.mousePosition = self.winWidth - 4, self.winHeight - 4
-		self.mouseCursor.move( *self.mousePosition )
+		
+		if self.control != 'tracker':
+			self.mouseCursor = PyMouse( )
+			self.mousePosition = self.winWidth - 4, self.winHeight - 4
+			self.mouseCursor.move( *self.mousePosition )
 
 		self.SetBackgroundColour( 'black' )
 
@@ -158,28 +160,31 @@ class main_menu( wx.Frame ):
 		
 	#-------------------------------------------------------------------------
 	def OnCloseWindow(self , event):
-
-		self.mousePosition = self.winWidth/1.85, self.winHeight/1.85	
-		self.mouseCursor.move( *self.mousePosition )	
+		
+		if self.control != 'tracker':
+			self.mousePosition = self.winWidth/1.85, self.winHeight/1.85
+			self.mouseCursor.move( *self.mousePosition )
 
 		dial = wx.MessageDialog(None, 'Czy napewno chcesz wyjść z programu?', 'Wyjście',
-					wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION | wx.STAY_ON_TOP)
-            
+					wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION | wx.STAY_ON_TOP )
+
 		ret = dial.ShowModal()		
 		
 		if ret == wx.ID_YES:
 			self.Destroy()
 		else:
 			event.Veto()
-			self.mousePosition = self.winWidth - 4, self.winHeight - 4
-			self.mouseCursor.move( *self.mousePosition )	
+
+			if self.control != 'tracker':
+				self.mousePosition = self.winWidth - 4, self.winHeight - 4
+				self.mouseCursor.move( *self.mousePosition )	
 
 	#-------------------------------------------------------------------------
 	def onPress( self, event ):
 
 		if self.control == 'tracker':
                     if self.pressFlag == False:
-			    self.button = event.GetEventObject()
+			    self.button = event.GetEventObject( )
 			    self.button.SetBackgroundColour( self.selectionColour )
 			    self.pressFlag = True
 			    self.label = event.GetEventObject().GetName().encode( 'utf-8' )			
@@ -209,8 +214,6 @@ class main_menu( wx.Frame ):
 			    radio.radio( parent = self, id = -1 ).Show( True )
 			    self.Hide( )
 			    
-		    # if self.control != 'tracer':
-		    # 	    self.stoper.Stop()
 		else:	
 			self.numberOfPresses += 1
 			self.countRows = 0
@@ -301,9 +304,9 @@ class main_menu( wx.Frame ):
 			self.pressFlag = False
 
 		else:
-
-			self.mouseCursor.move( *self.mousePosition )	
-			self.numberOfPresses = 0
+			if self.control != 'tracker':
+				self.mouseCursor.move( *self.mousePosition )	
+				self.numberOfPresses = 0
 
 			if self.flag == 'rest':
 				pass

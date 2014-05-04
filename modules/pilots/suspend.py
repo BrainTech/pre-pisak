@@ -46,8 +46,9 @@ class suspend( wx.Frame ):
             
             self.initializeParameters( )            
             self.createGui( )
-            self.initializeTimer( )
 	    self.createBindings( )
+
+            self.initializeTimer( )
 
 	    self.Show( True )
 	    self.SetTransparent( 0 )

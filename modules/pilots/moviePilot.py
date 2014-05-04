@@ -44,8 +44,9 @@ class pilot( wx.Frame ):
             self.initializeParameters( )
             self.initializeBitmaps( )
 	    self.createGui( )
-            self.initializeTimer( )
             self.createBindings( )
+
+            self.initializeTimer( )
 
 	#-------------------------------------------------------------------------
 	def initializeParameters(self):
@@ -70,6 +71,8 @@ class pilot( wx.Frame ):
 				    self.filmVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
 			    elif line[ :line.find('=')-1 ] == 'musicVolume':
 				    self.musicVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
+			    elif line[ :line.find('=')-1 ] == 'control':
+				    self.control = line[ line.rfind('=')+2:-1 ]
 
 			    elif not line.isspace( ):
 				    print 'Niewłaściwie opisane parametry'
@@ -82,8 +85,10 @@ class pilot( wx.Frame ):
 				    self.selectionColour = '#9EE4EF'
 				    self.filmVolumeLevel = 100
 				    self.musicVolumeLevel = 70
+				    self.control = 'switch'
 
 	    self.flag = 'row'
+	    self.pressFlag = False
             self.pressedStopFlag = False
 
             self.rowIteration = 0
@@ -98,10 +103,12 @@ class pilot( wx.Frame ):
             self.countMaxRows = 2
             self.countMaxColumns = 2
             self.numberOfPresses = 0
-
-            self.mouseCursor = PyMouse( )
-	    self.mousePosition = self.winWidth - 8, self.winHeight - 48
-            self.mouseCursor.move( *self.mousePosition )
+	    self.trackCounter = 0
+	    
+	    if self.control != 'tracker':	    
+		    self.mouseCursor = PyMouse( )
+		    self.mousePosition = self.winWidth - 8, self.winHeight - 48
+		    self.mouseCursor.move( *self.mousePosition )
 
             self.SetBackgroundColour( 'black' )
 
@@ -133,12 +140,17 @@ class pilot( wx.Frame ):
 
 		self.subSizer = wx.GridBagSizer( 4, 4 )
 
+		if self.control != 'tracker':
+			event = eval('wx.EVT_LEFT_DOWN')
+		else:
+			event = eval('wx.EVT_BUTTON')
+
 		for key, value in self.buttons.items( ):
 			if key == 1 or key == 2 or key == 3 or key == 4:
 				b = bt.GenBitmapButton( self, -1, name = value[ 0 ], bitmap = value[ 1 ] )
 				b.SetBackgroundColour( self.backgroundColour )
 				b.SetBezelWidth( 3 )
-				b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+				b.Bind( event, self.onPress )
 
 				self.subSizer.Add( b, ( ( key - 1 ) / self.numberOfColumns[ 0 ], ( key - 1 ) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
 
@@ -146,7 +158,7 @@ class pilot( wx.Frame ):
 				b = bt.GenBitmapButton( self, -1, name = value[ 0 ], bitmap = value[ 1 ] )
 				b.SetBackgroundColour( self.backgroundColour )
 				b.SetBezelWidth( 3 )
-				b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+				b.Bind( event, self.onPress )
 
 				self.subSizer.Add( b, ( ( key - 1 ) / self.numberOfColumns[ 0 ], ( key - 1 ) % self.numberOfColumns[ 0 ] ), ( 1, 2 ), wx.EXPAND )
 
@@ -154,7 +166,7 @@ class pilot( wx.Frame ):
 				b = bt.GenBitmapButton( self, -1, name = value[ 0 ], bitmap = value[ 1 ] )
 				b.SetBackgroundColour( self.backgroundColour )
 				b.SetBezelWidth( 3 )
-				b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+				b.Bind( event, self.onPress )
 
 				self.subSizer.Add( b, ( ( key ) / self.numberOfColumns[ 0 ], ( key ) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
 
@@ -162,8 +174,7 @@ class pilot( wx.Frame ):
 				b = bt.GenBitmapButton( self, -1, name = value[ 0 ], bitmap = value[ 1 ] )
 				b.SetBackgroundColour( self.backgroundColour )
 				b.SetBezelWidth( 3 )
-				b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
-
+				b.Bind( event, self.onPress )
 				self.subSizer.Add( b, ( ( key ) / self.numberOfColumns[ 0 ], ( key ) % self.numberOfColumns[ 0 ] ), ( 1, 2 ), wx.EXPAND )
 
                 for number in range( self.numberOfRows[ 0 ] ):
@@ -178,6 +189,8 @@ class pilot( wx.Frame ):
 	def initializeTimer(self):
 		self.stoper = wx.Timer( self )
 		self.Bind( wx.EVT_TIMER , self.timerUpdate , self.stoper )
+
+		# if self.control != 'tracker':
 		self.stoper.Start( self.timeGap )
 
 	#-------------------------------------------------------------------------
@@ -187,8 +200,9 @@ class pilot( wx.Frame ):
 	#-------------------------------------------------------------------------
 	def OnCloseWindow(self, event):
 
-		self.mousePosition = self.winWidth/1.85, self.winHeight/1.85	
-		self.mouseCursor.move( *self.mousePosition )	
+		if self.control != 'tracker':
+			self.mousePosition = self.winWidth/1.85, self.winHeight/1.85	
+			self.mouseCursor.move( *self.mousePosition )	
 
 		dial = wx.MessageDialog(None, 'Czy napewno chcesz wyjść z programu?', 'Wyjście',
 					wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION | wx.STAY_ON_TOP)
@@ -220,11 +234,14 @@ class pilot( wx.Frame ):
 
 		else:
 			event.Veto()
-			self.mousePosition = self.winWidth - 8, self.winHeight - 48
-			self.mouseCursor.move( *self.mousePosition )	
+
+			if self.control != 'tracker':											
+				self.mousePosition = self.winWidth - 8, self.winHeight - 8
+				self.mouseCursor.move( *self.mousePosition )	
 
 	#-------------------------------------------------------------------------
 	def onExit(self):
+
 		if __name__ == '__main__':
 			self.stoper.Stop( )
 			self.Destroy( )
@@ -238,99 +255,42 @@ class pilot( wx.Frame ):
 	#-------------------------------------------------------------------------
 	def onPress(self, event):
 
-		self.numberOfPresses += 1
-		self.numberOfEmptyIteration = 0
+		if self.control == 'tracker':
+			if self.pressFlag == False:
+				self.trackCounter = 0
+				self.button = event.GetEventObject()
+				self.button.SetBackgroundColour( self.selectionColour )
+				self.pressFlag = True
+				self.label = event.GetEventObject().GetName().encode( 'utf-8' )			
+				self.stoper.Start( 0.15 * self.timeGap )
 
-                if self.numberOfPresses == 1:
-
-			if self.flag == 'row':
-
-				if self.rowIteration == 1 or self.rowIteration == 2:
-					buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ], ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] )
-					for button in buttonsToHighlight:
-						item = self.subSizer.GetItem( button )
-						b = item.GetWindow( )
-						b.SetBackgroundColour( self.selectionColour )
-						b.SetFocus( )
-					self.flag = 'columns'
-					self.colIteration = 0
-
-				elif self.rowIteration == 3:
-					buttonsToHighlight = ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ],
-					for button in buttonsToHighlight:
-						item = self.subSizer.GetItem( button )
-						b = item.GetWindow( )
-						b.SetBackgroundColour( self.selectionColour )
-						b.SetFocus( )
-
-					self.rowIteration = 0
-					os.system( 'wid=`xdotool search --onlyvisible --name SMPlayer` && xdotool windowfocus $wid && xdotool key --window $wid f &&wid=`xdotool search --onlyvisible --name moviePilot` && xdotool windowactivate $wid' )
-
-				elif self.rowIteration == 4 or self.rowIteration == 5 or self.rowIteration == 6:
-					buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] - 1, ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] - 1 )
-					for button in buttonsToHighlight:
-						item = self.subSizer.GetItem( button )
-						b = item.GetWindow( )
-						b.SetBackgroundColour( self.selectionColour )
-						b.SetFocus( )
-					self.flag = 'columns'
-					self.colIteration = 0
-
-				elif self.rowIteration == 7:
-
-					buttonsToHighlight = ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] - 1,
-					for button in buttonsToHighlight:
-						item = self.subSizer.GetItem( button )
-						b = item.GetWindow( )
-						b.SetBackgroundColour( self.selectionColour )
-						b.SetFocus( )
-
-					os.system( 'smplayer -send-action quit' )
-                                        
-					self.onExit( )
-
-			elif self.flag == 'columns':
-
-				if self.rowIteration == 1 or self.rowIteration == 2:
-					self.position = ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.colIteration
-
-				elif self.rowIteration == 4 or self.rowIteration == 5 or self.rowIteration == 6:
-					self.position = ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.colIteration - 1
-
-				item = self.subSizer.GetItem( self.position - 1 )
-				selectedButton = item.GetWindow( )
-				selectedButton.SetBackgroundColour( self.selectionColour )
-				selectedButton.SetFocus( )
-
-                                self.Update( )
-
-				if self.buttons[ self.position ][ 0 ] == 'volume down':
+				if self.label == 'volume down':
 					try:
 						recentVolume = alsaaudio.Mixer( control = 'Master' ).getvolume( )[ 0 ] 
 						alsaaudio.Mixer( control = 'Master' ).setvolume( recentVolume - 15, 0 )
 						time.sleep( 1.5 )
 
 					except alsaaudio.ALSAAudioError:
-						selectedButton.SetBackgroundColour( 'red' )
-						selectedButton.SetFocus( )
+						self.button.SetBackgroundColour( 'red' )
+						self.button.SetFocus( )
                                 
 						self.Update( )
 						time.sleep( 1.5 )
 					
-				elif self.buttons[ self.position ][ 0 ] == 'volume up':
+				elif self.label == 'volume up':
 					try:
 						recentVolume = alsaaudio.Mixer( control = 'Master' ).getvolume( )[ 0 ] 
 						alsaaudio.Mixer( control = 'Master' ).setvolume( recentVolume + 15, 0 )
 						time.sleep( 1.5 )
 					
 					except alsaaudio.ALSAAudioError:
-						selectedButton.SetBackgroundColour( 'red' )
-						selectedButton.SetFocus( )
+						self.button.SetBackgroundColour( 'red' )
+						self.button.SetFocus( )
                                 
 						self.Update( )
 						time.sleep( 1.5 )
 
-				elif self.buttons[ self.position ][ 0 ] == 'play pause':
+				elif self.label == 'play pause':
 					if self.pressedStopFlag == True:
 						os.system( 'smplayer -send-action play' )
 
@@ -338,142 +298,288 @@ class pilot( wx.Frame ):
 					else:
 						os.system( 'smplayer -send-action pause' )
 
-				elif self.buttons[ self.position ][ 0 ] == 'stop':
+				elif self.label == 'stop':
 					os.system( 'smplayer -send-action stop && smplayer -send-action stop %% smplayer -send-action fullcreen' )
 
 					self.pressedStopFlag = True
 
-				elif self.buttons[ self.position ][ 0 ] == 'fast backward':
+				elif self.label == 'fast backward':
 					os.system( 'smplayer -send-action rewind3' )
 
-				elif self.buttons[ self.position ][ 0 ] == 'fast forward':
+				elif self.label == 'fast forward':
 					os.system( 'smplayer -send-action forward3' )
 
-				elif self.buttons[ self.position ][ 0 ] == 'backward':
+				elif self.label == 'backward':
 					os.system( 'smplayer -send-action rewind2' )
 
-				elif self.buttons[ self.position ][ 0 ] == 'forward':
+				elif self.label == 'forward':
 					os.system( 'smplayer -send-action forward2' )
 
-				elif self.buttons[ self.position ][ 0 ] == 'slow backward':
+				elif self.label == 'slow backward':
 					os.system( 'smplayer -send-action rewind1' )
 
-				elif self.buttons[ self.position ][ 0 ] == 'slow forward':
+				elif self.label == 'slow forward':
 					os.system( 'smplayer -send-action forward1' )
-
-                                selectedButton.SetBackgroundColour( self.backgroundColour ) # depend on abilites comment or not
-				self.flag = 'row'
-				self.rowIteration = 0
-				self.colIteration = 0
-				self.countRows = 0
-				self.countColumns = 0
-
+				
+				elif self.label == 'expand':
+					os.system( 'wid=`xdotool search --onlyvisible --name SMPlayer` && xdotool windowfocus $wid && xdotool key --window $wid f &&wid=`xdotool search --onlyvisible --name moviePilot` && xdotool windowactivate $wid' )
+				
+				elif self.label == 'back':
+					os.system( 'smplayer -send-action quit' )
+					self.onExit( )
+					
 		else:
-			pass
-			
-		# print self.numberOfPresses
+			self.numberOfPresses += 1
+			self.numberOfEmptyIteration = 0
+
+			if self.numberOfPresses == 1:
+
+				if self.flag == 'row':
+
+					if self.rowIteration == 1 or self.rowIteration == 2:
+						buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ], ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] )
+						for button in buttonsToHighlight:
+							item = self.subSizer.GetItem( button )
+							b = item.GetWindow( )
+							b.SetBackgroundColour( self.selectionColour )
+							b.SetFocus( )
+						self.flag = 'columns'
+						self.colIteration = 0
+
+					elif self.rowIteration == 3:
+						buttonsToHighlight = ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ],
+						for button in buttonsToHighlight:
+							item = self.subSizer.GetItem( button )
+							b = item.GetWindow( )
+							b.SetBackgroundColour( self.selectionColour )
+							b.SetFocus( )
+
+						self.rowIteration = 0
+						os.system( 'wid=`xdotool search --onlyvisible --name SMPlayer` && xdotool windowfocus $wid && xdotool key --window $wid f &&wid=`xdotool search --onlyvisible --name moviePilot` && xdotool windowactivate $wid' )
+
+					elif self.rowIteration == 4 or self.rowIteration == 5 or self.rowIteration == 6:
+						buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] - 1, ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] - 1 )
+						for button in buttonsToHighlight:
+							item = self.subSizer.GetItem( button )
+							b = item.GetWindow( )
+							b.SetBackgroundColour( self.selectionColour )
+							b.SetFocus( )
+						self.flag = 'columns'
+						self.colIteration = 0
+
+					elif self.rowIteration == 7:
+
+						buttonsToHighlight = ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] - 1,
+						for button in buttonsToHighlight:
+							item = self.subSizer.GetItem( button )
+							b = item.GetWindow( )
+							b.SetBackgroundColour( self.selectionColour )
+							b.SetFocus( )
+
+						os.system( 'smplayer -send-action quit' )
+
+						self.onExit( )
+
+				elif self.flag == 'columns':
+
+					if self.rowIteration == 1 or self.rowIteration == 2:
+						self.position = ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.colIteration
+
+					elif self.rowIteration == 4 or self.rowIteration == 5 or self.rowIteration == 6:
+						self.position = ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.colIteration - 1
+
+					item = self.subSizer.GetItem( self.position - 1 )
+					selectedButton = item.GetWindow( )
+					selectedButton.SetBackgroundColour( self.selectionColour )
+					selectedButton.SetFocus( )
+
+					self.Update( )
+
+					if self.buttons[ self.position ][ 0 ] == 'volume down':
+						try:
+							recentVolume = alsaaudio.Mixer( control = 'Master' ).getvolume( )[ 0 ] 
+							alsaaudio.Mixer( control = 'Master' ).setvolume( recentVolume - 15, 0 )
+							time.sleep( 1.5 )
+
+						except alsaaudio.ALSAAudioError:
+							selectedButton.SetBackgroundColour( 'red' )
+							selectedButton.SetFocus( )
+
+							self.Update( )
+							time.sleep( 1.5 )
+
+					elif self.buttons[ self.position ][ 0 ] == 'volume up':
+						try:
+							recentVolume = alsaaudio.Mixer( control = 'Master' ).getvolume( )[ 0 ] 
+							alsaaudio.Mixer( control = 'Master' ).setvolume( recentVolume + 15, 0 )
+							time.sleep( 1.5 )
+
+						except alsaaudio.ALSAAudioError:
+							selectedButton.SetBackgroundColour( 'red' )
+							selectedButton.SetFocus( )
+
+							self.Update( )
+							time.sleep( 1.5 )
+
+					elif self.buttons[ self.position ][ 0 ] == 'play pause':
+						if self.pressedStopFlag == True:
+							os.system( 'smplayer -send-action play' )
+
+							self.pressedStopFlag = False
+						else:
+							os.system( 'smplayer -send-action pause' )
+
+					elif self.buttons[ self.position ][ 0 ] == 'stop':
+						os.system( 'smplayer -send-action stop && smplayer -send-action stop %% smplayer -send-action fullcreen' )
+
+						self.pressedStopFlag = True
+
+					elif self.buttons[ self.position ][ 0 ] == 'fast backward':
+						os.system( 'smplayer -send-action rewind3' )
+
+					elif self.buttons[ self.position ][ 0 ] == 'fast forward':
+						os.system( 'smplayer -send-action forward3' )
+
+					elif self.buttons[ self.position ][ 0 ] == 'backward':
+						os.system( 'smplayer -send-action rewind2' )
+
+					elif self.buttons[ self.position ][ 0 ] == 'forward':
+						os.system( 'smplayer -send-action forward2' )
+
+					elif self.buttons[ self.position ][ 0 ] == 'slow backward':
+						os.system( 'smplayer -send-action rewind1' )
+
+					elif self.buttons[ self.position ][ 0 ] == 'slow forward':
+						os.system( 'smplayer -send-action forward1' )
+
+					selectedButton.SetBackgroundColour( self.backgroundColour ) # depend on abilites comment or not
+					self.flag = 'row'
+					self.rowIteration = 0
+					self.colIteration = 0
+					self.countRows = 0
+					self.countColumns = 0
+
+			else:
+				pass
+
+			# print self.numberOfPresses
 
 	#-------------------------------------------------------------------------
 	def timerUpdate(self, event):
 
-               	self.mouseCursor.move( *self.mousePosition )
-                self.numberOfPresses = 0
+		if self.control == 'tracker':
+			self.trackCounter += 1
+			print self.trackCounter 
+			if self.button.GetBackgroundColour( ) == self.backgroundColour:
+				self.button.SetBackgroundColour( self.selectionColour )
+				
+			else:
+				self.button.SetBackgroundColour( self.backgroundColour )	
 
-                if self.numberOfEmptyIteration < 2*0.9999999999:
-			if self.flag == 'row': #flag == row ie. switching between rows
+			# self.stoper.Stop( )
+			self.pressFlag = False
+			if self.trackCounter > 10:
+				self.stoper.Stop( )
 
-					self.numberOfEmptyIteration += 1. / self.numberOfRows[ 0 ]
+		else:
+			if self.control != 'tracker':
+				self.mouseCursor.move( *self.mousePosition )	
+			
+			self.numberOfPresses = 0
 
-					self.rowIteration = self.rowIteration % self.numberOfRows[ 0 ]
+			if self.numberOfEmptyIteration < 2*0.9999999999:
+				if self.flag == 'row': #flag == row ie. switching between rows
 
-					items = self.subSizer.GetChildren( )
-					for item in items:
-						b = item.GetWindow( )
-						b.SetBackgroundColour( self.backgroundColour )
-						b.SetFocus( )
+						self.numberOfEmptyIteration += 1. / self.numberOfRows[ 0 ]
 
-					if self.rowIteration == 0 or self.rowIteration == 1:
-						scope = range( self.rowIteration * self.numberOfColumns[ 0 ], self.rowIteration * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] )
+						self.rowIteration = self.rowIteration % self.numberOfRows[ 0 ]
 
-					elif self.rowIteration == 2:
-						scope = self.rowIteration * self.numberOfColumns[ 0 ],
+						items = self.subSizer.GetChildren( )
+						for item in items:
+							b = item.GetWindow( )
+							b.SetBackgroundColour( self.backgroundColour )
+							b.SetFocus( )
 
-					elif self.rowIteration == 3 or self.rowIteration == 4 or self.rowIteration == 5:
-						scope = range( self.rowIteration * self.numberOfColumns[ 0 ] - 1, self.rowIteration * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] - 1 )
+						if self.rowIteration == 0 or self.rowIteration == 1:
+							scope = range( self.rowIteration * self.numberOfColumns[ 0 ], self.rowIteration * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] )
 
-					elif self.rowIteration == 6:
-						scope = self.rowIteration * self.numberOfColumns[ 0 ] - 1,
+						elif self.rowIteration == 2:
+							scope = self.rowIteration * self.numberOfColumns[ 0 ],
 
-					for i in scope:
-						item = self.subSizer.GetItem( i )
+						elif self.rowIteration == 3 or self.rowIteration == 4 or self.rowIteration == 5:
+							scope = range( self.rowIteration * self.numberOfColumns[ 0 ] - 1, self.rowIteration * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] - 1 )
+
+						elif self.rowIteration == 6:
+							scope = self.rowIteration * self.numberOfColumns[ 0 ] - 1,
+
+						for i in scope:
+							item = self.subSizer.GetItem( i )
+							b = item.GetWindow( )
+							b.SetBackgroundColour( self.scanningColour )
+							b.SetFocus( )
+
+						self.rowIteration += 1
+
+				elif self.flag == 'columns': #flag = columns ie. switching between cells in the particular row
+
+					if self.countColumns == self.countMaxColumns:
+						self.flag = 'row'
+						self.rowIteration = 0
+						self.colIteration = 0
+						self.countColumns = 0
+						self.countRows = 0
+
+						items = self.subSizer.GetChildren( )
+						for item in items:
+							b = item.GetWindow( )
+							b.SetBackgroundColour( self.backgroundColour )
+							b.SetFocus( )
+
+					else:
+						self.colIteration = self.colIteration % self.numberOfColumns[ 0 ]
+
+						if self.colIteration == self.numberOfColumns[ 0 ] - 1:
+							self.countColumns += 1
+
+						items = self.subSizer.GetChildren( )
+						for item in items:
+							b = item.GetWindow( )
+							b.SetBackgroundColour( self.backgroundColour )
+							b.SetFocus( )
+
+						if self.rowIteration == 1 or self.rowIteration == 2:
+							item = self.subSizer.GetItem( ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.colIteration )
+
+						elif self.rowIteration == 4 or self.rowIteration == 5 or self.rowIteration == 6:
+							item = self.subSizer.GetItem( ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.colIteration - 1 )
+
 						b = item.GetWindow( )
 						b.SetBackgroundColour( self.scanningColour )
 						b.SetFocus( )
 
-					self.rowIteration += 1
+						self.colIteration += 1
 
-			elif self.flag == 'columns': #flag = columns ie. switching between cells in the particular row
+			else:
 
-				if self.countColumns == self.countMaxColumns:
-					self.flag = 'row'
-					self.rowIteration = 0
-					self.colIteration = 0
-					self.countColumns = 0
-					self.countRows = 0
+				self.stoper.Stop( )
+				self.numberOfEmptyIteration = 0
 
-					items = self.subSizer.GetChildren( )
-					for item in items:
-						b = item.GetWindow( )
-						b.SetBackgroundColour( self.backgroundColour )
-						b.SetFocus( )
-
-				else:
-					self.colIteration = self.colIteration % self.numberOfColumns[ 0 ]
-
-					if self.colIteration == self.numberOfColumns[ 0 ] - 1:
-						self.countColumns += 1
-
-					items = self.subSizer.GetChildren( )
-					for item in items:
-						b = item.GetWindow( )
-						b.SetBackgroundColour( self.backgroundColour )
-						b.SetFocus( )
-
-					if self.rowIteration == 1 or self.rowIteration == 2:
-						item = self.subSizer.GetItem( ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.colIteration )
-
-					elif self.rowIteration == 4 or self.rowIteration == 5 or self.rowIteration == 6:
-						item = self.subSizer.GetItem( ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.colIteration - 1 )
-
+				items = self.subSizer.GetChildren( )			
+				for item in items:
 					b = item.GetWindow( )
-					b.SetBackgroundColour( self.scanningColour )
+					b.SetBackgroundColour( self.backgroundColour )
 					b.SetFocus( )
 
-					self.colIteration += 1
+				self.numberOfEmptyIteration = 0
+				self.countColumns = 0
+				self.countRows = 0
+				self.colIteration = 0
+				self.rowIteration = 0
+				self.countColumns = 0
+				self.countRows = 0
+				self.numberOfPresses = 1
 
-		else:
-			
-			self.stoper.Stop( )
-			self.numberOfEmptyIteration = 0
-			suspend.suspend( self, id = 2 ).Show( True )
-			self.Hide( )
-			
-			items = self.subSizer.GetChildren( )			
-			for item in items:
-				b = item.GetWindow( )
-				b.SetBackgroundColour( self.backgroundColour )
-				b.SetFocus( )
-
-			self.numberOfEmptyIteration = 0
-			self.countColumns = 0
-			self.countRows = 0
-			self.colIteration = 0
-			self.rowIteration = 0
-			self.countColumns = 0
-			self.countRows = 0
-			self.numberOfPresses = 1
-			
-		# print self.rowIteration, self.colIteration
+			# print self.rowIteration, self.colIteration
 
 #=============================================================================
 if __name__ == '__main__':

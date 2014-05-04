@@ -42,8 +42,9 @@ class pilot( wx.Frame ):
             self.initializeParameters( )				
             self.initializeBitmaps( )
             self.createGui( )								
-            self.initializeTimer( )					
             self.createBindings( )						
+
+            self.initializeTimer( )					
 
 	#-------------------------------------------------------------------------
 	def initializeParameters(self):
@@ -68,6 +69,8 @@ class pilot( wx.Frame ):
                         self.filmVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
                     elif line[ :line.find('=')-1 ] == 'musicVolume':
                         self.musicVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
+		    elif line[ :line.find('=')-1 ] == 'control':
+                        self.control = line[ line.rfind('=')+2:-1 ]
 			
                     elif not line.isspace( ):
                         print 'Niewłaściwie opisane parametry'
@@ -80,9 +83,11 @@ class pilot( wx.Frame ):
                         self.selectionColour = '#9EE4EF'
                         self.filmVolumeLevel = 100
                         self.musicVolumeLevel = 70
+			self.control = 'switch'
                         
             self.flag = 'row'
-	    
+	    self.pressFlag = False
+
             self.rowIteration = 0						
             self.colIteration = 0
 
@@ -96,9 +101,10 @@ class pilot( wx.Frame ):
             self.countMaxColumns = 2									
             self.numberOfPresses = 1
 
-            self.mouseCursor = PyMouse( )
-	    self.mousePosition = self.winWidth - 8, self.winHeight - 8
-            self.mouseCursor.move( *self.mousePosition )	
+	    if self.control != 'tracker':
+		    self.mouseCursor = PyMouse( )
+		    self.mousePosition = self.winWidth - 8, self.winHeight - 8
+		    self.mouseCursor.move( *self.mousePosition )	
 
             self.SetBackgroundColour( 'black' )
 	    
@@ -129,20 +135,25 @@ class pilot( wx.Frame ):
 		self.mainSizer = wx.BoxSizer( wx.VERTICAL )
 
 		self.subSizer = wx.GridBagSizer( 4, 4 )
+
+		if self.control != 'tracker':
+			event = eval('wx.EVT_LEFT_DOWN')
+		else:
+			event = eval('wx.EVT_BUTTON')
 		
 		for key, value in self.radios.items( ):
 			if key == 1 or key == 2 or key == 3 or key == 4 or key == 5 or key == 6:
 				b = bt.GenBitmapButton( self, -1, name = value[ 0 ], bitmap = value[ 1 ] )
 				b.SetBackgroundColour( self.backgroundColour )
 				b.SetBezelWidth( 3 )
-				b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+				b.Bind( event, self.onPress )
 				
 				self.subSizer.Add( b, ( ( key - 1 ) / self.numberOfColumns[ 0 ], ( key - 1 ) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )			
 			elif key == 7:
 				b = bt.GenBitmapButton( self, -1, name = value[ 0 ], bitmap = value[ 1 ] )
 				b.SetBackgroundColour( self.backgroundColour )
 				b.SetBezelWidth( 3 )
-				b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+				b.Bind( event, self.onPress )
 
 				self.subSizer.Add( b, ( ( key - 1 ) / self.numberOfColumns[ 0 ], ( key - 1 ) % self.numberOfColumns[ 0 ] ), ( 1, 2 ), wx.EXPAND )
 
@@ -158,7 +169,9 @@ class pilot( wx.Frame ):
 	def initializeTimer(self):
 		self.stoper = wx.Timer( self )
 		self.Bind( wx.EVT_TIMER , self.timerUpdate , self.stoper )
-		self.stoper.Start( self.timeGap )
+
+		if self.control != 'tracker':
+			self.stoper.Start( self.timeGap )
 	
 	#-------------------------------------------------------------------------
 	def createBindings(self):
@@ -167,8 +180,9 @@ class pilot( wx.Frame ):
 	#-------------------------------------------------------------------------
 	def OnCloseWindow(self, event):
 
-		self.mousePosition = self.winWidth/1.85, self.winHeight/1.85	
-		self.mouseCursor.move( *self.mousePosition )	
+		if self.control != 'tracker':
+			self.mousePosition = self.winWidth/1.85, self.winHeight/1.85	
+			self.mouseCursor.move( *self.mousePosition )	
 
 		dial = wx.MessageDialog(None, 'Czy napewno chcesz wyjść z programu?', 'Wyjście',
 					wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION | wx.STAY_ON_TOP)
@@ -201,14 +215,18 @@ class pilot( wx.Frame ):
 
 		else:
 			event.Veto()
-			self.mousePosition = self.winWidth - 8, self.winHeight - 8
-			self.mouseCursor.move( *self.mousePosition )	
+
+			if self.control != 'tracker':											
+				self.mousePosition = self.winWidth - 8, self.winHeight - 8
+				self.mouseCursor.move( *self.mousePosition )	
 
 	#-------------------------------------------------------------------------
 	def onExit(self):
+
             if __name__ == '__main__':
                 self.stoper.Stop( )
                 self.Destroy( )
+
             else:
 		self.stoper.Stop( )
 		self.MakeModal( False )
@@ -218,27 +236,39 @@ class pilot( wx.Frame ):
 	
         #-------------------------------------------------------------------------
         def onPress(self, event):
-		
-		self.numberOfPresses += 1
-		self.numberOfEmptyIteration = 0
-		
-                if self.numberOfPresses == 1:
-			
-			if self.flag == 'row':
 
-				if self.rowIteration == self.numberOfRows[ 0 ]:
-					buttonsToHighlight = ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ],
+		if self.control == 'tracker':
+			if self.pressFlag == False:
+				self.button = event.GetEventObject()
+				self.button.SetBackgroundColour( self.selectionColour )
+				self.pressFlag = True
+				self.label = event.GetEventObject().GetName().encode( 'utf-8' )			
+				self.stoper.Start( 0.15 * self.timeGap )
 
-				else:
-					buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ], ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] )
-			
-				for button in buttonsToHighlight:
-					item = self.subSizer.GetItem( button )
-					b = item.GetWindow( )
-					b.SetBackgroundColour( self.selectionColour )
-					b.SetFocus( )
-					
-				if self.rowIteration == self.numberOfRows[ 0 ]:
+				if self.label == 'previous page':
+					os.system( 'wid=`xdotool search --onlyvisible --name Przeglądarka\ książek` && xdotool windowfocus $wid && xdotool key --window $wid Page_Up' )
+					os.system( 'wid=`xdotool search --onlyvisible --name E-book\ Viewer` && xdotool windowfocus $wid && xdotool key --window $wid Page_Up' )
+
+				elif self.label == 'next page':
+					os.system( 'wid=`xdotool search --onlyvisible --name Przeglądarka\ książek` && xdotool windowfocus $wid && xdotool key --window $wid Page_Down' )
+					os.system( 'wid=`xdotool search --onlyvisible --name E-book\ Viewer` && xdotool windowfocus $wid && xdotool key --window $wid Page_Down' )
+
+				elif self.label == 'previous section':
+					os.system( 'wid=`xdotool search --onlyvisible --name Przeglądarka\ książek` && xdotool windowfocus $wid && xdotool key --window $wid Ctrl+Page_Up' )
+					os.system( 'wid=`xdotool search --onlyvisible --name E-book\ Viewer` && xdotool windowfocus $wid && xdotool key --window $wid Ctrl+Page_Up' )
+
+				elif self.label == 'next section':
+					os.system( 'wid=`xdotool search --onlyvisible --name Przeglądarka\ książek` && xdotool windowfocus $wid && xdotool key --window $wid Ctrl+Page_Down' )
+					os.system( 'wid=`xdotool search --onlyvisible --name E-book\ Viewer` && xdotool windowfocus $wid && xdotool key --window $wid Ctrl+Page_Down' )
+
+				elif self.label == 'begin document':
+					os.system( 'wid=`xdotool search --onlyvisible --name Przeglądarka\ książek` && xdotool windowfocus $wid && xdotool key --window $wid Ctrl+Home' )
+					os.system( 'wid=`xdotool search --onlyvisible --name E-book\ Viewer` && xdotool windowfocus $wid && xdotool key --window $wid Ctrl+Home' )
+
+				elif self.label == 'end document':
+					os.system( 'wid=`xdotool search --onlyvisible --name Przeglądarka\ książek` && xdotool windowfocus $wid && xdotool key --window $wid Ctrl+End' )
+					os.system( 'wid=`xdotool search --onlyvisible --name E-book\ Viewer` && xdotool windowfocus $wid && xdotool key --window $wid Ctrl+End' )
+				elif self.label == 'back':
 					os.system( 'wmctrl -c Przeglądarka\ książek' )
 					os.system( 'wmctrl -c E-book\ Viewer' )
 					if __name__ == '__main__':
@@ -253,131 +283,180 @@ class pilot( wx.Frame ):
 						self.parent.parent.stoper.Start( self.parent.parent.timeGap )
 						self.parent.Destroy( )
 						self.Destroy( )
-						
-				self.flag = 'columns'
-				self.colIteration = 0                                
-				
-			elif self.flag == 'columns':
-                            
-				self.position = ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.colIteration
-	
-				item = self.subSizer.GetItem( self.position - 1 )
-				selectedButton = item.GetWindow( )
-				selectedButton.SetBackgroundColour( self.selectionColour )
-				selectedButton.SetFocus( )
-                                
-                                self.Update( )
 
-				if self.radios[ self.position ][ 0 ] == 'previous page':
-					os.system( 'wid=`xdotool search --onlyvisible --name Przeglądarka\ książek` && xdotool windowfocus $wid && xdotool key --window $wid Page_Up' )
-					os.system( 'wid=`xdotool search --onlyvisible --name E-book\ Viewer` && xdotool windowfocus $wid && xdotool key --window $wid Page_Up' )
+		else:
+			self.numberOfPresses += 1
+			self.numberOfEmptyIteration = 0
 
-				elif self.radios[ self.position ][ 0 ] == 'next page':
-					os.system( 'wid=`xdotool search --onlyvisible --name Przeglądarka\ książek` && xdotool windowfocus $wid && xdotool key --window $wid Page_Down' )
-					os.system( 'wid=`xdotool search --onlyvisible --name E-book\ Viewer` && xdotool windowfocus $wid && xdotool key --window $wid Page_Down' )
+			if self.numberOfPresses == 1:
 
-				elif self.radios[ self.position ][ 0 ] == 'previous section':
-					os.system( 'wid=`xdotool search --onlyvisible --name Przeglądarka\ książek` && xdotool windowfocus $wid && xdotool key --window $wid Ctrl+Page_Up' )
-					os.system( 'wid=`xdotool search --onlyvisible --name E-book\ Viewer` && xdotool windowfocus $wid && xdotool key --window $wid Ctrl+Page_Up' )
-					
-				elif self.radios[ self.position ][ 0 ] == 'next section':
-					os.system( 'wid=`xdotool search --onlyvisible --name Przeglądarka\ książek` && xdotool windowfocus $wid && xdotool key --window $wid Ctrl+Page_Down' )
-					os.system( 'wid=`xdotool search --onlyvisible --name E-book\ Viewer` && xdotool windowfocus $wid && xdotool key --window $wid Ctrl+Page_Down' )
-                                
-				elif self.radios[ self.position ][ 0 ] == 'begin document':
-					os.system( 'wid=`xdotool search --onlyvisible --name Przeglądarka\ książek` && xdotool windowfocus $wid && xdotool key --window $wid Ctrl+Home' )
-					os.system( 'wid=`xdotool search --onlyvisible --name E-book\ Viewer` && xdotool windowfocus $wid && xdotool key --window $wid Ctrl+Home' )
+				if self.flag == 'row':
 
-				elif self.radios[ self.position ][ 0 ] == 'end document':
-					os.system( 'wid=`xdotool search --onlyvisible --name Przeglądarka\ książek` && xdotool windowfocus $wid && xdotool key --window $wid Ctrl+End' )
-					os.system( 'wid=`xdotool search --onlyvisible --name E-book\ Viewer` && xdotool windowfocus $wid && xdotool key --window $wid Ctrl+End' )
-					
-                                selectedButton.SetBackgroundColour( self.backgroundColour )
-				self.flag = 'row'
-                                self.panelIteration = 0
-				self.rowIteration = 0
-				self.colIteration = 0
-				self.countColumns = 0
-				self.countRows = 0
-				
-		else: 
-			pass
+					if self.rowIteration == self.numberOfRows[ 0 ]:
+						buttonsToHighlight = ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ],
 
-		# print self.numberOfPresses
-
-
-	#-------------------------------------------------------------------------
-	def timerUpdate(self, event):
-				
-               	self.mouseCursor.move( *self.mousePosition )
-		
-                self.numberOfPresses = 0
-		
-		if self.numberOfEmptyIteration < 2:
-			if self.flag == 'row': #flag == row ie. switching between rows
-				
-					self.numberOfEmptyIteration += 1. / self.numberOfRows[ 0 ]        
-
-					self.rowIteration = self.rowIteration % self.numberOfRows[ 0 ]
-
-					items = self.subSizer.GetChildren( )
-					for item in items:
-						b = item.GetWindow( )
-						b.SetBackgroundColour( self.backgroundColour )
-						b.SetFocus( )
-
-					if self.rowIteration == self.numberOfRows[ 0 ] - 1:
-						scope = self.rowIteration * self.numberOfColumns[ 0 ],
 					else:
-						scope = range( self.rowIteration * self.numberOfColumns[ 0 ], self.rowIteration * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] )
+						buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ], ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] )
 
-					for i in scope:
-						item = self.subSizer.GetItem( i )
+					for button in buttonsToHighlight:
+						item = self.subSizer.GetItem( button )
 						b = item.GetWindow( )
-						b.SetBackgroundColour( self.scanningColour )
+						b.SetBackgroundColour( self.selectionColour )
 						b.SetFocus( )
-					self.rowIteration += 1
 
-			elif self.flag == 'columns': #flag = columns ie. switching between cells in the particular row
+					if self.rowIteration == self.numberOfRows[ 0 ]:
+						os.system( 'wmctrl -c Przeglądarka\ książek' )
+						os.system( 'wmctrl -c E-book\ Viewer' )
+						if __name__ == '__main__':
+							self.stoper.Stop( )
+							self.Destroy( )
+						else:
+							self.stoper.Stop( )
+							self.parent.stoper.Stop( )
+							self.MakeModal( False )
+							self.parent.MakeModal( False )
+							self.parent.parent.Show( True )
+							self.parent.parent.stoper.Start( self.parent.parent.timeGap )
+							self.parent.Destroy( )
+							self.Destroy( )
 
-				if self.countColumns == self.countMaxColumns:
+					self.flag = 'columns'
+					self.colIteration = 0                                
+
+				elif self.flag == 'columns':
+
+					self.position = ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.colIteration
+
+					item = self.subSizer.GetItem( self.position - 1 )
+					selectedButton = item.GetWindow( )
+					selectedButton.SetBackgroundColour( self.selectionColour )
+					selectedButton.SetFocus( )
+
+					self.Update( )
+
+					if self.radios[ self.position ][ 0 ] == 'previous page':
+						os.system( 'wid=`xdotool search --onlyvisible --name Przeglądarka\ książek` && xdotool windowfocus $wid && xdotool key --window $wid Page_Up' )
+						os.system( 'wid=`xdotool search --onlyvisible --name E-book\ Viewer` && xdotool windowfocus $wid && xdotool key --window $wid Page_Up' )
+
+					elif self.radios[ self.position ][ 0 ] == 'next page':
+						os.system( 'wid=`xdotool search --onlyvisible --name Przeglądarka\ książek` && xdotool windowfocus $wid && xdotool key --window $wid Page_Down' )
+						os.system( 'wid=`xdotool search --onlyvisible --name E-book\ Viewer` && xdotool windowfocus $wid && xdotool key --window $wid Page_Down' )
+
+					elif self.radios[ self.position ][ 0 ] == 'previous section':
+						os.system( 'wid=`xdotool search --onlyvisible --name Przeglądarka\ książek` && xdotool windowfocus $wid && xdotool key --window $wid Ctrl+Page_Up' )
+						os.system( 'wid=`xdotool search --onlyvisible --name E-book\ Viewer` && xdotool windowfocus $wid && xdotool key --window $wid Ctrl+Page_Up' )
+
+					elif self.radios[ self.position ][ 0 ] == 'next section':
+						os.system( 'wid=`xdotool search --onlyvisible --name Przeglądarka\ książek` && xdotool windowfocus $wid && xdotool key --window $wid Ctrl+Page_Down' )
+						os.system( 'wid=`xdotool search --onlyvisible --name E-book\ Viewer` && xdotool windowfocus $wid && xdotool key --window $wid Ctrl+Page_Down' )
+
+					elif self.radios[ self.position ][ 0 ] == 'begin document':
+						os.system( 'wid=`xdotool search --onlyvisible --name Przeglądarka\ książek` && xdotool windowfocus $wid && xdotool key --window $wid Ctrl+Home' )
+						os.system( 'wid=`xdotool search --onlyvisible --name E-book\ Viewer` && xdotool windowfocus $wid && xdotool key --window $wid Ctrl+Home' )
+
+					elif self.radios[ self.position ][ 0 ] == 'end document':
+						os.system( 'wid=`xdotool search --onlyvisible --name Przeglądarka\ książek` && xdotool windowfocus $wid && xdotool key --window $wid Ctrl+End' )
+						os.system( 'wid=`xdotool search --onlyvisible --name E-book\ Viewer` && xdotool windowfocus $wid && xdotool key --window $wid Ctrl+End' )
+
+					selectedButton.SetBackgroundColour( self.backgroundColour )
 					self.flag = 'row'
+					self.panelIteration = 0
 					self.rowIteration = 0
 					self.colIteration = 0
 					self.countColumns = 0
 					self.countRows = 0
-					self.numberOfPresses = 1
 
-					items = self.subSizer.GetChildren( )
-					for item in items:
-						b = item.GetWindow( )
-						b.SetBackgroundColour( self.backgroundColour )
-						b.SetFocus( )
+			else: 
+				pass
 
-				else:
-					self.colIteration = self.colIteration % self.numberOfColumns[ 0 ]
+			# print self.numberOfPresses
 
-					if self.colIteration == self.numberOfColumns[ 0 ] - 1:
-						self.countColumns += 1
 
-					items = self.subSizer.GetChildren( )
-					for item in items:
-						b = item.GetWindow( )
-						b.SetBackgroundColour( self.backgroundColour )
-						b.SetFocus( )
+	#-------------------------------------------------------------------------
+	def timerUpdate(self, event):
 
-					item = self.subSizer.GetItem( ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.colIteration )
-						
-					b = item.GetWindow( )
-					b.SetBackgroundColour( self.scanningColour )
-					b.SetFocus( )
-					
-					self.colIteration += 1
+		if self.control == 'tracker':
+
+			if self.button.GetBackgroundColour( ) == self.backgroundColour:
+				self.button.SetBackgroundColour( self.selectionColour )
+				
+			else:
+				self.button.SetBackgroundColour( self.backgroundColour )	
+
+			self.stoper.Stop( )
+			self.pressFlag = False
 
 		else:
-                        self.onExit( )
+			if self.control != 'tracker':
+				self.mouseCursor.move( *self.mousePosition )	
+			
+			self.numberOfPresses = 0
 
-		# print self.rowIteration, self.colIteration
+			if self.numberOfEmptyIteration < 2:
+				if self.flag == 'row': #flag == row ie. switching between rows
+
+						self.numberOfEmptyIteration += 1. / self.numberOfRows[ 0 ]        
+
+						self.rowIteration = self.rowIteration % self.numberOfRows[ 0 ]
+
+						items = self.subSizer.GetChildren( )
+						for item in items:
+							b = item.GetWindow( )
+							b.SetBackgroundColour( self.backgroundColour )
+							b.SetFocus( )
+
+						if self.rowIteration == self.numberOfRows[ 0 ] - 1:
+							scope = self.rowIteration * self.numberOfColumns[ 0 ],
+						else:
+							scope = range( self.rowIteration * self.numberOfColumns[ 0 ], self.rowIteration * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] )
+
+						for i in scope:
+							item = self.subSizer.GetItem( i )
+							b = item.GetWindow( )
+							b.SetBackgroundColour( self.scanningColour )
+							b.SetFocus( )
+						self.rowIteration += 1
+
+				elif self.flag == 'columns': #flag = columns ie. switching between cells in the particular row
+
+					if self.countColumns == self.countMaxColumns:
+						self.flag = 'row'
+						self.rowIteration = 0
+						self.colIteration = 0
+						self.countColumns = 0
+						self.countRows = 0
+						self.numberOfPresses = 1
+
+						items = self.subSizer.GetChildren( )
+						for item in items:
+							b = item.GetWindow( )
+							b.SetBackgroundColour( self.backgroundColour )
+							b.SetFocus( )
+
+					else:
+						self.colIteration = self.colIteration % self.numberOfColumns[ 0 ]
+
+						if self.colIteration == self.numberOfColumns[ 0 ] - 1:
+							self.countColumns += 1
+
+						items = self.subSizer.GetChildren( )
+						for item in items:
+							b = item.GetWindow( )
+							b.SetBackgroundColour( self.backgroundColour )
+							b.SetFocus( )
+
+						item = self.subSizer.GetItem( ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.colIteration )
+
+						b = item.GetWindow( )
+						b.SetBackgroundColour( self.scanningColour )
+						b.SetFocus( )
+
+						self.colIteration += 1
+
+			else:
+				self.onExit( )
+
+			# print self.rowIteration, self.colIteration
 
 #=============================================================================
 if __name__ == '__main__':

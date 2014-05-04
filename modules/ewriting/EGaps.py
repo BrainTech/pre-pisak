@@ -136,10 +136,11 @@ class cwiczenia(wx.Frame):
 
 		self.numberOfPresses = 1
 		self.pressFlag = False
-
-		self.mouseCursor = PyMouse( )
-		self.mousePosition = self.winWidth - 8, self.winHeight - 8
-               	self.mouseCursor.move( *self.mousePosition )			
+		
+		if self.control != 'tracker':
+			self.mouseCursor = PyMouse( )
+			self.mousePosition = self.winWidth - 8, self.winHeight - 8
+			self.mouseCursor.move( *self.mousePosition )			
 
 		mixer.init( )
 
@@ -330,7 +331,11 @@ class cwiczenia(wx.Frame):
 			self.stoper.Stop( )
 			self.MakeModal( False )
 			self.parent.Show( True )
-			self.parent.stoper.Start( self.parent.timeGap )
+			if self.control == 'tracker':
+				self.parent.stoper.Start( 0.15 * self.parent.timeGap )
+			else:
+				self.parent.stoper.Start( self.parent.timeGap )
+
 			self.Destroy( )
 
 	#-------------------------------------------------------------------------	

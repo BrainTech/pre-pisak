@@ -117,8 +117,9 @@ class memory_GUI( wx.Frame ):
 		
                 self.numberOfPresses = 1
                 self.subSizerNumber = 0
-
-		self.mouseCursor = PyMouse( )
+		
+		if self.control != 'tracker':
+			self.mouseCursor = PyMouse( )
 				
 		self.SetBackgroundColour( 'black' )
 
@@ -219,8 +220,9 @@ class memory_GUI( wx.Frame ):
 	#-------------------------------------------------------------------------	
 	def OnCloseWindow(self, event):
 
-		self.mousePosition = self.winWidth/1.85, self.winHeight/1.85	
-		self.mouseCursor.move( *self.mousePosition )	
+		if self.control != 'tracker':
+			self.mousePosition = self.winWidth/1.85, self.winHeight/1.85	
+			self.mouseCursor.move( *self.mousePosition )	
 
 		dial = wx.MessageDialog(None, 'Czy napewno chcesz wyjść z programu?', 'Wyjście',
 					wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION | wx.STAY_ON_TOP)
@@ -258,8 +260,10 @@ class memory_GUI( wx.Frame ):
 
 		else:
 			event.Veto( )
-			self.mousePosition = self.winWidth - 8, self.winHeight - 8
-			self.mouseCursor.move( *self.mousePosition )	
+
+			if self.control != 'tracker':
+				self.mousePosition = self.winWidth - 8, self.winHeight - 8
+				self.mouseCursor.move( *self.mousePosition )	
 
 	#----------------------------------------------------------------------------
 	def onExit(self):
@@ -271,7 +275,11 @@ class memory_GUI( wx.Frame ):
 			self.stoper.Stop( )
 			self.MakeModal( False )
 			self.parent.Show( True )
-			self.parent.stoper.Start( self.parent.timeGap )
+			if self.control == 'tracker':
+				self.parent.stoper.Start( 0.15 * self.parent.timeGap )
+			else:
+				self.parent.stoper.Start( self.parent.timeGap )
+				
 			self.Destroy( )
 
 	#----------------------------------------------------------------------------
@@ -467,8 +475,8 @@ class memory_GUI( wx.Frame ):
 				self.columnIteration = 0
 				self.countColumns = 0
 
-
-			self.mouseCursor.move( self.winWidth - 12, self.winHeight - 500 )
+			if self.control != 'tracker':
+				self.mouseCursor.move( self.winWidth - 12, self.winHeight - 500 )
 
 
 			if self.flag == 'row':

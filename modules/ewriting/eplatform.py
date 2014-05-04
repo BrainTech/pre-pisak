@@ -125,10 +125,11 @@ class cwiczenia(wx.Frame):
 		self.numberOfColumns = 1,
 
 		self.flaga = 0
-
-		self.mouseCursor = PyMouse( )
-		self.mousePosition = self.winWidth - 8, self.winHeight - 8
-               	self.mouseCursor.move( *self.mousePosition )			
+		
+		if self.control != 'tracker':
+			self.mouseCursor = PyMouse( )
+			self.mousePosition = self.winWidth - 8, self.winHeight - 8
+			self.mouseCursor.move( *self.mousePosition )			
 
                 self.poczatek = True
 		self.numberOfPresses = 1
@@ -194,8 +195,9 @@ class cwiczenia(wx.Frame):
 	#-------------------------------------------------------------------------	
 	def OnCloseWindow(self, event):
 
-		self.mousePosition = self.winWidth/1.85, self.winHeight/1.85	
-		self.mouseCursor.move( *self.mousePosition )	
+		if self.control != 'tracker':
+			self.mousePosition = self.winWidth/1.85, self.winHeight/1.85	
+			self.mouseCursor.move( *self.mousePosition )	
 
 		dial = wx.MessageDialog(None, 'Czy napewno chcesz wyjść z programu?', 'Wyjście',
 					wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION | wx.STAY_ON_TOP)
@@ -226,15 +228,21 @@ class cwiczenia(wx.Frame):
 						
 		else:
 			event.Veto()
-			self.mousePosition = self.winWidth - 8, self.winHeight - 8
-			self.mouseCursor.move( *self.mousePosition )	
+
+			if self.control != 'tracker':
+				self.mousePosition = self.winWidth - 8, self.winHeight - 8
+				self.mouseCursor.move( *self.mousePosition )	
 
 	#-------------------------------------------------------------------------	
 	def onExit(self):
                 if self.parent:
                         self.parent.MakeModal( True )
                         self.parent.Show( )
-                        self.parent.stoper.Start( self.parent.timeGap )                        
+			if self.control == 'tracker':
+				self.parent.stoper.Start( 0.15 * self.parent.timeGap )
+			else:
+				self.parent.stoper.Start( self.parent.timeGap )
+
                         self.MakeModal( False )
                         self.Destroy( )
                 else:

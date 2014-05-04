@@ -107,10 +107,11 @@ class music( wx.Frame ):
 		self.maxEmptyPanelIteration = 2
 
 		self.numberOfPresses = 1
-
-		self.mouseCursor = PyMouse( )
-		self.mousePosition = self.winWidth - 8, self.winHeight - 8
-               	self.mouseCursor.move( *self.mousePosition )			
+		
+		if self.control != 'tracker':
+			self.mouseCursor = PyMouse( )
+			self.mousePosition = self.winWidth - 8, self.winHeight - 8
+			self.mouseCursor.move( *self.mousePosition )			
 		
 		self.SetBackgroundColour( 'black' )
 		
@@ -168,8 +169,8 @@ class music( wx.Frame ):
 		else:
 			self.flag = 'panel'
 
-		print self.existingMedia
-		print self.existingLogos
+		# print self.existingMedia
+		# print self.existingLogos
 		
 	#-------------------------------------------------------------------------
 	def createGui(self):
@@ -244,7 +245,7 @@ class music( wx.Frame ):
 				subSizer.AddGrowableRow( number )
 			for number in range( self.numberOfColumns[ 0 ] ):
 				subSizer.AddGrowableCol( number )
-		
+
 			self.Layout( )
 
 			self. mainSizer.Add( subSizer, proportion = 1, flag = wx.EXPAND )
@@ -272,8 +273,9 @@ class music( wx.Frame ):
 	#-------------------------------------------------------------------------
 	def OnCloseWindow(self, event):
 
-		self.mousePosition = self.winWidth/1.85, self.winHeight/1.85	
-		self.mouseCursor.move( *self.mousePosition )	
+		if self.control != 'tracker':
+			self.mousePosition = self.winWidth/1.85, self.winHeight/1.85	
+			self.mouseCursor.move( *self.mousePosition )	
 
 		dial = wx.MessageDialog(None, 'Czy napewno chcesz wyjść z programu?', 'Wyjście',
 					wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION | wx.STAY_ON_TOP)
@@ -290,8 +292,10 @@ class music( wx.Frame ):
 				self.Destroy( )
 		else:
 			event.Veto()
-			self.mousePosition = self.winWidth - 8, self.winHeight - 8
-			self.mouseCursor.move( *self.mousePosition )	
+
+			if self.control != 'tracker':
+				self.mousePosition = self.winWidth - 8, self.winHeight - 8
+				self.mouseCursor.move( *self.mousePosition )	
 
 	#-------------------------------------------------------------------------
 	def onExit(self):
@@ -302,11 +306,13 @@ class music( wx.Frame ):
 			self.stoper.Stop( )
 			self.MakeModal( False )
 			self.parent.Show( True )
-			self.parent.stoper.Start( self.parent.timeGap )
+			if self.control != 'tracker':			
+				self.parent.stoper.Start( self.parent.timeGap )
+
 			self.Destroy( )
 		
 	#-------------------------------------------------------------------------
-        def onPress(self, event):
+	def onPress(self, event):
 
 		if self.control == 'tracker':
 			if self.pressFlag == False:
@@ -316,58 +322,58 @@ class music( wx.Frame ):
 				self.label = event.GetEventObject().GetName().encode( 'utf-8' )			
 				self.stoper.Start( 0.15 * self.timeGap )
 				
-			if self.label == 'volume_down':
-				try:
-					recentVolume = alsaaudio.Mixer( control = 'Master' ).getvolume( )[ 0 ] 
-					alsaaudio.Mixer( control = 'Master' ).setvolume( recentVolume - 15, 0 )
-							
-				except alsaaudio.ALSAAudioError:
+				if self.label == 'volume_down':
+					try:
+						recentVolume = alsaaudio.Mixer( control = 'Master' ).getvolume( )[ 0 ] 
+						alsaaudio.Mixer( control = 'Master' ).setvolume( recentVolume - 15, 0 )
+
+					except alsaaudio.ALSAAudioError:
+						self.button.SetBackgroundColour( 'red' )
+						self.button.SetFocus( )
+
+						self.Update( )
+
+				elif self.label == 'volume_up':
+					try:
+						recentVolume = alsaaudio.Mixer( control = 'Master' ).getvolume( )[ 0 ] 
+						alsaaudio.Mixer( control = 'Master' ).setvolume( recentVolume + 15, 0 )
+
+					except alsaaudio.ALSAAudioError:
+						self.button.SetBackgroundColour( 'red' )
+						self.button.SetFocus( )
+
+						self.Update( )
+
+				elif self.label == 'show':
+					self.stoper.Stop( )
+					musicPilot.pilot( self, id = 2 ).Show( True )
+					self.Hide( )
+
+				elif self.label == 'delete':
+					os.system( 'smplayer -send-action quit &' )
+
+				elif self.label == 'back':
+					self.onExit( )
+
+				elif self.label == 'empty':
 					self.button.SetBackgroundColour( 'red' )
 					self.button.SetFocus( )
-					
-					self.Update( )
 
-			elif self.label == 'volume_up':
-				try:
-					recentVolume = alsaaudio.Mixer( control = 'Master' ).getvolume( )[ 0 ] 
-					alsaaudio.Mixer( control = 'Master' ).setvolume( recentVolume + 15, 0 )
-							
-				except alsaaudio.ALSAAudioError:
-					self.button.SetBackgroundColour( 'red' )
-					self.button.SetFocus( )
-					
 					self.Update( )
-						
-			elif self.label == 'show':
-				self.stoper.Stop( )
-				musicPilot.pilot( self, id = 2 ).Show( True )
-				self.Hide( )
-				
-			elif self.label == 'delete':
-				os.system( 'smplayer -send-action quit &' )
-				
-			elif self.label == 'back':
-				self.onExit( )
+					# time.sleep( 1.5 )
 
-			elif self.label == 'empty':
-				self.button.SetBackgroundColour( 'red' )
-				self.button.SetFocus( )
-					
-				self.Update( )
-				# time.sleep( 1.5 )
+				else:
+					try:
+						choicePath = self.label[:self.label.rfind('/')] + '/playlist.m3u'
+						# print choicePath
+						os.system( 'smplayer -pos 0 0 %s &' % choicePath.replace( ' ', '\ ' ) )
 
-			else:
-				try:
-					choicePath = self.label[:self.label.rfind('/')] + '/playlist.m3u'
-					print choicePath
-					os.system( 'smplayer -pos 0 0 %s &' % choicePath.replace( ' ', '\ ' ) )
-						
-				except IndexError:
-					self.button.SetBackgroundColour( 'red' )
-					self.button.SetFocus( )
-					
-					self.Update( )
-					time.sleep( 1.5 )
+					except IndexError:
+						self.button.SetBackgroundColour( 'red' )
+						self.button.SetFocus( )
+
+						self.Update( )
+						time.sleep( 1.5 )
 
 		else:
 			self.numberOfPresses += 1
@@ -473,11 +479,11 @@ class music( wx.Frame ):
 							time.sleep( 1.5 )
 
 					if self.numberOfPanels == 1:
-					    self.flag = 'row'
-					    self.panelIteration = 0
+						self.flag = 'row'
+						self.panelIteration = 0
 					else:
-					    self.flag = 'panel'
-					    self.panelIteration = -1
+						self.flag = 'panel'
+						self.panelIteration = -1
 
 					self.rowIteration = 0
 					self.columnIteration = 0
@@ -510,7 +516,8 @@ class music( wx.Frame ):
 			self.pressFlag = False
 
 		else:
-		        self.mouseCursor.move( *self.mousePosition )	
+			if self.control != 'tracker':
+				self.mouseCursor.move( *self.mousePosition )	
 
                         self.numberOfPresses = 0
             

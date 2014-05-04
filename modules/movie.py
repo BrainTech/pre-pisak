@@ -106,10 +106,11 @@ class movie( wx.Frame ):
 		
 		self.numberOfPresses = 1
 
-		self.mouseCursor = PyMouse( )
-		self.mousePosition = self.winWidth - 8, self.winHeight - 8
-               	self.mouseCursor.move( *self.mousePosition )			
-		
+		if self.control != 'tracker':
+			self.mouseCursor = PyMouse( )
+			self.mousePosition = self.winWidth - 8, self.winHeight - 8
+			self.mouseCursor.move( *self.mousePosition )			
+
 		self.SetBackgroundColour( 'black' )
 
 	#-------------------------------------------------------------------------	
@@ -238,8 +239,9 @@ class movie( wx.Frame ):
 	#-------------------------------------------------------------------------
 	def OnCloseWindow(self, event):
 
-		self.mousePosition = self.winWidth/1.85, self.winHeight/1.85	
-		self.mouseCursor.move( *self.mousePosition )	
+		if self.control != 'tracker':
+			self.mousePosition = self.winWidth/1.85, self.winHeight/1.85	
+			self.mouseCursor.move( *self.mousePosition )	
 
 		dial = wx.MessageDialog(None, 'Czy napewno chcesz wyjść z programu?', 'Wyjście',
 					wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION | wx.STAY_ON_TOP)
@@ -254,8 +256,10 @@ class movie( wx.Frame ):
 				self.Destroy( )
 		else:
 			event.Veto()
-			self.mousePosition = self.winWidth - 8, self.winHeight - 8
-			self.mouseCursor.move( *self.mousePosition )	
+
+			if self.control != 'tracker':
+				self.mousePosition = self.winWidth - 8, self.winHeight - 8
+				self.mouseCursor.move( *self.mousePosition )	
 
 	#-------------------------------------------------------------------------
 	def onExit(self):
@@ -266,7 +270,9 @@ class movie( wx.Frame ):
 			self.stoper.Stop( )
 			self.MakeModal( False )
 			self.parent.Show( True )
-			self.parent.stoper.Start( self.parent.timeGap )
+			if self.control != 'tracker':
+				self.parent.stoper.Start( self.parent.timeGap )
+
 			self.Destroy( )
 	
 	#-------------------------------------------------------------------------
@@ -280,7 +286,6 @@ class movie( wx.Frame ):
 				self.label = event.GetEventObject().GetName().encode( 'utf-8' )
 				self.name = self.label[:self.label.rfind('.')] + '.mp3'			
 				self.stoper.Start( 0.15 * self.timeGap )
-				print self.label
 
 				if self.label == 'back':
 					self.onExit( )
@@ -427,7 +432,8 @@ class movie( wx.Frame ):
 			self.pressFlag = False
 
 		else:
-		        self.mouseCursor.move( *self.mousePosition )	
+			if self.control != 'tracker':
+				self.mouseCursor.move( *self.mousePosition )	
 
                         self.numberOfPresses = 0
             

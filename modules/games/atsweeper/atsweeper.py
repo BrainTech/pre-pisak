@@ -71,7 +71,11 @@ class sweeper_GUI( wx.Frame ):
 					self.musicVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
 				elif line[ :line.find('=')-1 ] == 'control':
 					self.control = line[ line.rfind('=')+2:-1 ]
-			
+				elif line[ :line.find('=')-1 ] == 'x_border':
+					self.xBorder = int( line[ line.rfind('=')+2:-1 ] )
+				elif line[ :line.find('=')-1 ] == 'y_border':
+					self.yBorder = int( line[ line.rfind('=')+2:-1 ] )
+
 				elif not line.isspace( ):
 					print 'Niewłaściwie opisane parametry'
 					print 'Błąd w linii', line
@@ -84,6 +88,8 @@ class sweeper_GUI( wx.Frame ):
 					self.filmVolumeLevel = 100
 					self.musicVolumeLevel = 70
 					self.control = 'switch'
+					self.xBorder = 4
+					self.yBorder = 4 
 
 		self.colorlegend = {'0':'#E5D9D9', '1': '#5545EA', '2': '#B229B7', '3': '#13CE1A', '4':'#CE1355', '5': '#F9F504', '6':'#FF7504', '7':'#FF0404', '8':'#000000'}
 
@@ -237,7 +243,7 @@ class sweeper_GUI( wx.Frame ):
 					self.subSizer.Add( b, ( 0, 2 * self.numberOfColumns / 3 + self.numberOfColumns % 3), ( 1, self.numberOfColumns / 3 ), wx.EXPAND )
 			b.position = ( (index_1+index_2+1) / self.numberOfColumns ) + 1, ( (index_1+index_2+1) % self.numberOfColumns ) + 1
 
-		self.mainSizer.Add( self.res, flag = wx.EXPAND | wx.TOP , border = 1 )				    
+		self.mainSizer.Add( self.res, flag = wx.EXPAND )				    
 		self.mainSizer.Add( self.subSizer, proportion = 1, flag = wx.EXPAND )
 
 		self.SetSizer( self.mainSizer , deleteOld = True )

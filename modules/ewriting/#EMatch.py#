@@ -162,10 +162,9 @@ class cwiczenia(wx.Frame):
 
 		self.numberOfPresses = 1
 
-		if self.control != 'tracker':
-			self.mouseCursor = PyMouse( )
-			self.mousePosition = self.winWidth - 8, self.winHeight - 8
-			self.mouseCursor.move( *self.mousePosition )			
+		self.mouseCursor = PyMouse( )
+		self.mousePosition = self.winWidth - 8, self.winHeight - 8
+               	self.mouseCursor.move( *self.mousePosition )			
 
 		mixer.init( )
 		
@@ -402,9 +401,8 @@ class cwiczenia(wx.Frame):
 	#-------------------------------------------------------------------------
 	def OnCloseWindow(self, event):
 
-		if self.control != 'tracker':
-			self.mousePosition = self.winWidth/1.85, self.winHeight/1.85	
-			self.mouseCursor.move( *self.mousePosition )	
+		self.mousePosition = self.winWidth/1.85, self.winHeight/1.85	
+		self.mouseCursor.move( *self.mousePosition )	
 
 		dial = wx.MessageDialog(None, 'Czy napewno chcesz wyjść z programu?', 'Wyjście',
 					wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION | wx.STAY_ON_TOP)
@@ -443,10 +441,8 @@ class cwiczenia(wx.Frame):
 
 		else:
 			event.Veto()
-
-			if self.control != 'tracker':
-				self.mousePosition = self.winWidth - 8, self.winHeight - 8
-				self.mouseCursor.move( *self.mousePosition )	
+			self.mousePosition = self.winWidth - 8, self.winHeight - 8
+			self.mouseCursor.move( *self.mousePosition )	
 
 	#-------------------------------------------------------------------------
 	def onExit(self):

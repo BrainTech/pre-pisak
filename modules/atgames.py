@@ -74,7 +74,11 @@ class games( wx.Frame ):
 					self.musicVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )	
 				elif line[ :line.find('=')-1 ] == 'control':
 					self.control = line[ line.rfind('=')+2:-1 ]
-				
+				elif line[ :line.find('=')-1 ] == 'x_border':
+					self.xBorder = int( line[ line.rfind('=')+2:-1 ] )
+				elif line[ :line.find('=')-1 ] == 'y_border':
+					self.yBorder = int( line[ line.rfind('=')+2:-1 ] )
+
 				elif not line.isspace( ):
 					print 'Niewłaściwie opisane parametry'
 					print 'Błąd w linii', line
@@ -87,6 +91,8 @@ class games( wx.Frame ):
 					self.filmVolumeLevel = 100
 					self.musicVolumeLevel = 70
 					self.control = 'switch'
+					self.xBorder = 4
+					self.yBorder = 4 
 
 		self.pressFlag = False
 
@@ -143,7 +149,7 @@ class games( wx.Frame ):
 
                 for panel in self.panels.keys( ):
 			
-			subSizer = wx.GridBagSizer( 4, 4 )
+			subSizer = wx.GridBagSizer( self.xBorder, self.yBorder )
                    
 			self.subSizers.append( subSizer )
 			

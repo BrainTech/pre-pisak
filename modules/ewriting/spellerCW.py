@@ -67,8 +67,12 @@ class speller( wx.Frame ):
 				elif line[ :line.find('=')-1 ] == 'musicVolume':
 					self.musicVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
 				elif line[ :line.find('=')-1 ] == 'control':
-					self.control = line[ line.rfind('=')+2:-1 ]
-			
+					self.control = line[ line.rfind('=')+2:-1 ]	
+				elif line[ :line.find('=')-1 ] == 'x_border':
+					self.xBorder = int( line[ line.rfind('=')+2:-1 ] )
+				elif line[ :line.find('=')-1 ] == 'y_border':
+					self.yBorder = int( line[ line.rfind('=')+2:-1 ] )
+		
 				elif not line.isspace( ):
 					print 'Niewłaściwie opisane parametry'
 					print 'Błąd w linii', line
@@ -81,6 +85,8 @@ class speller( wx.Frame ):
 					self.filmVolumeLevel = 100
 					self.musicVolumeLevel = 70
 					self.control = 'switch'
+					self.xBorder = 4
+					self.yBorder = 4 
 
 		with open( self.pathToATPlatform + 'spellerParameters', 'r' ) as parametersFile:
 			for line in parametersFile:
@@ -191,14 +197,23 @@ class speller( wx.Frame ):
 
 	#-------------------------------------------------------------------------	
 	def createGui(self):
+
+		self.thicknessOfExternalBorder = self.yBorder # factor related to the border of the entire board
+		self.thicknessOfInternalBorder = self.xBorder # factor related to the border of every button 
+
+		self.textFieldWidth = self.winWidth
+		self.textFieldHeight = 0.2 * ( self.winHeight - 20 ) # -20 because of the Unity upper bar
+
+		self.buttonsBoardWidth  = self.winWidth - self.thicknessOfExternalBorder * 2 - self.thicknessOfInternalBorder * ( self.numberOfColumns[ 0 ] - 1 )
+		self.buttonsBoardHeight = ( self.winHeight - 20 ) - self.textFieldHeight - self.thicknessOfExternalBorder * 3 - self.thicknessOfInternalBorder * ( self.numberOfRows[ 0 ] - 1 ) # -20 because of the Unity upper bar
 		
-		self.textField = wx.TextCtrl( self.parent, style = wx.TE_CENTRE | wx.TE_RICH2, size = ( self.winWidth, 0.2 * ( self.winHeight - 100 ) ) )
-		self.textField.SetFont( wx.Font(  69, wx.SWISS, wx.NORMAL, wx.NORMAL ) )
-		self.parent.mainSizer.Add( self.textField, flag = wx.EXPAND | wx.TOP | wx.BOTTOM, border = 3 )
+		self.textField = wx.TextCtrl( self.parent, style = wx.TE_CENTRE | wx.TE_RICH2, size = ( self.textFieldWidth, self.textFieldHeight ) )
+		self.textField.SetFont( wx.Font(  100, wx.SWISS, wx.NORMAL, wx.NORMAL ) )
+		self.parent.mainSizer.Add( self.textField, flag = wx.EXPAND | wx.TOP | wx.BOTTOM, border = self.xBorder )
 		
 		self.subSizers = [ ]
 		
-		subSizer = wx.GridBagSizer( 3, 3 )
+		subSizer = wx.GridBagSizer( self.xBorder, self.yBorder )
 
 		if self.control != 'tracker':
 			event = eval('wx.EVT_LEFT_DOWN')
@@ -206,8 +221,8 @@ class speller( wx.Frame ):
 			event = eval('wx.EVT_BUTTON')
 
 		for index_1, item in enumerate( self.labels[ 0 ][ :-7 ] ):
-			b = bt.GenButton( self.parent, -1, item, name = item, size = ( 0.985*self.winWidth / self.numberOfColumns[ 0 ], 0.79 * self.winHeight / self.numberOfRows[ 0 ] ) )
-			b.SetFont( wx.Font( 35, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False ) )
+			b = bt.GenButton( self.parent, -1, item, name = item, size = ( self.buttonsBoardWidth / float( self.numberOfColumns[ 0 ] ), self.buttonsBoardHeight / float( self.numberOfRows[ 0 ] ) ) )
+			b.SetFont( wx.Font( 50, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False ) )
 			b.SetBezelWidth( 3 )
 			b.SetBackgroundColour( self.backgroundColour )
 
@@ -220,27 +235,40 @@ class speller( wx.Frame ):
 			subSizer.Add( b, ( index_1 / self.numberOfColumns[ 0 ], index_1 % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
 
 		for index_2, item in enumerate( self.labels[ 0 ][ -7 : ] ):
-			b = bt.GenBitmapButton( self.parent, -1, name = item, bitmap = self.labelBitmaps[ item ] )
-			b.SetBackgroundColour( self.backgroundColour )
-			b.SetBezelWidth( 3 )
-                        b.Bind( event, self.onPress )
-
                         if index_2 == 3:
-                                subSizer.Add( b, ( ( index_1 + index_2 +1) / self.numberOfColumns[ 0 ], ( index_1 + index_2+1 ) % self.numberOfColumns[ 0 ] ), (1,3), wx.EXPAND )
+				b = bt.GenBitmapButton( self.parent, -1, name = item, bitmap = self.labelBitmaps[ item ], size = ( 3 * (self.buttonsBoardWidth / float( self.numberOfColumns[ 0 ] )), self.buttonsBoardHeight / float( self.numberOfRows[ 0 ] ) ) )
+				b.SetBackgroundColour( self.backgroundColour )
+				b.SetBezelWidth( 3 )
+				b.Bind( event, self.onPress )
+
+				subSizer.Add( b, ( ( index_1 + index_2 +1) / self.numberOfColumns[ 0 ], ( index_1 + index_2+1 ) % self.numberOfColumns[ 0 ] ), (1,3), wx.EXPAND )
                         elif index_2 > 3:
-                                subSizer.Add( b, ( ( index_1 + index_2 +3) / self.numberOfColumns[ 0 ], ( index_1 + index_2 +3) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
+				b = bt.GenBitmapButton( self.parent, -1, name = item, bitmap = self.labelBitmaps[ item ], size = ( self.buttonsBoardWidth / float( self.numberOfColumns[ 0 ] ), self.buttonsBoardHeight / float( self.numberOfRows[ 0 ] ) ) )
+				b.SetBackgroundColour( self.backgroundColour )
+				b.SetBezelWidth( 3 )
+				b.Bind( event, self.onPress )
+                        
+				subSizer.Add( b, ( ( index_1 + index_2 +3) / self.numberOfColumns[ 0 ], ( index_1 + index_2 +3) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
                         else:
+				b = bt.GenBitmapButton( self.parent, -1, name = item, bitmap = self.labelBitmaps[ item ], size = ( self.buttonsBoardWidth / float( self.numberOfColumns[ 0 ] ), self.buttonsBoardHeight / float( self.numberOfRows[ 0 ] ) ) )
+				b.SetBackgroundColour( self.backgroundColour )
+				b.SetBezelWidth( 3 )
+				b.Bind( event, self.onPress )
+
                                 subSizer.Add( b, ( ( index_1 + index_2+1 ) / self.numberOfColumns[ 0 ], ( index_1 + index_2 +1) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
                         
 		self.subSizers.append( subSizer )		    
-		self.parent.mainSizer.Add( self.subSizers[ 0 ], proportion = 1, flag = wx.EXPAND )
+		self.parent.mainSizer.Add( self.subSizers[ 0 ], proportion = 1, flag = wx.EXPAND | wx.LEFT, border = self.yBorder )
 		self.parent.SetSizer( self.parent.mainSizer )
 		
-		subSizer2 = wx.GridBagSizer( 3, 3 )
+		subSizer2 = wx.GridBagSizer( self.xBorder, self.yBorder )
+
+		self.buttonsBoardWidth2  = self.winWidth - self.thicknessOfExternalBorder * 2 - self.thicknessOfInternalBorder * ( self.numberOfColumns[ 1 ] - 1 )
+		self.buttonsBoardHeight2 = ( self.winHeight - 20 ) - self.textFieldHeight - self.thicknessOfExternalBorder * 3 - self.thicknessOfInternalBorder * ( self.numberOfRows[ 1 ] - 1 ) # -20 because of the Unity upper bar
 
 		for index_1, item in enumerate( self.labels[ 1 ][ :-6 ] ):
-			b = bt.GenButton( self.parent, -1, item, name = item, size = ( 0.985*self.winWidth / self.numberOfColumns[ 1 ], 0.75 * self.winHeight / self.numberOfRows[ 1 ] ) )
-			b.SetFont( wx.Font( 35, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False ) )
+			b = bt.GenButton( self.parent, -1, item, name = item, size = ( self.buttonsBoardWidth2 / float( self.numberOfColumns[ 1 ] ), self.buttonsBoardHeight2 / float( self.numberOfRows[ 1 ] ) ) )
+			b.SetFont( wx.Font( 50, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False ) )
 			b.SetBezelWidth( 3 )
 			b.SetBackgroundColour( self.backgroundColour )
 			b.SetForegroundColour( self.textColour )
@@ -248,20 +276,31 @@ class speller( wx.Frame ):
 			subSizer2.Add( b, ( index_1 / self.numberOfColumns[ 1 ], index_1 % self.numberOfColumns[ 1 ] ), wx.DefaultSpan, wx.EXPAND )
 
 		for index_2, item in enumerate( self.labels[ 1 ][ -6 :  ] ):
-			b = bt.GenBitmapButton( self.parent, -1, name = item, bitmap = self.labelBitmaps2[ item ] )
-			b.SetBackgroundColour( self.backgroundColour )
-			b.SetBezelWidth( 3 )
-                        b.Bind( event, self.onPress )
-
 			if index_2 == 2:
+				b = bt.GenBitmapButton( self.parent, -1, name = item, bitmap = self.labelBitmaps2[ item ], size = ( 3 * (self.buttonsBoardWidth2 / float( self.numberOfColumns[ 1 ] )), self.buttonsBoardHeight2 / float( self.numberOfRows[ 1 ] ) ) )
+				b.SetBackgroundColour( self.backgroundColour )
+				b.SetBezelWidth( 3 )
+				b.Bind( event, self.onPress )
+
                                 subSizer2.Add( b, ( ( index_1 + index_2 +1) / self.numberOfColumns[ 1 ], ( index_1 + index_2 +1) % self.numberOfColumns[ 1 ] ), (1,4), wx.EXPAND )
+
                         elif index_2 > 2:
+				b = bt.GenBitmapButton( self.parent, -1, name = item, bitmap = self.labelBitmaps2[ item ], size = ( self.buttonsBoardWidth2 / float( self.numberOfColumns[ 1 ] ), self.buttonsBoardHeight2 / float( self.numberOfRows[ 1 ] ) ) )
+				b.SetBackgroundColour( self.backgroundColour )
+				b.SetBezelWidth( 3 )
+				b.Bind( event, self.onPress )
+
                                 subSizer2.Add( b, ( ( index_1 + index_2 +4) / self.numberOfColumns[ 1], ( index_1 + index_2+4 ) % self.numberOfColumns[ 1 ] ), wx.DefaultSpan, wx.EXPAND )
                         else:
+				b = bt.GenBitmapButton( self.parent, -1, name = item, bitmap = self.labelBitmaps2[ item ], size = ( self.buttonsBoardWidth2 / float( self.numberOfColumns[ 1 ] ), self.buttonsBoardHeight2 / float( self.numberOfRows[ 1 ] ) ) )
+				b.SetBackgroundColour( self.backgroundColour )
+				b.SetBezelWidth( 3 )
+				b.Bind( event, self.onPress )
+
                                 subSizer2.Add( b, ( ( index_1 + index_2+1 ) / self.numberOfColumns[ 1 ], ( index_1 + index_2 +1) % self.numberOfColumns[ 1 ] ), wx.DefaultSpan, wx.EXPAND )
                         
 		self.subSizers.append( subSizer2 )		   
-		self.parent.mainSizer.Add( self.subSizers[ 1 ], proportion = 1, flag = wx.EXPAND )
+		self.parent.mainSizer.Add( self.subSizers[ 1 ], proportion = 1, flag = wx.EXPAND | wx.LEFT, border = self.yBorder )
 		self.parent.mainSizer.Show( item = self.subSizers[ 1 ], show = False, recursive = True )
 		self.parent.SetSizer( self.parent.mainSizer )
 		

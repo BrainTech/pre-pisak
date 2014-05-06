@@ -78,6 +78,10 @@ class cwiczenia(wx.Frame):
 					self.musicVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
 				elif line[ :line.find('=')-1 ] == 'control':
 					self.control = line[ line.rfind('=')+2:-1 ]
+				elif line[ :line.find('=')-1 ] == 'x_border':
+					self.xBorder = int( line[ line.rfind('=')+2:-1 ] )
+				elif line[ :line.find('=')-1 ] == 'y_border':
+					self.yBorder = int( line[ line.rfind('=')+2:-1 ] )
 
 				elif not line.isspace( ):
 					print 'Niewłaściwie opisane parametry'
@@ -91,6 +95,8 @@ class cwiczenia(wx.Frame):
 					self.filmVolumeLevel = 100
 					self.musicVolumeLevel = 70
 					self.control = 'switch'
+					self.xBorder = 4
+					self.yBorder = 4 
 
                 with open( self.pathToATPlatform + 'ewritingParameters', 'r' ) as parametersFile:
 			for line in parametersFile:                                                                
@@ -240,9 +246,9 @@ class cwiczenia(wx.Frame):
                         else:
                                 self. mainSizer = wx.BoxSizer( wx.VERTICAL )
 
-                        self.subSizerP = wx.GridSizer( 1, 1, 3, 3 )
-                        self.subSizer0 = wx.GridSizer( 1, 2, 3, 3 )
-                        self.subSizer=wx.GridSizer( 1, 5, 3, 3 )
+                        self.subSizerP = wx.GridSizer( 1, 1, self.xBorder, self.yBorder )
+                        self.subSizer0 = wx.GridSizer( 1, 2, self.xBorder, self.yBorder )
+                        self.subSizer=wx.GridSizer( 1, 5, self.xBorder, self.yBorder )
                         self.subSizerP.Add( res, 0, wx.EXPAND )
                         self.subSizer0.Add( b, 0, wx.EXPAND )
 		        self.subSizer0.Add( be, 0, wx.EXPAND )
@@ -259,9 +265,9 @@ class cwiczenia(wx.Frame):
                                         b.Bind( event, self.onPress )
                                         self.subSizer.Add( b, 0, wx.EXPAND )
 
-                        self. mainSizer.Add( self.subSizerP, proportion = 1, flag = wx.EXPAND | wx.BOTTOM, border = 2 )
-                        self. mainSizer.Add( self.subSizer0, proportion = 7, flag = wx.EXPAND )
-                        self. mainSizer.Add( self.subSizer, proportion = 2, flag = wx.EXPAND | wx.TOP, border = 2 )
+                        self. mainSizer.Add( self.subSizerP, proportion = 1, flag = wx.EXPAND )
+                        self. mainSizer.Add( self.subSizer0, proportion = 7, flag = wx.EXPAND | wx.TOP | wx.BOTTOM, border = self.xBorder )
+                        self. mainSizer.Add( self.subSizer, proportion = 2, flag = wx.EXPAND )
                         self.SetSizer( self. mainSizer, deleteOld = True )
 
                 self.SetBackgroundColour( 'black' )
@@ -278,9 +284,10 @@ class cwiczenia(wx.Frame):
 
 	#-------------------------------------------------------------------------	
 	def OnCloseWindow(self, event):
-
-		self.mousePosition = self.winWidth/1.85, self.winHeight/1.85	
-		self.mouseCursor.move( *self.mousePosition )	
+		
+		if self.control != 'tracker':
+			self.mousePosition = self.winWidth/1.85, self.winHeight/1.85	
+			self.mouseCursor.move( *self.mousePosition )	
 
 		dial = wx.MessageDialog(None, 'Czy napewno chcesz wyjść z programu?', 'Wyjście',
 					wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION | wx.STAY_ON_TOP)
@@ -318,8 +325,10 @@ class cwiczenia(wx.Frame):
 
 		else:
 			event.Veto( )
-			self.mousePosition = self.winWidth - 8, self.winHeight - 8
-			self.mouseCursor.move( *self.mousePosition )	
+
+			if self.control != 'tracker':
+				self.mousePosition = self.winWidth - 8, self.winHeight - 8
+				self.mouseCursor.move( *self.mousePosition )	
 
 	#-------------------------------------------------------------------------	
 	def onExit( self ):

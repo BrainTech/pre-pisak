@@ -1,4 +1,4 @@
-timeGap = 600
+timeGap = 2000
 
 backgroundColour = white
 textColour = black
@@ -9,3 +9,6 @@ filmVolume = 50
 musicVolume = 50
 
 control = tracker
+
+x_border = 10
+y_border = 10

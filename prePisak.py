@@ -81,6 +81,10 @@ class main_menu( wx.Frame ):
 					self.filmVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
 				elif line[ :line.find('=')-1 ] == 'control':
 					self.control = line[ line.rfind('=')+2:-1 ]
+				elif line[ :line.find('=')-1 ] == 'x_border':
+					self.xBorder = int( line[ line.rfind('=')+2:-1 ] )
+				elif line[ :line.find('=')-1 ] == 'y_border':
+					self.yBorder = int( line[ line.rfind('=')+2:-1 ] )
 
 				elif not line.isspace( ):
 					print '\nNiewłaściwie opisany parametr. Błąd w linii:\n%s' % line
@@ -93,6 +97,8 @@ class main_menu( wx.Frame ):
 					self.filmVolumeLevel = 100
 					self.musicVolumeLevel = 40
 					self.control = switch
+					self.xBorder = 4
+					self.yBorder = 4 
 
 		self.labels = 'SPELLER EXERCISES AUDIOBOOKS MUSIC MOVIES RADIO'.split( )
 
@@ -131,7 +137,7 @@ class main_menu( wx.Frame ):
 	#-------------------------------------------------------------------------
 	def createGui(self):
 		self.vbox = wx.BoxSizer( wx.VERTICAL )
-                self.sizer = wx.GridSizer( self.numberOfRows[ 0 ], self.numberOfColumns[ 0 ], 3, 3 )
+                self.sizer = wx.GridSizer( self.numberOfRows[ 0 ], self.numberOfColumns[ 0 ], self.xBorder, self.yBorder )
 
 		if self.control != 'tracker':
 			event = eval('wx.EVT_LEFT_DOWN')
@@ -162,22 +168,25 @@ class main_menu( wx.Frame ):
 	def OnCloseWindow(self , event):
 		
 		if self.control != 'tracker':
-			self.mousePosition = self.winWidth/1.85, self.winHeight/1.85
-			self.mouseCursor.move( *self.mousePosition )
+			if True in [ 'debian' in item for item in os.uname( ) ]:
+				pass
+			else:
+				self.mousePosition = self.winWidth/1.85, self.winHeight/1.85
+				self.mouseCursor.move( *self.mousePosition )
 
 		dial = wx.MessageDialog(None, 'Czy napewno chcesz wyjść z programu?', 'Wyjście',
 					wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION | wx.STAY_ON_TOP )
 
-		ret = dial.ShowModal()		
+		ret = dial.ShowModal( )
 		
 		if ret == wx.ID_YES:
-			self.Destroy()
+			self.Destroy( )
 		else:
-			event.Veto()
+			event.Veto( )
 
 			if self.control != 'tracker':
-				self.mousePosition = self.winWidth - 4, self.winHeight - 4
-				self.mouseCursor.move( *self.mousePosition )	
+					self.mousePosition = self.winWidth - 4, self.winHeight - 4
+					self.mouseCursor.move( *self.mousePosition )	
 
 	#-------------------------------------------------------------------------
 	def onPress( self, event ):
@@ -187,7 +196,7 @@ class main_menu( wx.Frame ):
 			    self.button = event.GetEventObject( )
 			    self.button.SetBackgroundColour( self.selectionColour )
 			    self.pressFlag = True
-			    self.label = event.GetEventObject().GetName().encode( 'utf-8' )			
+			    self.label = event.GetEventObject( ).GetName( ).encode( 'utf-8' )
 			    self.stoper.Start( 0.15 * self.timeGap )
 			    
 		    if self.label == 'SPELLER':

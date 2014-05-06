@@ -168,8 +168,9 @@ class main_menu( wx.Frame ):
 	def OnCloseWindow(self , event):
 		
 		if self.control != 'tracker':
-			if True in [ 'debian' in item for item in os.uname( ) ]:
-				pass
+			if True in [ 'debian' in item for item in os.uname( ) ]:				
+				self.mousePosition = self.winWidth/6.5, self.winHeight/6.
+				self.mouseCursor.move( *self.mousePosition )
 			else:
 				self.mousePosition = self.winWidth/1.85, self.winHeight/1.85
 				self.mouseCursor.move( *self.mousePosition )

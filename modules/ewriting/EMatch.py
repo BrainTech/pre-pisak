@@ -19,7 +19,7 @@
 import wxversion
 wxversion.select('2.8')
 
-import os, time
+import os, time, sys
 from random import shuffle
 
 import wx
@@ -60,94 +60,29 @@ class cwiczenia(wx.Frame):
 		with open( './.pathToATPlatform' ,'r' ) as textFile:
 			self.pathToATPlatform = textFile.readline( )
 
-		with open( self.pathToATPlatform + 'parameters', 'r' ) as parametersFile:
-			for line in parametersFile:
-
-				if line[ :line.find('=')-1 ] == 'timeGap':
-					self.timeGap = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'backgroundColour':
-					self.backgroundColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'textColour':
-					self.textColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'scanningColour':
-					self.scanningColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'selectionColour':
-					self.selectionColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'filmVolume':
-					self.filmVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'musicVolume':
-					self.musicVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'control':
-					self.control = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'x_border':
-					self.xBorder = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'y_border':
-					self.yBorder = int( line[ line.rfind('=')+2:-1 ] )
-				
-				elif not line.isspace( ):
-					print 'Niewłaściwie opisane parametry'
-					print 'Błąd w linii', line
-					
-					self.timeGap = 1500
-					self.backgroundColour = 'white'
-					self.textColour = 'black'
-					self.scanningColour =  '#E7FAFD'
-					self.selectionColour = '#9EE4EF'
-					self.filmVolumeLevel = 100
-					self.musicVolumeLevel = 70
-					self.control = 'switch'
-					self.xBorder = 4
-					self.yBorder = 4 
-
-		with open( self.pathToATPlatform + 'spellerParameters', 'r' ) as parametersFile:
-			for line in parametersFile:
-				
-				if line[ :line.find('=')-1 ] == 'voice':
-					self.voice = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'vowelColour':
-					self.vowelColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'polishLettersColour':
-					self.polishLettersColour = line[ line.rfind('=')+2:-1 ]
-			
-				elif not line.isspace( ):
-					print 'Niewłaściwie opisane parametry'
-					print 'Błąd w pliku spellerParameters w linii', line
-				    
-					self.voice = False
-					self.vowelColour = 'red'
-					self.polishLettersColour = 'blue'
-
-                with open( self.pathToATPlatform + 'ewritingParameters', 'r' ) as parametersFile:
-			for line in parametersFile:                                                                
-
-                                if line[ :line.find('=')-1 ] == 'textSize':
-					self.textSize = int( line[ line.rfind('=')+2:-1 ])
-				elif line[ :line.find('=')-1 ] == 'maxPoints':
-					self.maxPoints = int(line[ line.rfind('=')+2:-1 ])
-				elif line[ :line.find('=')-1 ] == 'checkTime':
-                                        self.checkTime = int(line[ line.rfind('=')+2:-1 ])
-				elif line[ :line.find('=')-1 ] == 'colorGrat':
-					self.colorGrat = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'colorNiest':
-                                        self.colorNiest = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'ileLuk':
-                                        self.ileLuk = int(line[ line.rfind('=')+2:-1 ])
-				elif line[ :line.find('=')-1 ] == 'sex':
-                                        self.sex = line[ line.rfind('=')+2:-1 ]
+		sys.path.append( self.pathToATPlatform )
+		from reader import reader
 		
-				elif not line.isspace( ):
-					print 'Niewłaściwie opisane parametry'
-					print 'Błąd w linii', line
-					
-					self.textSize = 80
-					self.checkTime = 8000
-					self.colorGrat = 'lime green'
-					self.colorNiest = 'indian red'
-					self.ileLuk = 1
-					self.maxPoints = 2
-					self.sex = 'D'
+		reader = reader()
+		reader.readParameters()
+		parameters = reader.getParameters()
+
+		for item in parameters:
+			try:
+				setattr(self, item[:item.find('=')], int(item[item.find('=')+1:]))
+			except ValueError:
+				setattr(self, item[:item.find('=')], item[item.find('=')+1:])
 
 		self.flaga = 0
+		self.checkFlag = False
+		self.flag = 'row'
+		self.columnIteration = 0
+		self.rowIteration = 0
+		self.maxRowIteration = 2 * 5
+		self.maxColumnIteration = 2 * 4
+		self.countRow = 0
+		self.countColumn = 0
+
 		self.pressFlag = True
 		self.PicNr = 0
 		self.result = 0
@@ -164,10 +99,15 @@ class cwiczenia(wx.Frame):
 
 		if self.control != 'tracker':
 			self.mouseCursor = PyMouse( )
-			self.mousePosition = self.winWidth - 8, self.winHeight - 8
+			self.mousePosition = self.winWidth - 8 - self.xBorder, self.winHeight - 8 - self.yBorder
 			self.mouseCursor.move( *self.mousePosition )			
 
-		mixer.init( )
+		if self.switchSound.lower( ) == 'on' or self.pressSound.lower( ) == 'on':
+			mixer.init( )
+			if self.switchSound.lower( ) == 'on':
+				self.switchingSound = mixer.Sound( self.pathToATPlatform + '/sounds/switchSound.wav' )
+			if self.pressSound.lower( ) == 'on':
+				self.pressingSound = mixer.Sound( self.pathToATPlatform + '/sounds/pressSound.wav' )
 		
 	#-------------------------------------------------------------------------
 	def initializeTimer(self):
@@ -190,15 +130,11 @@ class cwiczenia(wx.Frame):
 
 	#-------------------------------------------------------------------------
 	def timerUpdate(self, event):
-
+		
 		if self.control == 'tracker':
 			
 			if not self.poczatek: 
 				try:
-					# if self.button.GetBackgroundColour( ) == self.backgroundColour:
-					# 	self.button.SetBackgroundColour( self.selectionColour )
-
-					# else:
 					self.button.SetBackgroundColour( self.backgroundColour )	
 					self.Update()
 					self.stoper.Stop( )
@@ -217,29 +153,12 @@ class cwiczenia(wx.Frame):
 				self.poczatek = False
 				self.pressFlag = False
 
-
 		else:
 			self.mouseCursor.move( *self.mousePosition )
 
 			self.numberOfPresses = 0
-
-			if self.flaga <= self.numberOfExtraWords + 1 and self.flaga > 0:
-				item = self.wordSizer.GetChildren( )
-				b = item[ self.flaga-1 ].GetWindow( )
-				b.SetBackgroundColour( self.backgroundColour )
-				b.SetFocus( )
-
-			else:
-				if self.flaga == 0:
-					item = self.subSizer.GetChildren( )
-					b = item[ len( item ) - 1 ].GetWindow( )
-					b.SetBackgroundColour( self.backgroundColour )
-					b.SetFocus( )
-				else:
-					item = self.subSizer.GetChildren( )
-					b = item[ self.flaga - self.numberOfExtraWords - 2 ].GetWindow( )
-					b.SetBackgroundColour( self.backgroundColour )
-					b.SetFocus( )
+			
+			self.flaga = self.flaga % (self.numberOfExtraWords + 2)
 
 			if self.poczatek:
 				time.sleep( 1 )
@@ -250,21 +169,76 @@ class cwiczenia(wx.Frame):
 				self.stoper.Start( self.timeGap )
 				self.poczatek = False
 
-			if self.flaga >= self.numberOfExtraWords + 1:
-				item = self.subSizer.GetChildren( )
-				b = item[ self.flaga - self.numberOfExtraWords - 1 ].GetWindow( )
-				b.SetBackgroundColour( self.scanningColour )
-				b.SetFocus( )
+			if self.flag == 'rest':
+				pass
 			else:
-				item = self.wordSizer.GetChildren( )
-				b = item[ self.flaga ].GetWindow( )
-				b.SetBackgroundColour( self.scanningColour )
-				b.SetFocus( )
 
-			if self.flaga == 3 + self.numberOfExtraWords + 1: 
-				self.flaga = 0
-			else:
-				self.flaga += 1			
+				if self.switchSound.lower( ) == 'on' and not(self.checkFlag):
+					self.switchingSound.play( )
+
+				if self.flag == 'row':
+					self.rowIteration = self.rowIteration % 5
+
+					items = self.subSizer.GetChildren( )
+
+					for item in items:
+						b = item.GetWindow( )
+						b.SetBackgroundColour( self.backgroundColour )
+						b.SetFocus( )
+
+					items = self.wordSizer.GetChildren( )
+
+					for item in items:
+						b = item.GetWindow( )
+						b.SetBackgroundColour( self.backgroundColour )
+						b.SetFocus( )
+
+					if self.countRow == self.maxRowIteration:
+						self.flag = 'rest'
+
+					else:
+						if self.rowIteration == self.numberOfExtraWords + 1:				
+							items = self.subSizer.GetChildren( )
+
+							for item in items:
+								b = item.GetWindow( )
+								b.SetBackgroundColour( self.scanningColour )
+								b.SetFocus( )
+
+						else:
+							items = self.wordSizer.GetChildren( )
+
+							b = items[ self.rowIteration ].GetWindow( )
+							b.SetBackgroundColour( self.scanningColour )
+							b.SetFocus( )
+
+						self.countRow += 1
+						self.rowIteration += 1
+
+				elif self.flag == 'column':
+					self.columnIteration = self.columnIteration % 4
+
+					if self.countColumn == self.maxColumnIteration:
+						self.countColumn = 0
+						self.countRow = 0
+						self.rowIteration = 0
+						self.columnIteration = 0
+						self.flag = 'row'
+					else:
+						items = self.subSizer.GetChildren( )
+
+						for item in items:
+							b = item.GetWindow( )
+							b.SetBackgroundColour( self.backgroundColour )
+							b.SetFocus( )
+
+						b = items[ self.columnIteration ].GetWindow( )
+						b.SetBackgroundColour( self.scanningColour )
+						b.SetFocus( )
+
+						self.columnIteration += 1
+						self.countColumn += 1
+
 	
 	#-------------------------------------------------------------------------
 	def createGui(self):
@@ -305,9 +279,6 @@ class cwiczenia(wx.Frame):
                                 self.extraWords.append( SLOWO )
                                 
 		b = bt.GenBitmapButton( self, -1, bitmap = picture )
-		# b.name = 'picture'
-		# b.SetBackgroundColour( self.backgroundColour)
-		# b.Bind( event, self.onPress )
 
                 obiekty_wyrazow = [ ]
                 self.wyrazy_w_kolejnosci = [ ]
@@ -316,14 +287,14 @@ class cwiczenia(wx.Frame):
                 for i, j in enumerate( self.extraWords ):
                         be = bt.GenButton( self, -1, j )
 			be.name = j
-                        be.SetFont( wx.Font(60, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False) )
+                        be.SetFont( wx.Font(self.tableFontSize, eval( self.tableFont ), wx.FONTWEIGHT_LIGHT,  False) )
                         be.SetBackgroundColour( self.backgroundColour )
                         be.Bind( event, self.onPress )
                         obiekty_wyrazow.append( be )
                         self.wyrazy_w_kolejnosci.append( j )
 
                 be = bt.GenButton( self, -1, self.WORD )
-                be.SetFont( wx.Font(60, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False) )
+                be.SetFont( wx.Font( self.tableFontSize, eval( self.tableFont ), wx.FONTWEIGHT_LIGHT,  False) )
 		be.name = self.WORD
                 be.SetBackgroundColour( self.backgroundColour )
                 be.Bind( event, self.onPress )
@@ -331,10 +302,7 @@ class cwiczenia(wx.Frame):
                 self.wyrazy_w_kolejnosci.insert( gdzie_poprawne, self.WORD )
                 
                 res = bt.GenButton( self, -1, u'TWÓJ WYNIK:   ' + str(self.result) + ' / ' + str( self.maxPoints ) )
-		res.SetFont( wx.Font(27, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False) )
-		# res.name = 'points'
-		# res.SetBackgroundColour( self.backgroundColour )
-		# res.Bind( event, self.onPress )
+		res.SetFont( wx.Font( int(self.tableFontSize*0.6), eval( self.tableFont ), wx.FONTWEIGHT_LIGHT,  False) )
 		
                 self.wordSizer = wx.GridSizer( self.numberOfExtraWords + 1, 1, self.xBorder, self.yBorder )
                 for item in obiekty_wyrazow:
@@ -381,9 +349,9 @@ class cwiczenia(wx.Frame):
                                         b.Bind( event, self.onPress )
 					self.subSizer.Add( b, 0, wx.EXPAND )						
 
-                        self. mainSizer.Add( self.subSizerP, 1, wx.EXPAND )
-                        self. mainSizer.Add( self.subSizer0, 7, wx.EXPAND | wx.TOP | wx.BOTTOM, border = self.xBorder )
-                        self. mainSizer.Add( self.subSizer, 2, wx.EXPAND )
+                        self. mainSizer.Add( self.subSizerP, 1, wx.EXPAND | wx.TOP | wx.RIGHT | wx.LEFT, border = self.xBorder )
+                        self. mainSizer.Add( self.subSizer0, 7, wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT | wx.RIGHT, border = self.xBorder )
+                        self. mainSizer.Add( self.subSizer, 2, wx.EXPAND  | wx.BOTTOM | wx.LEFT | wx.RIGHT, border = self.xBorder)
 
                         self.SetSizer( self.mainSizer, deleteOld = True )
 
@@ -472,6 +440,9 @@ class cwiczenia(wx.Frame):
 	#-------------------------------------------------------------------------
 	def onPress(self, event):
 
+		if self.pressSound.lower( ) == 'on':
+			self.pressingSound.play( )
+
 		if self.control == 'tracker':
 			if self.pressFlag == False:
 				self.button = event.GetEventObject( )
@@ -479,33 +450,8 @@ class cwiczenia(wx.Frame):
 				self.Update()
 				self.pressFlag = True
 				self.name = self.button.name
-				# print self.name
-
-				# if self.flaga == 0 :
-				# 	items = self.subSizer.GetChildren( )
-				# 	item=items[ 3 ]
-
-				# else:
-				# 	if self.flaga >= self.numberOfExtraWords + 2:
-				# 		items = self.subSizer.GetChildren( )
-				# 		item=items[ self.flaga - self.numberOfExtraWords - 2 ]
-				# 	else:
-				# 		items = self.wordSizer.GetChildren( )
-				# 		item=items[ self.flaga -1 ]
-
-				# b = item.GetWindow( )
-				# b.SetBackgroundColour( self.selectionColour )
-				# b.SetFocus( )
-				# b.Update( )
-
-				# if 'speller' in self.icons[ self.flaga - self.numberOfExtraWords - 2 ] and self.flaga >= self.numberOfExtraWords + 2:
-				# 	pass
-
-				# if self.name == 'points' or self.name == 'picture':
-				# 	pass
 
 				if self.name == 'speak':
-					# time.sleep( 1 )
 					self.stoper.Stop( )
 					mixer.music.load( self.pathToATPlatform + 'multimedia/ewriting/voices/' + str( self.word ) + '.ogg' )
 					mixer.music.play( )
@@ -522,7 +468,6 @@ class cwiczenia(wx.Frame):
 						command += ' ' + self.pathToATPlatform + 'multimedia/ewriting/spelling/' + self.word + '.ogg'
 						wykonaj = sp.Popen( shlex.split( command ) )
 
-					# time.sleep( 1.5 )
 					do_literowania = mixer.Sound( self.pathToATPlatform + 'multimedia/ewriting/spelling/' + self.word + '.ogg' )
 					do_literowania.play( )
 					self.stoper4.Start( ( do_literowania.get_length( ) + 0.5 ) * 1000 )
@@ -542,79 +487,93 @@ class cwiczenia(wx.Frame):
 						self.ownWord = self.WORD
 
 					else:
-						self.ownWord=''
+						self.ownWord = ''
 
 					self.stoper.Stop( )
 					self.check( )
 
 		else:
 			self.numberOfPresses += 1
+			self.countRow = 0
 
 			if self.numberOfPresses == 1:
-
-				if self.flaga == 0 :
-					items = self.subSizer.GetChildren( )
-					item=items[ 3 ]
-
-				else:
-					if self.flaga >= self.numberOfExtraWords + 2:
-						items = self.subSizer.GetChildren( )
-						item=items[ self.flaga - self.numberOfExtraWords - 2 ]
-					else:
+				
+				if self.flag == 'rest':
+					self.rowIteration = 0
+					self.countRows = 0
+					self.flag = 'row'
+				
+				elif self.flag == 'row':
+					if self.rowIteration < self.numberOfExtraWords + 2:
 						items = self.wordSizer.GetChildren( )
-						item=items[ self.flaga -1 ]
+						item=items[ self.rowIteration-1 ]
+						b = item.GetWindow( )
+						b.SetBackgroundColour( self.selectionColour )
+						b.SetFocus( )
+						b.Update( )
+					
+						if self.wyrazy_w_kolejnosci[ self.rowIteration-1 ] == self.WORD:
+							self.ownWord = self.WORD
+						
+						else:
+							self.ownWord=''
 
-				b = item.GetWindow( )
-				b.SetBackgroundColour( self.selectionColour )
-				b.SetFocus( )
-				b.Update( )
+						self.stoper.Stop( )
+						self.check( )
+					
+						self.rowIteration = 0
+						self.countRow = 0
+					
+					if self.rowIteration == self.numberOfExtraWords + 2:
+						self.flag = 'column'
+						items = self.subSizer.GetChildren( )
+						
+						for item in items:
+							b = item.GetWindow( )
+							b.SetBackgroundColour( self.selectionColour )
+							b.SetFocus( )
+							b.Update( )
+							
+				elif self.flag == 'column':
 
-				if 'speller' in self.icons[ self.flaga - self.numberOfExtraWords - 2 ] and self.flaga >= self.numberOfExtraWords + 2:
-					pass
+					if self.columnIteration == 4:
+						self.onExit( )
 
-				elif self.flaga == 0:
-					self.onExit( )
+					elif self.columnIteration == 1:
+						time.sleep( 1 )
+						self.stoper.Stop( )
+						mixer.music.load( self.pathToATPlatform + 'multimedia/ewriting/voices/' + str( self.word ) + '.ogg' )
+						mixer.music.play( )
+						self.stoper4.Start( 2000 )
 
-				elif 'speak' in self.icons[ self.flaga - self.numberOfExtraWords - 2 ] and self.flaga >= self.numberOfExtraWords + 2:
-					time.sleep( 1 )
-					self.stoper.Stop( )
-					mixer.music.load( self.pathToATPlatform + 'multimedia/ewriting/voices/' + str( self.word ) + '.ogg' )
-					mixer.music.play( )
-					self.stoper4.Start( 2000 )
+					elif self.columnIteration == 2:
+						self.stoper.Stop( )
+						if str( self.word ) + '.ogg' not in os.listdir( self.pathToATPlatform + 'multimedia/ewriting/spelling/' ):        
+							command = 'sox -m ' + self.pathToATPlatform + 'sounds/phone/' + list( self.word )[ 0 ].swapcase( ) + '.wav'
+							ile = 0
+							for l in list( self.word )[ 1: ]:
+								ile += 2
+								command += ' "|sox ' + self.pathToATPlatform + 'sounds/phone/' + l.swapcase( ) + '.wav' + ' -p pad ' + str( ile ) + '"'
+							command += ' ' + self.pathToATPlatform + 'multimedia/ewriting/spelling/' + self.word + '.ogg'
+							wykonaj = sp.Popen( shlex.split( command ) )
 
-				elif 'literuj' in  self.icons[ self.flaga - self.numberOfExtraWords - 2 ] and self.flaga >= self.numberOfExtraWords + 2:
-					self.stoper.Stop( )
-					if str( self.word ) + '.ogg' not in os.listdir( self.pathToATPlatform + 'multimedia/ewriting/spelling/' ):        
-						command = 'sox -m ' + self.pathToATPlatform + 'sounds/phone/' + list( self.word )[ 0 ].swapcase( ) + '.wav'
-						ile = 0
-						for l in list( self.word )[ 1: ]:
-							ile += 2
-							command += ' "|sox ' + self.pathToATPlatform + 'sounds/phone/' + l.swapcase( ) + '.wav' + ' -p pad ' + str( ile ) + '"'
-						command += ' ' + self.pathToATPlatform + 'multimedia/ewriting/spelling/' + self.word + '.ogg'
-						wykonaj = sp.Popen( shlex.split( command ) )
+						time.sleep( 1.5 )
+						do_literowania = mixer.Sound( self.pathToATPlatform + 'multimedia/ewriting/spelling/' + self.word + '.ogg' )
+						do_literowania.play( )
+						self.stoper4.Start( ( do_literowania.get_length( ) + 0.5 ) * 1000 )
 
-					time.sleep( 1.5 )
-					do_literowania = mixer.Sound( self.pathToATPlatform + 'multimedia/ewriting/spelling/' + self.word + '.ogg' )
-					do_literowania.play( )
-					self.stoper4.Start( ( do_literowania.get_length( ) + 0.5 ) * 1000 )
+					elif self.columnIteration == 3:
 
-				elif 'undo' in self.icons[ self.flaga - self.numberOfExtraWords - 2 ] and self.flaga >= self.numberOfExtraWords + 2 :
+						self.stoper.Stop( )
 
-					self.stoper.Stop( )
-
-					self.createGui( )			
-					self.stoper.Start( self.timeGap )
-
-				else:
-					if self.wyrazy_w_kolejnosci[ self.flaga - 1 ] == self.WORD:
-						self.ownWord = self.WORD
-
-					else:
-						self.ownWord=''
-
-					self.stoper.Stop( )
-					self.check( )
-
+						self.createGui( )			
+						self.stoper.Start( self.timeGap )
+					
+					self.rowIteration = 0
+					self.columnIteration = 0
+					self.countRow = 0
+					self.countColumn = 0
+					self.flag = 'row'
 			else:
 				event.Skip( )
 
@@ -625,7 +584,8 @@ class cwiczenia(wx.Frame):
         
 	#-------------------------------------------------------------------------
 	def check(self):
-
+		
+		self.checkFlag = True
                 self.mainSizer.Clear( deleteWindows = True )
 		self.checkW = check.check( self )
 

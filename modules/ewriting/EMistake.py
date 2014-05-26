@@ -19,7 +19,7 @@
 import wxversion
 wxversion.select('2.8')
 
-import os, time
+import os, time, sys
 from random import shuffle
 
 import wx
@@ -59,35 +59,18 @@ class cwiczenia(wx.Frame):
 		with open( './.pathToATPlatform' ,'r' ) as textFile:
 			self.pathToATPlatform = textFile.readline( )
 
-		with open( self.pathToATPlatform + 'parameters', 'r' ) as parametersFile:
-			for line in parametersFile:
+		sys.path.append( self.pathToATPlatform )
+		from reader import reader
+		
+		reader = reader()
+		reader.readParameters()
+		parameters = reader.getParameters()
 
-				if line[ :line.find('=')-1 ] == 'timeGap':
-					self.timeGap = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'backgroundColour':
-					self.backgroundColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'textColour':
-					self.textColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'scanningColour':
-					self.scanningColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'selectionColour':
-					self.selectionColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'filmVolume':
-					self.filmVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'musicVolume':
-					self.musicVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
-			
-				elif not line.isspace( ):
-					print 'Niewłaściwie opisane parametry'
-					print 'Błąd w linii', line
-					
-					self.timeGap = 1500
-					self.backgroundColour = 'white'
-					self.textColour = 'black'
-					self.scanningColour =  '#E7FAFD'
-					self.selectionColour = '#9EE4EF'
-					self.filmVolumeLevel = 100
-					self.musicVolumeLevel = 70
+		for item in parameters:
+			try:
+				setattr(self, item[:item.find('=')], int(item[item.find('=')+1:]))
+			except ValueError:
+				setattr(self, item[:item.find('=')], item[item.find('=')+1:])
 
 		with open( self.pathToATPlatform + 'spellerParameters', 'r' ) as parametersFile:
 			for line in parametersFile:

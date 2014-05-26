@@ -19,7 +19,7 @@
 import wxversion
 wxversion.select( '2.8' )
 
-import glob, os, time
+import glob, os, time, sys
 import wx, alsaaudio
 import wx.lib.buttons as bt
 
@@ -30,160 +30,168 @@ from pygame import mixer
 
 #=============================================================================
 class speller( wx.Frame ):
-	def __init__(self, parent, id):
+	def __init__(self, parent, id, con = 1):
 
 		self.winWidth, self.winHeight = wx.DisplaySize( )
-
 		wx.Frame.__init__( self , parent , id , 'ATPlatform Speller' )
 		style = self.GetWindowStyle( )
-		self.SetWindowStyle( style | wx.STAY_ON_TOP )
-		self.parent = parent
 		
-		self.Maximize( True )
-		self.Centre( True )
-		self.MakeModal( True )
+		self.con = con
+		
+		if self.con !=0 :
+			self.SetWindowStyle( style | wx.STAY_ON_TOP )
+			self.parent = parent
+		
+			self.Maximize( True )
+			self.Centre( True )
+			self.MakeModal( True )
+			
+			self.initializeParameters( )
+			self.initializeBitmaps( )
+			self.createGui( )
+			self.createBindings( )
 
-		self.initializeParameters( )
-		self.initializeBitmaps( )
-		self.createGui( )
-		self.createBindings( )
+			self.initializeTimer( )
 
-		self.initializeTimer( )
+		else:
+			self.initializeParameters( )
 
 	#-------------------------------------------------------------------------
 	def initializeParameters(self):
                 
-            with open( './.pathToATPlatform' ,'r' ) as textFile:
-		    self.pathToATPlatform = textFile.readline( )
-		    
-	    with open( self.pathToATPlatform + 'parameters', 'r' ) as parametersFile:
-		    for line in parametersFile:
-
-			    if line[ :line.find('=')-1 ] == 'timeGap':
-				    self.timeGap = int( line[ line.rfind('=')+2:-1 ] )
-			    elif line[ :line.find('=')-1 ] == 'backgroundColour':
-				    self.backgroundColour = line[ line.rfind('=')+2:-1 ]
-			    elif line[ :line.find('=')-1 ] == 'textColour':
-				    self.textColour = line[ line.rfind('=')+2:-1 ]
-			    elif line[ :line.find('=')-1 ] == 'scanningColour':
-				    self.scanningColour = line[ line.rfind('=')+2:-1 ]
-			    elif line[ :line.find('=')-1 ] == 'selectionColour':
-				    self.selectionColour = line[ line.rfind('=')+2:-1 ]
-			    elif line[ :line.find('=')-1 ] == 'filmVolume':
-				    self.filmVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
-			    elif line[ :line.find('=')-1 ] == 'musicVolume':
-			    	    self.musicVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
-			    elif line[ :line.find('=')-1 ] == 'control':
-				    self.control = line[ line.rfind('=')+2:-1 ]
-			    elif line[ :line.find('=')-1 ] == 'x_border':
-				    self.xBorder = int( line[ line.rfind('=')+2:-1 ] )
-			    elif line[ :line.find('=')-1 ] == 'y_border':
-				    self.yBorder = int( line[ line.rfind('=')+2:-1 ] )
-			    
-			    elif not line.isspace( ):
-				    print 'Niewłaściwie opisane parametry'
-				    print 'Błąd w pliku parameters w linii', line
-				    
-				    self.timeGap = 1500
-				    self.backgroundColour = 'white'
-				    self.textColour = 'black'
-				    self.scanningColour =  '#E7FAFD'
-				    self.selectionColour = '#9EE4EF'
-				    self.filmVolumeLevel = 100
-				    self.musicVolumeLevel = 40
-				    self.control = 'switch'
-				    self.xBorder = 4
-				    self.yBorder = 4 
-
-	    with open( self.pathToATPlatform + 'spellerParameters', 'r' ) as parametersFile:
-		    for line in parametersFile:
-
-			    if line[ :line.find('=')-1 ] == 'voice':
-				    self.voice = line[ line.rfind('=')+2:-1 ]
-			    elif line[ :line.find('=')-1 ] == 'vowelColour':
-				    self.vowelColour = line[ line.rfind('=')+2:-1 ]
-			    elif line[ :line.find('=')-1 ] == 'polishLettersColour':
-				    self.polishLettersColour = line[ line.rfind('=')+2:-1 ]
+		with open( './.pathToATPlatform' ,'r' ) as textFile:
+			self.pathToATPlatform = textFile.readline( )
 			
-			    elif not line.isspace( ):
-				    print 'Niewłaściwie opisane parametry'
-				    print 'Błąd w pliku spellerParameters w linii', line
-				    
-				    self.voice = False
-				    self.vowelColour = 'red'
-				    self.polishLettersColour = 'blue'
+		sys.path.append( self.pathToATPlatform )
+		from reader import reader
 
-	    self.labels = [ 'A B C D E F G H I J K L M N O P R S T U W Y Z SPECIAL_CHARACTERS UNDO SPEAK SAVE SPACJA OPEN EXIT'.split( ), '1 2 3 4 5 6 7 8 9 0 + - * / = % $ & . , ; : " ? ! @ # ( ) [ ] { } < > ~ UNDO SPEAK SAVE SPACJA OPEN EXIT'.split( ) ]
+		reader = reader()
+		reader.readParameters()
+		parameters = reader.getParameters()
 
-	    self.numberOfRows = [ 4, 5 ]
-	    self.numberOfColumns = [ 8, 9 ]
+		for item in parameters:
+			try:
+				setattr(self, item[:item.find('=')], int(item[item.find('=')+1:]))
+			except ValueError:
+				setattr(self, item[:item.find('=')], item[item.find('=')+1:])					    
+
+		self.labels1 = [ 'A B C D E F G H I J K L M N O P R S T U W Y Z SPECIAL_CHARACTERS UNDO SPEAK SAVE SPACJA OPEN EXIT'.split( ), '1 2 3 4 5 6 7 8 9 0 + - * / = % $ & . , ; : " ? ! @ # ( ) [ ] { } < > ~ UNDO SPEAK SAVE SPACJA OPEN EXIT'.split( ) ]
+		    
+		self.labels2 = [ 'A O N S Y P J G I Z W C D U B F E R T K M L H SPECIAL_CHARACTERS UNDO SPEAK SAVE SPACJA OPEN EXIT'.split( ), '1 2 3 4 5 6 7 8 9 0 + - * / = % $ & . , ; : " ? ! @ # ( ) [ ] { } < > ~ UNDO SPEAK SAVE SPACJA OPEN EXIT'.split( ) ]
+
+		self.labels3 = [ 'A O Z R T D J G I U N S K M B F E Y W C P L H SPECIAL_CHARACTERS UNDO SPEAK SAVE SPACJA OPEN EXIT'.split( ), '1 2 3 4 5 6 7 8 9 0 + - * / = % $ & . , ; : " ? ! @ # ( ) [ ] { } < > ~ UNDO SPEAK SAVE SPACJA OPEN EXIT'.split( ) ]
+
+		self.labels4 = [ 'A E B C D F G H I O J K L M N P U Y R S T W Z SPECIAL_CHARACTERS UNDO SPEAK SAVE SPACJA OPEN EXIT'.split( ), '1 2 3 4 5 6 7 8 9 0 + - * / = % $ & . , ; : " ? ! @ # ( ) [ ] { } < > ~ UNDO SPEAK SAVE SPACJA OPEN EXIT'.split( ) ]
+		    
+		self.labels5 = ['A O N T D J G Ó I Z S K U B Ą Ć E W Y M Ł H Ś Ń R C P L Ę Ż F Ź UNDO SPEAK SAVE SPACJA SPECIAL_CHARACTERS OPEN EXIT'.split( ), '1 2 3 4 5 6 7 8 9 0 + - * / = % $ & . , ; : " ? ! @ # ( ) [ ] { } < > ~ UNDO SPEAK SAVE SPACJA OPEN EXIT'.split( )]
+
+		self.labels6 = [ 'A O U W K J H Ą I Y R C M G Ę Ś E N T P B Ł Ż Ń Z B D L F Ó Ć Ź UNDO SPEAK SAVE SPACJA SPECIAL_CHARACTERS OPEN EXIT'.split( ), '1 2 3 4 5 6 7 8 9 0 + - * / = % $ & . , ; : " ? ! @ # ( ) [ ] { } < > ~ UNDO SPEAK SAVE SPACJA OPEN EXIT'.split( )]
+		
+		self.labels7 = [ 'A O Z W K J Ę Ó I Y R C M G Ą Ś E N T P B F Ż Ń U S D L H Ł Ć Ź UNDO SPEAK SAVE SPACJA SPECIAL_CHARACTERS OPEN EXIT'.split( ), '1 2 3 4 5 6 7 8 9 0 + - * / = % $ & . , ; : " ? ! @ # ( ) [ ] { } < > ~ UNDO SPEAK SAVE SPACJA OPEN EXIT'.split( )]
+
+		self.labels = eval( 'self.labels'+str(self.spellerNumber) )
+
+		self.colouredLabels = [ 'A', 'E', 'I', 'O', 'U', 'Y' ]
+		self.colouredLabels2 = [ 'Ą', 'Ć', 'Ę', 'Ł', 'Ń', 'Ó', 'Ś', 'Ź', 'Ż' ]
+
+		if self.con != 0:
+			if len( self.labels[ 0 ] ) == 30:
+				self.numberOfRows = [ 4, 5 ]
+				self.specialButtonsMarker = -3
+				self.startIndex = 4
+			elif len( self.labels[ 0 ] ) == 39:
+				self.numberOfRows = [ 5, 5 ]
+				self.specialButtonsMarker = -4
+				self.startIndex = 3
+			else:
+				print 'Blad w definiowaniu tablicy'
+				exit( )
+
+			self.numberOfColumns = [ 8, 9 ]
+
+			self.flag = 'row'						
+			self.pressFlag = False
+
+			self.rowIteration = 0						
+			self.columnIteration = 0							
+			self.countRows = 0
+			self.countColumns = 0										
+
+			self.maxNumberOfRows = 2
+			self.maxNumberOfColumns = 2									
+
+			self.numberOfPresses = 1
+			self.subSizerNumber = 0
+
+			if self.control != 'tracker':
+				self.mouseCursor = PyMouse( )
+				self.mousePosition = self.winWidth - 8 - self.xBorder, self.winHeight - 8 - self.yBorder
+				self.mouseCursor.move( *self.mousePosition )			
+
+			mixer.init( )	
+			if self.switchSound.lower( ) == 'on' or self.pressSound.lower( ) == 'on':
+				if self.switchSound.lower( ) == 'on':
+					self.switchingSound = mixer.Sound( self.pathToATPlatform + '/sounds/switchSound.wav' )
+				if self.pressSound.lower( ) == 'on':
+					self.pressingSound = mixer.Sound( self.pathToATPlatform + '/sounds/pressSound.wav' )
+		
+			if self.voice == 'True':
+				self.phones = glob.glob( self.pathToATPlatform + 'sounds/phone/*' )
+				self.phoneLabels = [ item[ item.rfind( '/' )+1 : item.rfind( '.' ) ] for item in self.phones ]
+				self.sounds = [ mixer.Sound( self.sound ) for self.sound in self.phones ]
 				
-	    self.flag = 'row'						
-	    self.pressFlag = False
+				self.rows = glob.glob( self.pathToATPlatform + 'sounds/rows/*' )
+				self.rowLabels = [ item[ item.rfind( '/' )+1 : item.rfind( '.' ) ] for item in self.rows ]
+				self.rowSounds = [ mixer.Sound( self.sound ) for self.sound in self.rows ]
 
-	    self.rowIteration = 0						
-	    self.columnIteration = 0							
-	    self.countRows = 0
-	    self.countColumns = 0										
+			self.typewriterKeySound = mixer.Sound( self.pathToATPlatform + 'sounds/typewriter_key.wav' )
+			self.typewriterForwardSound = mixer.Sound( self.pathToATPlatform + 'sounds/typewriter_forward.wav' )
+			self.typewriterSpaceSound = mixer.Sound( self.pathToATPlatform + 'sounds/typewriter_space.wav' )
 
-	    self.maxNumberOfRows = 2
-	    self.maxNumberOfColumns = 2									
-	    
-	    self.numberOfPresses = 1
-	    self.subSizerNumber = 0
-
-	    if self.control != 'tracker':
-		    self.mouseCursor = PyMouse( )
-		    self.mousePosition = self.winWidth - 8, self.winHeight - 8
-		    self.mouseCursor.move( *self.mousePosition )			
-
-	    mixer.init( )
-	    self.typewriterKeySound = mixer.Sound( self.pathToATPlatform + 'sounds/typewriter_key.wav' )
-	    self.typewriterForwardSound = mixer.Sound( self.pathToATPlatform + 'sounds/typewriter_forward.wav' )
-	    self.typewriterSpaceSound = mixer.Sound( self.pathToATPlatform + 'sounds/typewriter_space.wav' )
-
-	    if self.voice == 'True':
-		    self.phones = glob.glob( self.pathToATPlatform + 'sounds/phone/*' )
-		    self.phoneLabels = [ item[ item.rfind( '/' )+1 : item.rfind( '.' ) ] for item in self.phones ]
-		    self.sounds = [ mixer.Sound( self.sound ) for self.sound in self.phones ]
-	    
-	    self.SetBackgroundColour( 'black' )
-
+			self.SetBackgroundColour( 'black' )
+		    
 	#-------------------------------------------------------------------------
         def initializeBitmaps(self):
             
-            labelFiles = [ self.pathToATPlatform + file for file in [ 'icons/speller/special_characters.png', 'icons/speller/undo.png', 'icons/speller/speak.png', 'icons/speller/save.png', 'icons/speller/open.png', 'icons/speller/exit.png', ] ]
+		if self.specialButtonsMarker == -3:
+
+			labelFiles = [ self.pathToATPlatform + file for file in [ 'icons/speller/special_characters.png', 'icons/speller/undo.png', 'icons/speller/speak.png', 'icons/speller/save.png', 'icons/speller/open.png', 'icons/speller/exit.png', ] ]
+			labelBitmapIndex = [ self.labels[ 0 ].index( self.labels[ 0 ][ -7 ] ), self.labels[ 0 ].index( self.labels[ 0 ][ -6 ] ), self.labels[ 0 ].index( self.labels[ 0 ][ -5 ] ), self.labels[ 0 ].index( self.labels[ 0 ][ -4 ] ), self.labels[ 0 ].index( self.labels[ 0 ][ -2 ] ), self.labels[ 0 ].index( self.labels[ 0 ][ -1 ] ) ]
+		
+		if self.specialButtonsMarker == -4:
+
+			labelFiles = [ self.pathToATPlatform + 'icons/speller/' + item for item in [ 'undo.png', 'speak.png', 'save.png', 'special_characters.png', 'open.png', 'exit.png', ] ]
+			labelBitmapIndex = [ self.labels[ 0 ].index( self.labels[ 0 ][ -7 ] ), self.labels[ 0 ].index( self.labels[ 0 ][ -6 ] ), self.labels[ 0 ].index( self.labels[ 0 ][ -5 ] ), self.labels[ 0 ].index( self.labels[ 0 ][ -3 ] ), self.labels[ 0 ].index( self.labels[ 0 ][ -2 ] ), self.labels[ 0 ].index( self.labels[ 0 ][ -1 ] ) ]
+
+		self.labelBitmaps = { }	    
+
+		for labelFilesIndex, labelIndex in enumerate( labelBitmapIndex ):
+			self.labelBitmaps[ self.labels[ 0 ][ labelIndex ] ] = wx.BitmapFromImage( wx.ImageFromStream( open( labelFiles[ labelFilesIndex ], 'rb' )) )      
+		labelFiles2 = [ self.pathToATPlatform + 'icons/speller/' + item for item in [ 'special_characters.png', 'undo.png', 'speak.png', 'save.png', 'open.png', 'exit.png', ] ]
             
-            self.labelBitmaps = { }
+		self.labelBitmaps2 = { }
 	    
-	    labelBitmapIndex = [ self.labels[ 0 ].index( self.labels[ 0 ][ -7 ] ), self.labels[ 0 ].index( self.labels[ 0 ][ -6 ] ), self.labels[ 0 ].index( self.labels[ 0 ][ -5 ] ), self.labels[ 0 ].index( self.labels[ 0 ][ -4 ] ), self.labels[ 0 ].index( self.labels[ 0 ][ -2 ] ), self.labels[ 0 ].index( self.labels[ 0 ][ -1 ] ) ]
+		labelBitmapIndex2 = [ self.labels[ 1 ].index( self.labels[ 1 ][ -6 ] ), self.labels[ 1 ].index( self.labels[ 1 ][ -5 ] ), self.labels[ 1 ].index( self.labels[ 1 ][ -4 ] ), self.labels[ 1 ].index( self.labels[ 1 ][ -2 ] ), self.labels[ 1 ].index( self.labels[ 1 ][ -1 ] ) ]
 
-            for labelFilesIndex, labelIndex in enumerate( labelBitmapIndex ):
-		    self.labelBitmaps[ self.labels[ 0 ][ labelIndex ] ] = wx.BitmapFromImage( wx.ImageFromStream( open( labelFiles[ labelFilesIndex ], 'rb' )) )      
-
-            self.labelBitmaps2 = { }
-	    
-	    labelBitmapIndex2 = [ self.labels[ 1 ].index( self.labels[ 1 ][ -6 ] ), self.labels[ 1 ].index( self.labels[ 1 ][ -5 ] ), self.labels[ 1 ].index( self.labels[ 1 ][ -4 ] ), self.labels[ 1 ].index( self.labels[ 1 ][ -2 ] ), self.labels[ 1 ].index( self.labels[ 1 ][ -1 ] ) ]
-
-            for labelFilesIndex2, labelIndex2 in enumerate( labelBitmapIndex2 ):
-		    self.labelBitmaps2[ self.labels[ 1 ][ labelIndex2 ] ] = wx.BitmapFromImage( wx.ImageFromStream( open( labelFiles[ -5: ][ labelFilesIndex2 ], 'rb' )) )
+		for labelFilesIndex2, labelIndex2 in enumerate( labelBitmapIndex2 ):
+			self.labelBitmaps2[ self.labels[ 1 ][ labelIndex2 ] ] = wx.BitmapFromImage( wx.ImageFromStream( open( labelFiles2[ -5: ][ labelFilesIndex2 ], 'rb' )) )
 
 	#-------------------------------------------------------------------------	
 	def createGui(self):
 
-		self.thicknessOfExternalBorder = self.yBorder # factor related to the border of the entire board
+		self.thicknessOfExternalBorder = self.xBorder # factor related to the border of the entire board
 		self.thicknessOfInternalBorder = self.xBorder # factor related to the border of every button 
 
-		self.textFieldWidth = self.winWidth
+		self.textFieldWidth = self.winWidth - 2*self.thicknessOfExternalBorder
 		self.textFieldHeight = 0.2 * ( self.winHeight - 20 ) # -20 because of the Unity upper bar
 
 		self.buttonsBoardWidth  = self.winWidth - self.thicknessOfExternalBorder * 2 - self.thicknessOfInternalBorder * ( self.numberOfColumns[ 0 ] - 1 )
 		self.buttonsBoardHeight = ( self.winHeight - 20 ) - self.textFieldHeight - self.thicknessOfExternalBorder * 3 - self.thicknessOfInternalBorder * ( self.numberOfRows[ 0 ] - 1 ) # -20 because of the Unity upper bar
-
+		
 		self.mainSizer = wx.BoxSizer( wx.VERTICAL )
-		self.textField = wx.TextCtrl( self, style = wx.TE_LEFT, size = ( self.textFieldWidth, self.textFieldHeight ) )
-		self.textField.SetFont( wx.Font( 100, wx.SWISS, wx.NORMAL, wx.NORMAL ) )
-		self.mainSizer.Add( self.textField, flag = wx.EXPAND | wx.TOP | wx.BOTTOM, border = self.thicknessOfExternalBorder )
+		self.textField = wx.TextCtrl( self, style = wx.TE_LEFT, size = (  self.textFieldWidth, self.textFieldHeight ) )
+		self.textField.SetFont( wx.Font( self.textFontSize, eval(self.textFont), wx.NORMAL, wx.NORMAL ) )
+		self.mainSizer.Add( self.textField, flag = wx.EXPAND | wx.TOP | wx.LEFT | wx.RIGHT, border = self.thicknessOfExternalBorder )
 		
 		self.subSizers = [ ]
 		
@@ -193,33 +201,50 @@ class speller( wx.Frame ):
 			event = eval('wx.EVT_LEFT_DOWN')
 		else:
 			event = eval('wx.EVT_BUTTON')
-
+			
 		for index_1, item in enumerate( self.labels[ 0 ][ :-7 ] ):
 			b = bt.GenButton( self, -1, item, name = item, size = ( self.buttonsBoardWidth / float( self.numberOfColumns[ 0 ] ), self.buttonsBoardHeight / float( self.numberOfRows[ 0 ] ) ) )
-			b.SetFont( wx.Font( 50, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False ) )
+			b.SetFont( wx.Font( self.tableFontSize, eval(self.textFont), wx.FONTWEIGHT_LIGHT,  False ) )
 			b.SetBezelWidth( 3 )
 			b.SetBackgroundColour( self.backgroundColour )
-			b.SetForegroundColour( self.textColour )
+
+			if item in self.colouredLabels and self.vowelColour != 'False':
+				b.SetForegroundColour( self.vowelColour )
+			elif item in self.colouredLabels2 and self.polishLettersColour != 'False':
+				b.SetForegroundColour( self.polishLettersColour )
+			else:
+				b.SetForegroundColour( self.textColour )
+
 			b.Bind( event, self.onPress )
 			subSizer.Add( b, ( index_1 / self.numberOfColumns[ 0 ], index_1 % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
 
-		for index_2, item in enumerate( self.labels[ 0 ][ -7 : -3 ], start = 1 ):
+		for index_2, item in enumerate( self.labels[ 0 ][ -7 : self.specialButtonsMarker ], start = 1 ):
 			b = bt.GenBitmapButton( self, -1, name = item, bitmap = self.labelBitmaps[ item ], size = ( self.buttonsBoardWidth / float( self.numberOfColumns[ 0 ] ), self.buttonsBoardHeight / float( self.numberOfRows[ 0 ] ) ) )
 			b.SetBackgroundColour( self.backgroundColour )
 			b.SetBezelWidth( 3 )
                         b.Bind( event, self.onPress )
 			subSizer.Add( b, ( ( index_1 + index_2 ) / self.numberOfColumns[ 0 ], ( index_1 + index_2 ) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
 
-		for item in ( self.labels[ 0 ][ -3 ], ):
-			b = bt.GenButton( self, -1, item, name = item, size = ( 3 * ( self.buttonsBoardWidth / float( self.numberOfColumns[ 0 ] ) ), self.buttonsBoardHeight / float( self.numberOfRows[ 0 ] ) ) )
-			b.SetFont( wx.Font( 50, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False ) )
+		for item in ( self.labels[ 0 ][ self.specialButtonsMarker ], ):
+
+			if self.specialButtonsMarker == -3:
+				b = bt.GenButton( self, -1, item, name = item, size = ( 3 * ( self.buttonsBoardWidth / float( self.numberOfColumns[ 0 ] ) ), self.buttonsBoardHeight / float( self.numberOfRows[ 0 ] ) ) )
+
+			if self.specialButtonsMarker == -4:
+				b = bt.GenButton( self, -1, item, name = item, size = ( 2 * ( self.buttonsBoardWidth / float( self.numberOfColumns[ 0 ] ) ), self.buttonsBoardHeight / float( self.numberOfRows[ 0 ] ) ) )
+				
+			b.SetFont( wx.Font( self.tableFontSize, eval(self.tableFont), wx.FONTWEIGHT_LIGHT,  False ) )
 			b.SetBezelWidth( 3 )
 			b.SetBackgroundColour( self.backgroundColour )
 			b.SetForegroundColour( self.textColour )
 			b.Bind( event, self.onPress )
-			subSizer.Add( b, ( ( index_1 + index_2 ) / self.numberOfColumns[ 0 ], ( index_1 + index_2 + 1 ) % self.numberOfColumns[ 0 ] ), ( 1, 3 ), wx.EXPAND )
 
-		for index_3, item in enumerate( self.labels[ 0 ][ -2: ], start = 4 ):
+			if self.specialButtonsMarker == -3:
+				subSizer.Add( b, ( ( index_1 + index_2 ) / self.numberOfColumns[ 0 ], ( index_1 + index_2 + 1 ) % self.numberOfColumns[ 0 ] ), ( 1, 3 ), wx.EXPAND )
+			elif self.specialButtonsMarker == -4:
+				subSizer.Add( b, ( ( index_1 + index_2 ) / self.numberOfColumns[ 0 ], ( index_1 + index_2 + 1 ) % self.numberOfColumns[ 0 ] ), ( 1, 2 ), wx.EXPAND )
+
+		for index_3, item in enumerate( self.labels[ 0 ][ self.specialButtonsMarker+1: ], start = self.startIndex ):
 			b = bt.GenBitmapButton( self, -1, name = item, bitmap = self.labelBitmaps[ item ], size = ( self.buttonsBoardWidth / float( self.numberOfColumns[ 0 ] ), self.buttonsBoardHeight / float( self.numberOfRows[ 0 ] ) ) )
 			b.SetBackgroundColour( self.backgroundColour )
 			b.SetBezelWidth( 3 )
@@ -227,7 +252,7 @@ class speller( wx.Frame ):
 			subSizer.Add( b, ( ( index_1 + index_2 + index_3 ) / self.numberOfColumns[ 0 ], ( index_1 + index_2 + index_3 ) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
 
 		self.subSizers.append( subSizer )		    
-		self.mainSizer.Add( self.subSizers[ 0 ], proportion = 1, flag = wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, border = self.yBorder )
+		self.mainSizer.Add( self.subSizers[ 0 ], proportion = 1, flag = wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP | wx.BOTTOM, border = self.yBorder)
 		self.SetSizer( self.mainSizer )
 		self.Center( )
 		
@@ -238,7 +263,7 @@ class speller( wx.Frame ):
 
 		for index_1, item in enumerate( self.labels[ 1 ][ :-6 ] ):
 			b = bt.GenButton( self, -1, item, name = item, size = ( self.buttonsBoardWidth2 / float( self.numberOfColumns[ 1 ] ), self.buttonsBoardHeight2 / float( self.numberOfRows[ 1 ] ) ) )
-			b.SetFont( wx.Font( 50, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False ) )
+			b.SetFont( wx.Font( self.tableFontSize, eval(self.tableFont), wx.FONTWEIGHT_LIGHT,  False ) )
 			b.SetBezelWidth( 3 )
 			b.SetBackgroundColour( self.backgroundColour )
 			b.SetForegroundColour( self.textColour )
@@ -253,8 +278,8 @@ class speller( wx.Frame ):
 			subSizer2.Add( b, ( ( index_1 + index_2 ) / self.numberOfColumns[ 1 ], ( index_1 + index_2 ) % self.numberOfColumns[ 1 ] ), wx.DefaultSpan, wx.EXPAND )
 
 		for item in ( self.labels[ 1 ][ -3 ], ):
-			b = bt.GenButton( self, -1, item, name = item,  size = ( 3 * (self.buttonsBoardWidth2 / float( self.numberOfColumns[ 1 ] )), self.buttonsBoardHeight2 / float( self.numberOfRows[ 1 ] ) ) )
-			b.SetFont( wx.Font( 50, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False ) )
+			b = bt.GenButton( self, -1, item, name = item, size = ( 3 * (self.buttonsBoardWidth2 / float( self.numberOfColumns[ 1 ] )), self.buttonsBoardHeight2 / float( self.numberOfRows[ 1 ] ) ) )
+			b.SetFont( wx.Font( self.tableFontSize, eval(self.tableFont), wx.FONTWEIGHT_LIGHT,  False ) )
 			b.SetBezelWidth( 3 )
 			b.SetBackgroundColour( self.backgroundColour )
 			b.SetForegroundColour( self.textColour )
@@ -269,8 +294,13 @@ class speller( wx.Frame ):
 			subSizer2.Add( b, ( ( index_1 + index_2 + index_3 ) / self.numberOfColumns[ 1 ], ( index_1 + index_2 + index_3 ) % self.numberOfColumns[ 1 ] ), wx.DefaultSpan, wx.EXPAND )
 
 		self.subSizers.append( subSizer2 )		   
-		self.mainSizer.Add( self.subSizers[ 1 ], proportion = 1, flag = wx.EXPAND | wx.LEFT, border = self.yBorder )
-		self.mainSizer.Show( item = self.subSizers[ 1 ], show = False, recursive = True )
+		self.mainSizer.Add( self.subSizers[ 1 ], proportion = 1, flag = wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP | wx.BOTTOM, border = self.yBorder )
+
+		if self.subSizerNumber == 0:
+			self.mainSizer.Show( item = self.subSizers[ 1 ], show = False, recursive = True )
+		else:
+			self.mainSizer.Show( item = self.subSizers[ 0 ], show = False, recursive = True )
+
 		self.SetSizer( self.mainSizer )
 		self.Center( )
 
@@ -282,6 +312,10 @@ class speller( wx.Frame ):
 		if self.control != 'tracker':
 			self.stoper.Start( self.timeGap )
 	
+	#-------------------------------------------------------------------------
+	def getLabels(self):
+		return self.labels
+
 	#-------------------------------------------------------------------------
 	def createBindings(self):
 		self.Bind( wx.EVT_CLOSE, self.OnCloseWindow )
@@ -312,7 +346,7 @@ class speller( wx.Frame ):
 			event.Veto()
 
 			if self.control != 'tracker':
-				self.mousePosition = self.winWidth - 8, self.winHeight - 8
+				self.mousePosition = self.winWidth - 8 - self.yBorder, self.winHeight - 8 - self.xBorder
 				self.mouseCursor.move( *self.mousePosition )	
 
 	#-------------------------------------------------------------------------
@@ -321,17 +355,24 @@ class speller( wx.Frame ):
 			self.stoper.Stop( )
 			self.Destroy( )
 		else:
-			self.stoper.Stop( )
-			self.MakeModal( False )
-			self.parent.Show( True )
-			if self.control != 'tracker':
-				self.parent.stoper.Start( self.parent.timeGap )
+			if self.con != 0:
+				self.stoper.Stop( )
 
+				if self.parent:
+					self.parent.Show( True )
+
+					if self.control != 'tracker':
+						self.parent.stoper.Start( self.parent.timeGap )
+
+			self.MakeModal( False )
 			self.Destroy( )
 		
 	#-------------------------------------------------------------------------
 	def onPress(self, event):
 		
+		if self.pressSound.lower( ) == 'on':
+			self.pressingSound.play( )
+
 		if self.control == 'tracker':
 			if self.pressFlag == False:
 				self.button = event.GetEventObject()
@@ -390,7 +431,6 @@ class speller( wx.Frame ):
 					try:
 						textToLoad = open( 'myTextFile.txt' ).read( )
 						self.textField.Clear( )
-						print textToLoad
 						self.textField.AppendText( textToLoad )
 
 					except IOError:
@@ -430,7 +470,14 @@ class speller( wx.Frame ):
 					if self.rowIteration != self.numberOfRows[ self.subSizerNumber ]:
 						buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ self.subSizerNumber ], ( self.rowIteration - 1 ) * self.numberOfColumns[ self.subSizerNumber ] + self.numberOfColumns[ self.subSizerNumber ] )
 					else:
-						buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ self.subSizerNumber ], ( self.rowIteration - 1 ) * self.numberOfColumns[ self.subSizerNumber ] + 6 )
+						if self.specialButtonsMarker == -3 or self.subSizerNumber == 1:
+							buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ self.subSizerNumber ], ( self.rowIteration - 1 ) * self.numberOfColumns[ self.subSizerNumber ] + 6 )
+
+						elif self.specialButtonsMarker == -4:
+							buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ self.subSizerNumber ], ( self.rowIteration - 1 ) * self.numberOfColumns[ self.subSizerNumber ] + 7 )
+
+						# elif self.subSizerNumber == 1:
+						# 	buttonsToHighlight = range( ( self.rowIteration ) * self.numberOfColumns[ self.subSizerNumber ], ( self.rowIteration ) * self.numberOfColumns[ self.subSizerNumber ] + 6 )
 
 					for button in buttonsToHighlight:
 						item = self.subSizers[ self.subSizerNumber ].GetItem( button )
@@ -450,20 +497,26 @@ class speller( wx.Frame ):
 					b.SetFocus( )
 
 					label = self.labels[ self.subSizerNumber ][ self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration - 1 ]
+					
+					if self.specialButtonsMarker == -3:
+						if label == 'SPECIAL_CHARACTERS':								
 
-					if label == 'SPECIAL_CHARACTERS':								
+							self.subSizerNumber = 1
 
-						self.subSizerNumber = 1
+							self.mainSizer.Show( item = self.subSizers[ 1 ], show = True, recursive = True )
+							self.mainSizer.Show( item = self.subSizers[ 0 ], show = False, recursive = True )					
+							self.SetSizer( self.mainSizer )
 
-						self.mainSizer.Show( item = self.subSizers[ 1 ], show = True, recursive = True )
-						self.mainSizer.Show( item = self.subSizers[ 0 ], show = False, recursive = True )					
-						self.SetSizer( self.mainSizer )
+							self.Layout( )
 
-						self.Layout( )
+						else:
+							self.typewriterKeySound.play( )
+
+							self.textField.AppendText( label )
 
 					else:
 						self.typewriterKeySound.play( )
-
+						
 						self.textField.AppendText( label )
 
 					self.flag = 'row'
@@ -486,7 +539,7 @@ class speller( wx.Frame ):
 
 					elif label == 'SPEAK':								
 						text = str( self.textField.GetValue( ) )
-
+						
 						if text == '' or text.isspace( ):
 							pass
 
@@ -504,7 +557,6 @@ class speller( wx.Frame ):
 
 					elif label == 'SAVE':
 						text = str( self.textField.GetValue( ) )
-
 						if text == '':
 							pass
 						else:
@@ -518,11 +570,12 @@ class speller( wx.Frame ):
 
 					elif label == 'OPEN':
 						try:
-							textToLoad = open( 'myFile.txt' ).read( )
+							textToLoad = open( 'myTextFile.txt' ).read( )
 							self.textField.Clear( )
 							self.textField.AppendText( textToLoad )
 
 						except IOError:
+							print "Can't find the file"
 							pass
 
 					elif label == 'EXIT':
@@ -537,6 +590,17 @@ class speller( wx.Frame ):
 
 						    self.SetSizer( self.mainSizer )
 						    self.Layout( )
+
+					elif self.specialButtonsMarker == -4:
+						if label == 'SPECIAL_CHARACTERS':								
+
+							self.subSizerNumber = 1
+
+							self.mainSizer.Show( item = self.subSizers[ 1 ], show = True, recursive = True )
+							self.mainSizer.Show( item = self.subSizers[ 0 ], show = False, recursive = True )					
+							self.SetSizer( self.mainSizer )
+
+							self.Layout( )
 
 					self.flag = 'row'
 					self.rowIteration = 0
@@ -590,7 +654,11 @@ class speller( wx.Frame ):
 
 					if self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1:
 						self.countRows += 1
-						buttonsToHighlight = range( self.rowIteration * self.numberOfColumns[ self.subSizerNumber ], self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + 6 )
+
+						if self.specialButtonsMarker == -3 or self.subSizerNumber == 1:
+							buttonsToHighlight = range( self.rowIteration * self.numberOfColumns[ self.subSizerNumber ], self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + 6 )
+						elif self.specialButtonsMarker == -4:
+							buttonsToHighlight = range( self.rowIteration * self.numberOfColumns[ self.subSizerNumber ], self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + 7 )
 
 					else:
 						buttonsToHighlight = range( self.rowIteration * self.numberOfColumns[ self.subSizerNumber ], self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.numberOfColumns[ self.subSizerNumber ] )
@@ -603,8 +671,14 @@ class speller( wx.Frame ):
 
 					self.rowIteration += 1
 
+					if self.switchSound.lower( ) == 'on' and self.voice == 'False':
+						self.switchingSound.play( )
+
 					if self.voice == 'True':
-						os.system( 'milena_say %i' % ( self.rowIteration ) )
+						for idx, item in enumerate( self.rowLabels ):
+							if int(item) == self.rowIteration:
+								self.rowSounds[ idx ].play( )
+								break
 
 			elif self.flag == 'columns':
 
@@ -623,7 +697,7 @@ class speller( wx.Frame ):
 						if self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 1 or (self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 3 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 4 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ):
 							self.countColumns += 1
 
-						if self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] or ( self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 2 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 3 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ):
+						if self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] or ( self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 2 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 and self.specialButtonsMarker == -3) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 3 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ) or ( self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 1 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 and self.specialButtonsMarker == -4):
 							self.columnIteration = 0
 
 						items = self.subSizers[ self.subSizerNumber ].GetChildren( )
@@ -636,8 +710,11 @@ class speller( wx.Frame ):
 						b = item.GetWindow( )
 						b.SetBackgroundColour( self.scanningColour )
 						b.SetFocus( )
+						
+						if self.switchSound.lower( ) == 'on' and self.voice == 'False':
+							self.switchingSound.play( )
 
-						if self.voice == 'True':
+						elif self.voice == 'True':
 							label = self.labels[ self.subSizerNumber ][ self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration ]
 
 							try:
@@ -647,6 +724,9 @@ class speller( wx.Frame ):
 
 							except IndexError:
 								pass
+							
+						# if self.switchSound.lower() == 'on' and (self.rowIteration == self.numberOfRows[0]-1 or self.subSizerNumber == 1):
+						# 	self.switchingSound.play( )
 
 						self.columnIteration += 1
 

@@ -19,11 +19,12 @@
 import wxversion
 wxversion.select( '2.8' )
 
-import wx, os
+import wx, os, sys
 import wx.lib.buttons as bt
 import subprocess as sp
 
 from pymouse import PyMouse
+from pygame import mixer
 
 
 #==========================================================================================================================================================
@@ -57,27 +58,37 @@ class suspend( wx.Frame ):
 	def initializeParameters(self):
 
             with open( '.pathToATPlatform' ,'r' ) as textFile:
-		    self.path = textFile.readline( )
+		    self.pathToATPlatform = textFile.readline( )
 
-	    with open( self.path + 'parameters' ,'r' ) as parametersFile:
-		    line = parametersFile.readline( )
-
+	    sys.path.append( self.pathToATPlatform )
+	    from reader import reader
+	    
+	    reader = reader()
+	    reader.readParameters()
+	    parameters = reader.getParameters()
+	    
+	    for item in parameters:
 		    try:
-			    self.timeGap = int( line[ line.rfind( '=' ) + 2: -1 ] )
+			    setattr(self, item[:item.find('=')], int(item[item.find('=')+1:]))
 		    except ValueError:
-		    	    print '\nNiewłaściwie opisany parametr. Błąd w linii:\n%s' % line
-		    	    self.timeGap = 1500
+			    setattr(self, item[:item.find('=')], item[item.find('=')+1:])
 
+	    self.initCount = 0
             self.mouseCursor = PyMouse( )
-	    self.mousePosition = self.winWidth - 8, self.winHeight - 48
-            self.mouseCursor.move( *self.mousePosition )
+	    if self.control != 'tracker':
+		    self.mousePosition = self.winWidth - 8 - self.xBorder, self.winHeight - 48 - self.yBorder
+		    self.mouseCursor.move( *self.mousePosition )
 
+	    if self.pressSound.lower( ) == 'on':
+		    mixer.init( )
+		    self.pressingSound = mixer.Sound( self.pathToATPlatform + '/sounds/pressSound.wav' )
+			    
 	#-------------------------------------------------------------------------
 	def createGui(self):
 
 		self.mainSizer = wx.BoxSizer( wx.VERTICAL )
 
-		self.subSizer = wx.GridBagSizer( 4, 4 )
+		self.subSizer = wx.GridBagSizer( self.xBorder, self.yBorder )
 
                 b = bt.GenButton( self, -1, '', name='' )
                 b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
@@ -135,7 +146,7 @@ class suspend( wx.Frame ):
 
 		else:
 			event.Veto()
-			self.mousePosition = self.winWidth - 8, self.winHeight - 48
+			self.mousePosition = self.winWidth - 8 - self.xBorder, self.winHeight - 48 - self.yBorder
 			self.mouseCursor.move( *self.mousePosition )	
 
 	#-------------------------------------------------------------------------
@@ -152,21 +163,30 @@ class suspend( wx.Frame ):
 
 	#-------------------------------------------------------------------------
         def onPress(self, event):
+		if self.pressSound.lower( ) == 'on':
+			self.pressingSound.play( )
+
 		self.onExit( )
 		    
 	#-------------------------------------------------------------------------
 	def timerUpdate(self, event):
 		
-               	self.mouseCursor.move( *self.mousePosition )
-		
-		if __name__ != '__main__':
-			
-			cmd = 'wmctrl -l'
-			p = sp.Popen( cmd, shell=True, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.STDOUT, close_fds=True )
-			output = p.stdout.read( )
-		
-			if 'SMPlayer' not in output:
+		if self.control == 'tracker':
+			self.mousePosition = self.mouseCursor.position( )
+			print self.mousePosition
+			if self.mousePosition[0] > 1120:
 				self.onExit( )
+		else:
+			self.mouseCursor.move( *self.mousePosition )
+		
+		# if __name__ != '__main__':
+			
+		# 	cmd = 'wmctrl -l'
+		# 	p = sp.Popen( cmd, shell=True, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.STDOUT, close_fds=True )
+		# 	output = p.stdout.read( )
+		
+		# 	if 'SMPlayer' not in output:
+		# 		self.onExit( )
 			
 #=============================================================================
 if __name__ == '__main__':

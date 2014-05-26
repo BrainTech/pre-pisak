@@ -19,6 +19,7 @@
 import wxversion
 wxversion.select('2.8')
 
+import os, sys
 import wx
 import wx.lib.buttons as bt
 from pymouse import PyMouse
@@ -55,87 +56,39 @@ class cwiczenia(wx.Frame):
 		with open( './.pathToATPlatform' ,'r' ) as textFile:
 			self.pathToATPlatform = textFile.readline( )
 
-		with open( self.pathToATPlatform + 'parameters', 'r' ) as parametersFile:
-			for line in parametersFile:
-
-				if line[ :line.find('=')-1 ] == 'timeGap':
-					self.timeGap = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'backgroundColour':
-					self.backgroundColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'textColour':
-					self.textColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'scanningColour':
-					self.scanningColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'selectionColour':
-					self.selectionColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'filmVolume':
-					self.filmVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'musicVolume':
-					self.musicVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'control':
-					self.control = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'x_border':
-					self.xBorder = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'y_border':
-					self.yBorder = int( line[ line.rfind('=')+2:-1 ] )
-
-				elif not line.isspace( ):
-					print 'Niewłaściwie opisane parametry'
-					print 'Błąd w linii', line
-					
-					self.timeGap = 1500
-					self.backgroundColour = 'white'
-					self.textColour = 'black'
-					self.scanningColour =  '#E7FAFD'
-					self.selectionColour = '#9EE4EF'
-					self.filmVolumeLevel = 100
-					self.musicVolumeLevel = 70
-					self.control = 'switch'
-					self.xBorder = 4
-					self.yBorder = 4 
-
-                with open( self.pathToATPlatform + 'ewritingParameters', 'r' ) as parametersFile:
-			for line in parametersFile:                                                                
-
-                                if line[ :line.find('=')-1 ] == 'textSize':
-					self.textSize = int( line[ line.rfind('=')+2:-1 ])
-				elif line[ :line.find('=')-1 ] == 'maxPoints':
-					self.maxPoints = int(line[ line.rfind('=')+2:-1 ])
-				elif line[ :line.find('=')-1 ] == 'checkTime':
-                                        self.checkTime = int(line[ line.rfind('=')+2:-1 ])
-				elif line[ :line.find('=')-1 ] == 'colorGrat':
-					self.colorGrat = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'colorNiest':
-                                        self.colorNiest = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'ileLuk':
-                                        self.ileLuk = int(line[ line.rfind('=')+2:-1 ])
-				elif line[ :line.find('=')-1 ] == 'sex':
-                                        self.sex = line[ line.rfind('=')+2:-1 ]
+		sys.path.append( self.pathToATPlatform )
+		from reader import reader
 		
-				elif not line.isspace( ):
-					print 'Niewłaściwie opisane parametry'
-					print 'Błąd w linii', line
-					print 'Wczytano parametry domyślne'
-					
-					self.textSize = 80
-					self.checkTime = 8000
-					self.colorGrat = 'lime green'
-					self.colorNiest = 'indian red'
-					self.ileLuk = 1
-					self.maxPoints = 2
-					self.sex = 'D'
+		reader = reader()
+		reader.readParameters()
+		parameters = reader.getParameters()
+
+		for item in parameters:
+			try:
+				setattr(self, item[:item.find('=')], int(item[item.find('=')+1:]))
+			except ValueError:
+				setattr(self, item[:item.find('=')], item[item.find('=')+1:])
 
 		self.pressFlag = False
 
 		self.numberOfRows = 3,
 		self.numberOfColumns = 1,
+		self.numberOfIteration = 0
+		self.maxNumberOfIteration = 2 * self.numberOfRows[0]
 
 		self.flaga = 0
 		
 		if self.control != 'tracker':
 			self.mouseCursor = PyMouse( )
-			self.mousePosition = self.winWidth - 8, self.winHeight - 8
+			self.mousePosition = self.winWidth - 8 - self.xBorder, self.winHeight - 8 - self.yBorder
 			self.mouseCursor.move( *self.mousePosition )			
+							
+		if self.switchSound.lower( ) == 'on' or self.pressSound.lower( ) == 'on':
+			mixer.init( )
+			if self.switchSound.lower( ) == 'on':
+				self.switchingSound = mixer.Sound( self.pathToATPlatform + '/sounds/switchSound.wav' )
+			if self.pressSound.lower( ) == 'on':
+				self.pressingSound = mixer.Sound( self.pathToATPlatform + '/sounds/pressSound.wav' )
 
                 self.poczatek = True
 		self.numberOfPresses = 1
@@ -164,22 +117,29 @@ class cwiczenia(wx.Frame):
 		self.mainSizer = wx.GridBagSizer( self.xBorder, self.yBorder )
 
                 nazwy = [ u'UZUPEŁNIJ LUKĘ',u'NAZWIJ OBRAZEK' ]
-                kolory = [ 'blue', 'dark green' ]
+                kolory = [ 'indian red', 'yellow' ]
 
-                for index in range( 2 ):
-                        b = bt.GenButton( self, -1, nazwy[ index ], name = nazwy[ index ])
-			b.SetFont( wx.Font( 75, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False ) )
-			b.SetBezelWidth( 3 )
-			b.SetBackgroundColour( self.backgroundColour )
-			b.SetForegroundColour( kolory[ index ] )
-			b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
-                        self.mainSizer.Add( b, ( index, 0 ), wx.DefaultSpan, wx.EXPAND )
+		b = bt.GenButton( self, -1, nazwy[ 0 ], name = nazwy[ 0 ])
+		b.SetFont( wx.Font( 75, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False ) )
+		b.SetBezelWidth( 3 )
+		b.SetBackgroundColour( self.backgroundColour )
+		b.SetForegroundColour( kolory[ 0 ] )
+		b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+		self.mainSizer.Add( b, ( 0, 0 ), wx.DefaultSpan, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, border = self.xBorder )
+
+		b = bt.GenButton( self, -1, nazwy[ 1 ], name = nazwy[ 1 ])
+		b.SetFont( wx.Font( 75, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False ) )
+		b.SetBezelWidth( 3 )
+		b.SetBackgroundColour( self.backgroundColour )
+		b.SetForegroundColour( kolory[ 1 ] )
+		b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
+		self.mainSizer.Add( b, ( 1, 0 ), wx.DefaultSpan, wx.EXPAND | wx.LEFT | wx.RIGHT, border = self.xBorder )
 
 		b = bt.GenBitmapButton( self, -1, bitmap = self.functionButtonPath[ 0 ], name = self.functionButtonName[ 0 ] )
 		b.SetBackgroundColour( self.backgroundColour )
 		b.SetBezelWidth( 3 )
 		b.Bind( wx.EVT_LEFT_DOWN, self.onPress )
-		self.mainSizer.Add( b, ( index + 1, 0 ), wx.DefaultSpan, wx.EXPAND )
+		self.mainSizer.Add( b, ( 2, 0 ), wx.DefaultSpan, wx.EXPAND | wx.BOTTOM | wx.LEFT | wx.RIGHT, border = self.xBorder)
 		
 		for number in range( self.numberOfRows[ 0 ] ):
 			self.mainSizer.AddGrowableRow( number )
@@ -236,7 +196,7 @@ class cwiczenia(wx.Frame):
 			event.Veto()
 
 			if self.control != 'tracker':
-				self.mousePosition = self.winWidth - 8, self.winHeight - 8
+				self.mousePosition = self.winWidth - 8 - self.xBorder, self.winHeight - 8 - self.yBorder
 				self.mouseCursor.move( *self.mousePosition )	
 
 	#-------------------------------------------------------------------------	
@@ -257,6 +217,9 @@ class cwiczenia(wx.Frame):
 
 	#-------------------------------------------------------------------------	
 	def onPress(self, event):
+		
+		if self.pressSound.lower( ) == 'on':
+			self.pressingSound.play( )
 
 		if self.control == 'tracker':
 			if self.pressFlag == False:
@@ -283,38 +246,43 @@ class cwiczenia(wx.Frame):
 
 		else:
 			self.numberOfPresses += 1
+			self.numberOfIteration = 0
 
 			if self.numberOfPresses == 1:
-
+				
 				items = self.mainSizer.GetChildren( )
+				
+				if self.flaga == 'rest':
+					self.flaga = 0				
+				
+				else:
+					if self.flaga == 0:
+						b = items[ 2 ].GetWindow( )
 
-				if self.flaga == 0:
-					b = items[ 2 ].GetWindow( )
+					elif self.flaga == 1:
+					       b = items[ 0 ].GetWindow( )
 
-				elif self.flaga == 1:
-				       b = items[ 0 ].GetWindow( )
+					elif self.flaga == 2:
+						b = items[ 1 ].GetWindow( )
 
-				elif self.flaga == 2:
-					b = items[ 1 ].GetWindow( )
+					b.SetBackgroundColour( self.selectionColour )
+					b.SetFocus( )
+					b.Update( )
 
-				b.SetBackgroundColour( self.selectionColour )
-				b.SetFocus( )
-				b.Update( )
+					if self.flaga == 0 :
+						self.onExit( )
 
-				if self.flaga == 0 :
-					self.onExit( )
+					if self.flaga == 1 :
+						self.stoper.Stop( )
+						EGaps.cwiczenia( self, id = -1 ).Show( True )
+						self.MakeModal( False )
+						self.Hide( )
 
-				if self.flaga == 1 :
-					self.stoper.Stop( )
-					EGaps.cwiczenia( self, id = -1 ).Show( True )
-					self.MakeModal( False )
-					self.Hide( )
-
-				if self.flaga == 2 :
-					self.stoper.Stop( )
-					EMatch.cwiczenia( self, id = -1 ).Show( True )
-					self.MakeModal( False )
-					self.Hide( )
+					if self.flaga == 2 :
+						self.stoper.Stop( )
+						EMatch.cwiczenia( self, id = -1 ).Show( True )
+						self.MakeModal( False )
+						self.Hide( )
 
 			else:
 				event.Skip( )
@@ -335,25 +303,42 @@ class cwiczenia(wx.Frame):
 
 		else:
 			self.mouseCursor.move( *self.mousePosition )
-
 			self.numberOfPresses = 0
+			
+			self.numberOfIteration += 1
 
-			for i in range( 3 ):
-				item = self.mainSizer.GetItem( i )
+			if self.flaga == 'rest':
+				pass
+
+			elif self.numberOfIteration > self.maxNumberOfIteration:
+				for i in range( 3 ):
+					item = self.mainSizer.GetItem( i )
+					b = item.GetWindow( )
+					b.SetBackgroundColour( self.backgroundColour )
+					b.SetFocus( )
+
+				self.flaga = 'rest'
+
+			else:
+				for i in range( 3 ):
+					item = self.mainSizer.GetItem( i )
+					b = item.GetWindow( )
+					b.SetBackgroundColour( self.backgroundColour )
+					b.SetFocus( )
+
+				item = self.mainSizer.GetItem( self.flaga )
 				b = item.GetWindow( )
-				b.SetBackgroundColour( self.backgroundColour )
+				b.SetBackgroundColour( self.scanningColour )
 				b.SetFocus( )
 
-			item = self.mainSizer.GetItem( self.flaga )
-			b = item.GetWindow( )
-			b.SetBackgroundColour( self.scanningColour )
-			b.SetFocus( )
+				if self.flaga == 2:
+					self.flaga = 0
+				else:
+					self.flaga += 1			
+					
+				if self.switchSound.lower( ) == 'on':
+					self.switchingSound.play( )
 
-			if self.flaga == 2:
-				self.flaga = 0
-			else:
-				self.flaga += 1			
-	
 #=============================================================================
 if __name__ == '__main__':
 

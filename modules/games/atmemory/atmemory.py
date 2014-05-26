@@ -16,10 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with EPlatform. If not, see <http://www.gnu.org/licenses/>.
 
-
 import wxversion
 wxversion.select('2.8')
 
+import sys, os 
 import wx
 import wx.lib.buttons as bt
 
@@ -56,45 +56,19 @@ class memory_GUI( wx.Frame ):
 		with open( './.pathToATPlatform' ,'r' ) as textFile:
 			self.pathToATPlatform = textFile.readline( )
 
-		with open( self.pathToATPlatform + 'parameters', 'r' ) as parametersFile:
-			for line in parametersFile:
+		sys.path.append( self.pathToATPlatform )
+		from reader import reader
+		
+		reader = reader()
+		reader.readParameters()
+		parameters = reader.getParameters()
 
-				if line[ :line.find('=')-1 ] == 'timeGap':
-					self.timeGap = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'backgroundColour':
-					self.backgroundColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'textColour':
-					self.textColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'scanningColour':
-					self.scanningColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'selectionColour':
-					self.selectionColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'filmVolume':
-					self.filmVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'musicVolume':
-					self.musicVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'control':
-					self.control = line[ line.rfind('=')+2:-1 ]				
-				elif line[ :line.find('=')-1 ] == 'x_border':
-					self.xBorder = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'y_border':
-					self.yBorder = int( line[ line.rfind('=')+2:-1 ] )
+		for item in parameters:
+			try:
+				setattr(self, item[:item.find('=')], int(item[item.find('=')+1:]))
+			except ValueError:
+				setattr(self, item[:item.find('=')], item[item.find('=')+1:])
 
-				elif not line.isspace( ):
-					print 'Niewłaściwie opisane parametry'
-					print 'Błąd w linii', line
-					
-					self.timeGap = 1500
-					self.backgroundColour = 'white'
-					self.textColour = 'black'
-					self.scanningColour =  '#E7FAFD'
-					self.selectionColour = '#9EE4EF'
-					self.filmVolumeLevel = 100
-					self.musicVolumeLevel = 70
-					self.control = 'switch'					
-					self.xBorder = 4
-					self.yBorder = 4 
-					
 		self.colorlegend = {'0':'#E5D9D9', '1': '#5545EA', '2': '#B229B7', '3': '#13CE1A', '4':'#CE1355', '5': '#F9F504', '6':'#FF7504', '7':'#FF0404', '8':'#000000'}
 		
 		self.options = [ 'restart', 'exit' ]
@@ -120,12 +94,20 @@ class memory_GUI( wx.Frame ):
                 self.countColumns = 0										
 		
                 self.maxNumberOfColumns = 2									
-		
+		self.maxNumberOfRows = 2
+
                 self.numberOfPresses = 1
                 self.subSizerNumber = 0
 		
 		if self.control != 'tracker':
 			self.mouseCursor = PyMouse( )
+
+		if self.switchSound.lower( ) == 'on' or self.pressSound.lower( ) == 'on':
+			mixer.init( )
+			if self.switchSound.lower( ) == 'on':
+				self.switchingSound = mixer.Sound( self.pathToATPlatform + '/sounds/switchSound.wav' )
+			if self.pressSound.lower( ) == 'on':
+				self.pressingSound = mixer.Sound( self.pathToATPlatform + '/sounds/pressSound.wav' )
 				
 		self.SetBackgroundColour( 'black' )
 
@@ -133,8 +115,7 @@ class memory_GUI( wx.Frame ):
 
 	#-------------------------------------------------------------------------
         def initializeBitmaps(self):
-		
-		
+				
 		iconFiles = [ file for file in [ self.path + 'icons/games/atmemory/restart.png', self.path + 'icons/games/atmemory/exit.png' ,self.path + 'icons/games/atmemory/empty.png' ] ]	
 		iconBitmapName = [ 'restart', 'exit', 'empty' ]
 
@@ -152,6 +133,9 @@ class memory_GUI( wx.Frame ):
 	#-------------------------------------------------------------------------	
 	def createGui(self):
 		
+		self.thicknessOfExternalBorder = self.xBorder # factor related to the border of the entire board
+		self.thicknessOfInternalBorder = self.xBorder # factor related to the border of every button 
+
 		self.mainSizer = wx.BoxSizer( wx.VERTICAL )		
 
 		self.subSizer = wx.GridBagSizer( self.xBorder, self.yBorder )
@@ -160,15 +144,18 @@ class memory_GUI( wx.Frame ):
 			event = eval('wx.EVT_LEFT_DOWN')
 		else:
 			event = eval('wx.EVT_BUTTON')
+
+		self.buttonsBoardWidth  = self.winWidth - self.thicknessOfExternalBorder * 2 - self.thicknessOfInternalBorder * ( self.numberOfColumns - 1 )
+		self.buttonsBoardHeight = ( self.winHeight - 20 ) - self.thicknessOfExternalBorder * 3 - self.thicknessOfInternalBorder * ( self.numberOfRows - 1 ) # -20 because of the Unity upper bar
 		
 		for index_1, item in enumerate( self.labels ):
 			if item in self.indexes:
 				name = str(int(item))
-				b = bt.GenBitmapButton( self, -1, bitmap = self.iconBitmaps[ name ], size = ( 0.985*self.winWidth / self.numberOfColumns, 0.95 * self.winHeight / self.numberOfRows ) )#0.79
+				b = bt.GenBitmapButton( self, -1, bitmap = self.iconBitmaps[ name ], size = ( self.buttonsBoardWidth / float( self.numberOfColumns ), self.buttonsBoardHeight / float( self.numberOfRows ) ) )
 			else:
 				if item == -1.0:
 					name = 'empty'			
-				b = bt.GenBitmapButton( self, -1, bitmap = self.iconBitmaps[ name ], size = ( 0.985*self.winWidth / self.numberOfColumns, 0.95 * self.winHeight / self.numberOfRows ) )
+				b = bt.GenBitmapButton( self, -1, bitmap = self.iconBitmaps[ name ], size = ( self.buttonsBoardWidth / float( self.numberOfColumns ), self.buttonsBoardHeight / float( self.numberOfRows ) ) )
 				b.SetFont( wx.Font( 65, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False ) )
 
 			b.name = (index_1 / self.numberOfColumns), (index_1 % self.numberOfRows) + 1
@@ -183,7 +170,7 @@ class memory_GUI( wx.Frame ):
 
                         if index_2 == 1:
 				if self.winstate:
-					b = bt.GenButton( self, -1, u'WYGRYWASZ!', size = ( 0.985*self.winWidth / self.numberOfColumns, 0.95 * self.winHeight / self.numberOfRows  ) )
+					b = bt.GenButton( self, -1, u'WYGRYWASZ!',  size = ( self.buttonsBoardWidth / float( self.numberOfColumns ), self.buttonsBoardHeight / float( self.numberOfRows ) ) )
 					b.SetFont( wx.Font(27, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False) )
 		
 				else:
@@ -202,7 +189,7 @@ class memory_GUI( wx.Frame ):
                                 self.subSizer.Add( b, ( ( index_1 + index_2 + 2 ) / self.numberOfColumns, ( index_1 + index_2 + 2 ) % self.numberOfColumns), (1,2), wx.EXPAND )
 			b.name = (( index_1 + index_2 ) / self.numberOfRows), (( index_1 + index_2 ) % self.numberOfColumns) + 1
 
-		self.mainSizer.Add( self.subSizer, proportion = 1, flag = wx.EXPAND )
+		self.mainSizer.Add( self.subSizer, proportion = 1, flag = wx.EXPAND | wx.TOP | wx.LEFT, border = self.xBorder )
 		self.SetSizer( self.mainSizer , deleteOld = True )
 		
 		self.Layout( )
@@ -272,7 +259,7 @@ class memory_GUI( wx.Frame ):
 			event.Veto( )
 
 			if self.control != 'tracker':
-				self.mousePosition = self.winWidth - 8, self.winHeight - 8
+				self.mousePosition = self.winWidth - 8 - self.xBorder, self.winHeight - 8 - self.yBorder
 				self.mouseCursor.move( *self.mousePosition )	
 
 	#----------------------------------------------------------------------------
@@ -294,6 +281,9 @@ class memory_GUI( wx.Frame ):
 
 	#----------------------------------------------------------------------------
 	def onPress(self, event):
+		
+		if self.pressSound.lower( ) == 'on':
+			self.pressingSound.play( )
 
 		if self.control == 'tracker':
 			if self.pressFlag == False:
@@ -361,6 +351,8 @@ class memory_GUI( wx.Frame ):
 
 			if self.numberOfPresses == 1:
 				#print self.game.displayfield
+				self.countRows = 0
+
 				if self.flag == 'rest':
 					self.flag = 'row'
 					self.rowIteration = 0
@@ -455,8 +447,8 @@ class memory_GUI( wx.Frame ):
 				self.button.SetBackgroundColour( self.backgroundColour )	
 
 			if self.revert:
-				self.stoper.Stop()
-				time.sleep(1)
+				self.stoper.Stop( )
+				time.sleep( 1 )
 				self.stoper.Start( self.timeGap )
 				self.game.revert( )
 				#print self.rowIteration, self.columnIteration, self.old_rowIteration, self.old_columnIteration			
@@ -471,8 +463,8 @@ class memory_GUI( wx.Frame ):
 		else:
 			self.numberOfPresses = 0		
 			if self.revert:
-				self.stoper.Stop()
-				time.sleep(1)
+				self.stoper.Stop( )
+				time.sleep( 1 )
 				self.stoper.Start( self.timeGap )
 				self.game.revert( )
 				#print self.rowIteration, self.columnIteration, self.old_rowIteration, self.old_columnIteration			
@@ -486,85 +478,101 @@ class memory_GUI( wx.Frame ):
 				self.countColumns = 0
 
 			if self.control != 'tracker':
-				self.mouseCursor.move( self.winWidth - 12, self.winHeight - 500 )
+				self.mouseCursor.move( self.winWidth - 8 - self.xBorder, self.winHeight - 8 - self.yBorder )
 
+			if self.flag == 'rest':
+				pass
 
-			if self.flag == 'row':
+			elif self.countRows < self.maxNumberOfRows:
+				if self.flag == 'row':
 
-				self.rowIteration = self.rowIteration % self.numberOfRows
+					self.rowIteration = self.rowIteration % self.numberOfRows
 
-				items = self.subSizer.GetChildren( )
-				for i, item in enumerate( items ):
-						b = item.GetWindow( )
-						b.SetBackgroundColour( self.backgroundColour )
-						b.SetFocus( )
-						b.Update( )
+					items = self.subSizer.GetChildren( )
+					for i, item in enumerate( items ):
+							b = item.GetWindow( )
+							b.SetBackgroundColour( self.backgroundColour )
+							b.SetFocus( )
+							b.Update( )
 
-				if self.rowIteration == self.numberOfRows - 1:
-					self.countRows += 1
-					buttonsToHighlight = range( self.rowIteration * self.numberOfColumns, self.rowIteration * self.numberOfColumns  + 2 )
-
-				else:
-					buttonsToHighlight = range( self.rowIteration * self.numberOfColumns, self.rowIteration * self.numberOfColumns + self.numberOfColumns )
-
-				for i, button in enumerate( buttonsToHighlight ):
-
-						item = self.subSizer.GetItem( button )
-						b = item.GetWindow( )
-						b.SetBackgroundColour( self.scanningColour )
-						b.SetFocus( )
-						b.Update( )
-
-				self.rowIteration += 1
-
-			elif self.flag == 'columns':
-
-	################################################################################################################################################
-
-					new_numberOfColumns = self.numberOfColumns
 					if self.rowIteration == self.numberOfRows - 1:
-						new_numberOfColumns = 2
-						self.maxNumberOfColumns = 4
-
-	################################################################################################################################################
-
-					if self.countColumns == self.maxNumberOfColumns:
-						self.flag = 'row'
-
-						item = self.subSizer.GetItem( self.rowIteration * self.numberOfColumns + self.columnIteration - 1 )
-
-						b = item.GetWindow( )
-						b.SetBackgroundColour( self.backgroundColour )
-
-						self.rowIteration = 0
-						self.columnIteration = 0
-						self.countColumns = 0
+						self.countRows += 1
+						buttonsToHighlight = range( self.rowIteration * self.numberOfColumns, self.rowIteration * self.numberOfColumns  + 2 )
 
 					else:
+						buttonsToHighlight = range( self.rowIteration * self.numberOfColumns, self.rowIteration * self.numberOfColumns + self.numberOfColumns )
 
-						if self.columnIteration == new_numberOfColumns - 1 or (self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns - 3 and self.rowIteration == self.numberOfRows - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns - 4 and self.rowIteration == self.numberOfRows - 1 ):
-							self.countColumns += 1
+					for i, button in enumerate( buttonsToHighlight ):
 
-						if self.columnIteration == new_numberOfColumns or ( self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns - 2 and self.rowIteration == self.numberOfRows - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns - 3 and self.rowIteration == self.numberOfRows - 1 ):
+							item = self.subSizer.GetItem( button )
+							b = item.GetWindow( )
+							b.SetBackgroundColour( self.scanningColour )
+							b.SetFocus( )
+							b.Update( )
+
+					self.rowIteration += 1
+
+				elif self.flag == 'columns':
+
+		################################################################################################################################################
+
+						new_numberOfColumns = self.numberOfColumns
+						if self.rowIteration == self.numberOfRows - 1:
+							new_numberOfColumns = 2
+							self.maxNumberOfColumns = 4
+
+		################################################################################################################################################
+
+						if self.countColumns == self.maxNumberOfColumns:
+							self.flag = 'row'
+
+							item = self.subSizer.GetItem( self.rowIteration * self.numberOfColumns + self.columnIteration - 1 )
+
+							b = item.GetWindow( )
+							b.SetBackgroundColour( self.backgroundColour )
+
+							self.rowIteration = 0
 							self.columnIteration = 0
+							self.countColumns = 0
 
-						items = self.subSizer.GetChildren( )
+						else:
 
-						for i, item in enumerate( items ):
+							if self.columnIteration == new_numberOfColumns - 1 or (self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns - 3 and self.rowIteration == self.numberOfRows - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns - 4 and self.rowIteration == self.numberOfRows - 1 ):
+								self.countColumns += 1
 
-								b = item.GetWindow( )
-								b.SetBackgroundColour( self.backgroundColour )
-								b.SetFocus( )
-								b.Update( )
+							if self.columnIteration == new_numberOfColumns or ( self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns - 2 and self.rowIteration == self.numberOfRows - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns - 3 and self.rowIteration == self.numberOfRows - 1 ):
+								self.columnIteration = 0
 
-						item = self.subSizer.GetItem( self.rowIteration * self.numberOfColumns + self.columnIteration)
-						b = item.GetWindow( )
-						b.SetBackgroundColour( self.scanningColour )
-						b.SetFocus( )
-						b.Update( )
+							items = self.subSizer.GetChildren( )
 
-						self.maxNumberOfColumns			
-						self.columnIteration += 1
+							for i, item in enumerate( items ):
+
+									b = item.GetWindow( )
+									b.SetBackgroundColour( self.backgroundColour )
+									b.SetFocus( )
+									b.Update( )
+
+							item = self.subSizer.GetItem( self.rowIteration * self.numberOfColumns + self.columnIteration)
+							b = item.GetWindow( )
+							b.SetBackgroundColour( self.scanningColour )
+							b.SetFocus( )
+							b.Update( )
+
+							self.maxNumberOfColumns			
+							self.columnIteration += 1
+
+				if self.switchSound.lower( ) == 'on':
+					self.switchingSound.play( )
+
+			else:
+				self.flag = 'rest'
+
+				items = self.subSizer.GetChildren( )
+
+				for item in items:
+					b = item.GetWindow( )
+					b.SetBackgroundColour( self.backgroundColour )
+					b.SetFocus( )
 
 #=============================================================================
 if __name__ == '__main__':

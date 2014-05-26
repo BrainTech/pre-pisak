@@ -20,7 +20,7 @@
 import wxversion
 wxversion.select('2.8')
 
-import os
+import os, sys
 
 import wx
 import wx.lib.buttons as bt
@@ -47,94 +47,33 @@ class check(wx.Frame):
 		with open( './.pathToATPlatform' ,'r' ) as textFile:
 			self.pathToATPlatform = textFile.readline( )
 
-		with open( self.pathToATPlatform + 'parameters', 'r' ) as parametersFile:
-			for line in parametersFile:
-
-				if line[ :line.find('=')-1 ] == 'timeGap':
-					self.timeGap = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'backgroundColour':
-					self.backgroundColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'textColour':
-					self.textColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'scanningColour':
-					self.scanningColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'selectionColour':
-					self.selectionColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'filmVolume':
-					self.filmVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'musicVolume':
-					self.musicVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'control':
-					self.control = line[ line.rfind('=')+2:-1 ]
-
-				elif not line.isspace( ):
-					print 'Niewłaściwie opisane parametry'
-					print 'Błąd w linii', line
-					
-					self.timeGap = 1500
-					self.backgroundColour = 'white'
-					self.textColour = 'black'
-					self.scanningColour =  '#E7FAFD'
-					self.selectionColour = '#9EE4EF'
-					self.filmVolumeLevel = 100
-					self.musicVolumeLevel = 70
-					self.control = 'switch'
-
-		with open( self.pathToATPlatform + 'spellerParameters', 'r' ) as parametersFile:
-			for line in parametersFile:
-				
-				if line[ :line.find('=')-1 ] == 'voice':
-					self.voice = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'vowelColour':
-					self.vowelColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'polishLettersColour':
-					self.polishLettersColour = line[ line.rfind('=')+2:-1 ]
-			
-				elif not line.isspace( ):
-					print 'Niewłaściwie opisane parametry'
-					print 'Błąd w pliku spellerParameters w linii', line
-				    
-					self.voice = False
-					self.vowelColour = 'red'
-					self.polishLettersColour = 'blue'
-
-                with open( self.pathToATPlatform + 'ewritingParameters', 'r' ) as parametersFile:
-			for line in parametersFile:                                                                
-
-                                if line[ :line.find('=')-1 ] == 'textSize':
-					self.textSize = int( line[ line.rfind('=')+2:-1 ])
-				elif line[ :line.find('=')-1 ] == 'maxPoints':
-					self.maxPoints = int(line[ line.rfind('=')+2:-1 ])
-				elif line[ :line.find('=')-1 ] == 'checkTime':
-                                        self.checkTime = int(line[ line.rfind('=')+2:-1 ])
-				elif line[ :line.find('=')-1 ] == 'colorGrat':
-					self.colorGrat = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'colorNiest':
-                                        self.colorNiest = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'ileLuk':
-                                        self.ileLuk = int(line[ line.rfind('=')+2:-1 ])
-				elif line[ :line.find('=')-1 ] == 'sex':
-                                        self.sex = line[ line.rfind('=')+2:-1 ]
+		sys.path.append( self.pathToATPlatform )
+		from reader import reader
 		
-				elif not line.isspace( ):
-					print 'Niewłaściwie opisane parametry'
-					print 'Błąd w linii', line
-					
-					self.textSize = 80
-					self.checkTime = 8000
-					self.colorGrat = 'lime green'
-					self.colorNiest = 'indian red'
-					self.ileLuk = 1
-					self.maxPoints = 2
-					self.sex = 'D'
+		reader = reader()
+		reader.readParameters()
+		parameters = reader.getParameters()
+
+		for item in parameters:
+			try:
+				setattr(self, item[:item.find('=')], int(item[item.find('=')+1:]))
+			except ValueError:
+				setattr(self, item[:item.find('=')], item[item.find('=')+1:])
+
+		self.mouseCursor = PyMouse( )
+		if self.control != 'tracker':
+			self.mousePosition = self.winWidth - 8 - self.xBorder, self.winHeight - 48 - self.yBorder
+			self.mouseCursor.move( *self.mousePosition )
 
 		mixer.init( )
+		if self.pressSound.lower( ) == 'on':
+			self.pressingSound = mixer.Sound( self.pathToATPlatform + '/sounds/pressSound.wav' )
 
 	#-------------------------------------------------------------------------
 	def createGui(self):
 	
-                self.subSizer = wx.GridSizer( 1, 1, 0, 0 )
-                self.subSizer2 = wx.GridSizer( 1, 1, 0, 0 )
+                self.subSizer = wx.GridSizer( 1, 1, self.xBorder, self.yBorder )
+                self.subSizer2 = wx.GridSizer( 1, 1, self.xBorder, self.yBorder )
 
 		if self.control != 'tracker':
 			self.event = eval('wx.EVT_LEFT_DOWN')
@@ -199,15 +138,12 @@ class check(wx.Frame):
 		b.SetForegroundColour( kolor)
 		b.SetFocus( )
 		
-		self.subSizer.Add( b, 0, wx.EXPAND )
-		self.subSizer2.Add( be, 0, wx.EXPAND )
+		self.subSizer.Add( b, 0, wx.EXPAND | wx.RIGHT | wx.LEFT | wx.TOP | wx.BOTTOM, border = self.xBorder)
+		self.subSizer2.Add( be, 0, wx.EXPAND | wx.RIGHT | wx.LEFT | wx.BOTTOM, border = self.xBorder )
 		self.parent.mainSizer.Add( self.subSizer, proportion = 7, flag = wx.EXPAND )
 		self.parent.mainSizer.Add(self.subSizer2, proportion = 3, flag = wx.EXPAND )
 		self.parent.SetSizer( self.parent.mainSizer )
 		self.parent.Layout( )
-
-		# if self.app:
-                #         self.parent.stoper3.Start( self.checkTime )
 
 		if self.oklaski:
                         mixer.music.load( self.pathToATPlatform + 'multimedia/ewriting/oklaski.ogg' )
@@ -220,7 +156,7 @@ class check(wx.Frame):
 	def reward(self, event):
 
                 self.parent.mainSizer.Clear( deleteWindows = True )
-                self.subSizer = wx.GridSizer( 1, 1, 0, 0)
+                self.subSizer = wx.GridSizer( 1, 1, self.xBorder, self.yBorder)
 
                 b = bt.GenButton( self.parent, -1, u'CHCESZ WYŁĄCZYĆ?\n \nPRZYCIŚNIJ.' )
 		b.SetFont( wx.Font(25, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False) )
@@ -228,7 +164,7 @@ class check(wx.Frame):
 		b.SetBackgroundColour( 'white' )
 		b.Bind( self.event, self.OnExit)
 
-		self.subSizer.Add( b, 0, wx.EXPAND )
+		self.subSizer.Add( b, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP | wx.BOTTOM, border = self.xBorder)
                 self.parent.mainSizer.Add( self.subSizer, proportion = 1, flag = wx.EXPAND )
                 self.parent.SetSizer( self.parent.mainSizer )
                 self.parent.Layout( )
@@ -245,6 +181,7 @@ class check(wx.Frame):
                 self.ileklik += 1
 
                 if self.ileklik == 1:
+			self.parent.checkFlag = False
                         mixer.music.stop( )
                         self.parent.back( )
 		else:
@@ -253,6 +190,10 @@ class check(wx.Frame):
 	#-------------------------------------------------------------------------
 	def zamknij(self, event):
 
+		if self.pressSound.lower( ) == 'on':
+			self.pressingSound.play( )
+
+		self.parent.checkFlag = False
 		self.parent.back( )
 
                 if self.oklaski:

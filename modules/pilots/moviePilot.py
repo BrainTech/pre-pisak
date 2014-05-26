@@ -19,11 +19,12 @@
 import wxversion
 wxversion.select( '2.8' )
 
-import glob, os, time
+import glob, os, time, sys
 import wx, alsaaudio
 import wx.lib.buttons as bt
 
 from pymouse import PyMouse
+from pygame import mixer
 
 import suspend
 
@@ -33,7 +34,9 @@ class pilot( wx.Frame ):
 
 	    self.winWidth, self.winHeight = wx.DisplaySize( )
 
-            wx.Frame.__init__( self , parent , id, 'moviePilot', size = ( 220, 468 ), pos = ( self.winWidth - 225, self.winHeight - 505 ) )
+            self.initializeParameters( )
+            wx.Frame.__init__( self , parent , id, 'moviePilot', size = ( self.width, self.height ), pos = ( self.winWidth - self.width - self.xBorder*(self.numberOfColumns[0]-2), self.winHeight - self.height - self.xBorder*(self.numberOfRows[0]-6) ) )
+            self.SetBackgroundColour( 'black' )
 
             style = self.GetWindowStyle( )
             self.SetWindowStyle( style | wx.STAY_ON_TOP )
@@ -41,7 +44,6 @@ class pilot( wx.Frame ):
             
 	    self.MakeModal( True )
 
-            self.initializeParameters( )
             self.initializeBitmaps( )
 	    self.createGui( )
             self.createBindings( )
@@ -54,38 +56,18 @@ class pilot( wx.Frame ):
 	    with open( '.pathToATPlatform' ,'r' ) as textFile:
 		    self.pathToATPlatform = textFile.readline( )
 
-	    with open( self.pathToATPlatform + 'parameters' ,'r' ) as parametersFile:
-		    for line in parametersFile:
-
-			    if line[ :line.find('=')-1 ] == 'timeGap':
-				    self.timeGap = int( line[ line.rfind('=')+2:-1 ] )
-			    elif line[ :line.find('=')-1 ] == 'backgroundColour':
-				    self.backgroundColour = line[ line.rfind('=')+2:-1 ]
-			    elif line[ :line.find('=')-1 ] == 'textColour':
-				    self.textColour = line[ line.rfind('=')+2:-1 ]
-			    elif line[ :line.find('=')-1 ] == 'scanningColour':
-				    self.scanningColour = line[ line.rfind('=')+2:-1 ]
-			    elif line[ :line.find('=')-1 ] == 'selectionColour':
-				    self.selectionColour = line[ line.rfind('=')+2:-1 ]
-			    elif line[ :line.find('=')-1 ] == 'filmVolume':
-				    self.filmVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
-			    elif line[ :line.find('=')-1 ] == 'musicVolume':
-				    self.musicVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
-			    elif line[ :line.find('=')-1 ] == 'control':
-				    self.control = line[ line.rfind('=')+2:-1 ]
-
-			    elif not line.isspace( ):
-				    print 'Niewłaściwie opisane parametry'
-				    print 'Błąd w linii', line
-				    
-				    self.timeGap = 1500
-				    self.backgroundColour = 'white'
-				    self.textColour = 'black'
-				    self.scanningColour =  '#E7FAFD'
-				    self.selectionColour = '#9EE4EF'
-				    self.filmVolumeLevel = 100
-				    self.musicVolumeLevel = 70
-				    self.control = 'switch'
+	    sys.path.append( self.pathToATPlatform )
+	    from reader import reader
+	    
+	    reader = reader()
+	    reader.readParameters()
+	    parameters = reader.getParameters()
+	    
+	    for item in parameters:
+		    try:
+			    setattr(self, item[:item.find('=')], int(item[item.find('=')+1:]))
+		    except ValueError:
+			    setattr(self, item[:item.find('=')], item[item.find('=')+1:])
 
 	    self.flag = 'row'
 	    self.pressFlag = False
@@ -104,13 +86,24 @@ class pilot( wx.Frame ):
             self.countMaxColumns = 2
             self.numberOfPresses = 0
 	    self.trackCounter = 0
-	    
+
+	    self.initCount = 0 #it's better to use another timer than conditions
+	    self.initCount2 = 0
+
+	    self.mouseCursor = PyMouse( )	    
 	    if self.control != 'tracker':	    
-		    self.mouseCursor = PyMouse( )
-		    self.mousePosition = self.winWidth - 8, self.winHeight - 48
+		    self.mousePosition = self.winWidth - 8 - self.xBorder, self.winHeight - 48 - self.yBorder
 		    self.mouseCursor.move( *self.mousePosition )
 
-            self.SetBackgroundColour( 'black' )
+	    if self.switchSound.lower( ) == 'on' or self.pressSound.lower( ) == 'on':
+		    mixer.init( )
+		    if self.switchSound.lower( ) == 'on':
+			    self.switchingSound = mixer.Sound( self.pathToATPlatform + '/sounds/switchSound.wav' )
+		    if self.pressSound.lower( ) == 'on':
+			    self.pressingSound = mixer.Sound( self.pathToATPlatform + '/sounds/pressSound.wav' )
+	    
+	    self.width = self.numberOfColumns[0] * 120
+	    self.height = self.numberOfRows[0] * 100
 
 	#-------------------------------------------------------------------------
         def initializeBitmaps(self):
@@ -138,7 +131,7 @@ class pilot( wx.Frame ):
 
 		self.mainSizer = wx.BoxSizer( wx.VERTICAL )
 
-		self.subSizer = wx.GridBagSizer( 4, 4 )
+		self.subSizer = wx.GridBagSizer( self.xBorder, self.yBorder )
 
 		if self.control != 'tracker':
 			event = eval('wx.EVT_LEFT_DOWN')
@@ -182,7 +175,7 @@ class pilot( wx.Frame ):
                 for number in range( self.numberOfColumns[ 0 ] ):
                     self.subSizer.AddGrowableCol( number )
 
-		self. mainSizer.Add( self.subSizer, proportion = 1, flag = wx.EXPAND )
+		self. mainSizer.Add( self.subSizer, proportion = 1, flag = wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP | wx.BOTTOM, border = self.xBorder )
 		self.SetSizer( self. mainSizer )
 
 	#-------------------------------------------------------------------------
@@ -236,7 +229,7 @@ class pilot( wx.Frame ):
 			event.Veto()
 
 			if self.control != 'tracker':											
-				self.mousePosition = self.winWidth - 8, self.winHeight - 8
+				self.mousePosition = self.winWidth - 8 - self.xBorder, self.winHeight - 8 - self.yBorder
 				self.mouseCursor.move( *self.mousePosition )	
 
 	#-------------------------------------------------------------------------
@@ -255,14 +248,17 @@ class pilot( wx.Frame ):
 	#-------------------------------------------------------------------------
 	def onPress(self, event):
 
+		if self.pressSound.lower( ) == 'on':
+			self.pressingSound.play( )
+
 		if self.control == 'tracker':
 			if self.pressFlag == False:
-				self.trackCounter = 0
+				# self.trackCounter = 0
 				self.button = event.GetEventObject()
 				self.button.SetBackgroundColour( self.selectionColour )
 				self.pressFlag = True
 				self.label = event.GetEventObject().GetName().encode( 'utf-8' )			
-				self.stoper.Start( 0.15 * self.timeGap )
+				# self.stoper.Start( 0.1 * self.timeGap )
 
 				if self.label == 'volume down':
 					try:
@@ -466,20 +462,27 @@ class pilot( wx.Frame ):
 
 	#-------------------------------------------------------------------------
 	def timerUpdate(self, event):
-
+		
 		if self.control == 'tracker':
-			self.trackCounter += 1
-			print self.trackCounter 
-			if self.button.GetBackgroundColour( ) == self.backgroundColour:
-				self.button.SetBackgroundColour( self.selectionColour )
-				
+			self.initCount += 1
+			self.mousePosition = self.mouseCursor.position( )
+			if self.mousePosition[0] < 1120 and self.initCount > 2:
+				self.initCount2 += 1
+				if self.initCount2 == 2:
+					self.stoper.Stop( )
+					suspend.suspend( self, id = 2 ).Show( True )
+					self.initCount = 0
+					self.initCont2 = 0
+					self.Hide( )
 			else:
-				self.button.SetBackgroundColour( self.backgroundColour )	
+				self.initCount2 = 0
 
-			# self.stoper.Stop( )
-			self.pressFlag = False
-			if self.trackCounter > 10:
-				self.stoper.Stop( )
+			if self.pressFlag == True:
+				if self.button.GetBackgroundColour( ) == self.backgroundColour:
+					self.button.SetBackgroundColour( self.selectionColour )
+				else:
+					self.button.SetBackgroundColour( self.backgroundColour )	
+				self.pressFlag = False
 
 		else:
 			if self.control != 'tracker':
@@ -488,6 +491,10 @@ class pilot( wx.Frame ):
 			self.numberOfPresses = 0
 
 			if self.numberOfEmptyIteration < 2*0.9999999999:
+
+				if self.switchSound.lower( ) == 'on':
+					self.switchingSound.play( )
+
 				if self.flag == 'row': #flag == row ie. switching between rows
 
 						self.numberOfEmptyIteration += 1. / self.numberOfRows[ 0 ]
@@ -563,6 +570,8 @@ class pilot( wx.Frame ):
 
 				self.stoper.Stop( )
 				self.numberOfEmptyIteration = 0
+				suspend.suspend( self, id = 2 ).Show( True )
+				self.Hide( )
 
 				items = self.subSizer.GetChildren( )			
 				for item in items:

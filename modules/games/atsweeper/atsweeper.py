@@ -19,11 +19,12 @@
 import wxversion
 wxversion.select('2.8')
 
+import sys, os
 import wx
 import wx.lib.buttons as bt
 from pymouse import PyMouse
+from pygame import mixer
 
-import pygame
 import minesweeper
 
 #=============================================================================
@@ -52,44 +53,18 @@ class sweeper_GUI( wx.Frame ):
 		with open( './.pathToATPlatform' ,'r' ) as textFile:
 			self.pathToATPlatform = textFile.readline( )
 
-		with open( self.pathToATPlatform + 'parameters', 'r' ) as parametersFile:
-			for line in parametersFile:
+		sys.path.append( self.pathToATPlatform )
+		from reader import reader
+		
+		reader = reader()
+		reader.readParameters()
+		parameters = reader.getParameters()
 
-				if line[ :line.find('=')-1 ] == 'timeGap':
-					self.timeGap = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'backgroundColour':
-					self.backgroundColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'textColour':
-					self.textColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'scanningColour':
-					self.scanningColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'selectionColour':
-					self.selectionColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'filmVolume':
-					self.filmVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'musicVolume':
-					self.musicVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'control':
-					self.control = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'x_border':
-					self.xBorder = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'y_border':
-					self.yBorder = int( line[ line.rfind('=')+2:-1 ] )
-
-				elif not line.isspace( ):
-					print 'Niewłaściwie opisane parametry'
-					print 'Błąd w linii', line
-					
-					self.timeGap = 1500
-					self.backgroundColour = 'white'
-					self.textColour = 'black'
-					self.scanningColour =  '#E7FAFD'
-					self.selectionColour = '#9EE4EF'
-					self.filmVolumeLevel = 100
-					self.musicVolumeLevel = 70
-					self.control = 'switch'
-					self.xBorder = 4
-					self.yBorder = 4 
+		for item in parameters:
+			try:
+				setattr(self, item[:item.find('=')], int(item[item.find('=')+1:]))
+			except ValueError:
+				setattr(self, item[:item.find('=')], item[item.find('=')+1:])
 
 		self.colorlegend = {'0':'#E5D9D9', '1': '#5545EA', '2': '#B229B7', '3': '#13CE1A', '4':'#CE1355', '5': '#F9F504', '6':'#FF7504', '7':'#FF0404', '8':'#000000'}
 
@@ -120,7 +95,7 @@ class sweeper_GUI( wx.Frame ):
                 self.countRows = 0
                 self.countColumns = 0										
 
-		self.maxNumberOfRows = 3
+		self.maxNumberOfRows = 2
                 self.maxNumberOfColumns = 2									
 	    
                 self.numberOfPresses = 1
@@ -128,12 +103,20 @@ class sweeper_GUI( wx.Frame ):
 
 		if self.control != 'tracker':
 			self.mouseCursor = PyMouse( )
-			self.mousePosition = self.winWidth - 8, self.winHeight - 8
+			self.mousePosition = self.winWidth - 10 - self.xBorder, self.winHeight - 12 - self.yBorder
 			self.mouseCursor.move( *self.mousePosition )
+
+		if self.switchSound.lower( ) == 'on' or self.pressSound.lower( ) == 'on':
+			mixer.init( )
+			if self.switchSound.lower( ) == 'on':
+				self.switchingSound = mixer.Sound( self.pathToATPlatform + '/sounds/switchSound.wav' )
+			if self.pressSound.lower( ) == 'on':
+				self.pressingSound = mixer.Sound( self.pathToATPlatform + '/sounds/pressSound.wav' )
 
 		self.SetBackgroundColour( 'black' )
 
 		self.number = 0
+
 	#-------------------------------------------------------------------------
         def initializeBitmaps( self ):
 		
@@ -158,16 +141,15 @@ class sweeper_GUI( wx.Frame ):
 			event = eval('wx.EVT_BUTTON')
 
 		if self.winstate:
-			self.res = bt.GenButton( self, -1, u'WSZYSTKIE MINY OZNAKOWANE. WYGRYWASZ!', size = ( self.winWidth, 0.1 * ( self.winHeight-20 ) ) )
+			self.res = bt.GenButton( self, -1, u'WSZYSTKIE MINY OZNAKOWANE. WYGRYWASZ!', size = ( self.winWidth - 2*self.xBorder, 0.1 * ( self.winHeight-20 ) ) )
 		elif self.failstate:
-			self.res = bt.GenButton( self, -1, u'KABOOM!', size = ( self.winWidth, 0.1 * ( self.winHeight-20 ) ) )
+			self.res = bt.GenButton( self, -1, u'KABOOM!', size = ( self.winWidth - 2*self.xBorder, 0.1 * ( self.winHeight-20 ) ) )
 		else:
-                	self.res = bt.GenButton( self, -1, u'FLAGI / MINY:   ' + str( self.game.numberOfFlags ) + ' / ' + str( self.game.numberOfMines ), size = ( self.winWidth, 0.1 * ( self.winHeight-20 ) ) )
+                	self.res = bt.GenButton( self, -1, u'FLAGI / MINY:   ' + str( self.game.numberOfFlags ) + ' / ' + str( self.game.numberOfMines ), size = ( self.winWidth - 2*self.xBorder, 0.1 * ( self.winHeight-20 ) ) )
 
-		self.border = 1
 		self.res.SetFont( wx.Font(27, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False) )
 				
-		self.margine = 3
+		self.margine = self.xBorder
 
 		self.subSizer = wx.GridBagSizer( self.margine, self.margine )
 
@@ -175,15 +157,15 @@ class sweeper_GUI( wx.Frame ):
 
 			if item == -2.0:
 
-				b = bt.GenBitmapButton( self, -1, bitmap = self.iconBitmaps[ 'mine' ], size = ( ( self.winWidth - self.margine/1.8 * (self.numberOfColumns) ) / float( self.numberOfColumns ), ( 0.7 * ( self.winHeight-20 ) - self.margine * (self.numberOfRows - 1) ) / float( self.numberOfRows - 1 ) ) )
+				b = bt.GenBitmapButton( self, -1, bitmap = self.iconBitmaps[ 'mine' ], size = ( ( self.winWidth - self.margine * (self.numberOfColumns+1) ) / float( self.numberOfColumns ), ( 0.7 * ( self.winHeight-20 ) - self.margine * (self.numberOfRows+2) ) / float( self.numberOfRows - 1 ) ) )
 
 			elif item == -3.0:
 
-				b = bt.GenBitmapButton( self, -1, bitmap=self.iconBitmaps[ 'flag_mini' ],size = ( ( self.winWidth - self.margine/1.8 * (self.numberOfColumns) ) / float( self.numberOfColumns ), ( 0.7 * ( self.winHeight-20 ) - self.margine * (self.numberOfRows - 1) ) / float( self.numberOfRows - 1 ) ) )
+				b = bt.GenBitmapButton( self, -1, bitmap=self.iconBitmaps[ 'flag_mini' ],size = ( ( self.winWidth - self.margine * (self.numberOfColumns+1) ) / float( self.numberOfColumns ), ( 0.7 * ( self.winHeight-20 ) - self.margine * (self.numberOfRows+2) ) / float( self.numberOfRows - 1 ) ) )
 
 			elif item == -4.0:
 
-				b = bt.GenBitmapButton( self, -1, bitmap=self.iconBitmaps[ 'flag_crossed_mini' ],size = ( ( self.winWidth - self.margine/1.8 * (self.numberOfColumns) ) / float( self.numberOfColumns ), ( 0.7 * ( self.winHeight-20 ) - self.margine * (self.numberOfRows - 1) ) / float( self.numberOfRows - 1 ) ) )
+				b = bt.GenBitmapButton( self, -1, bitmap=self.iconBitmaps[ 'flag_crossed_mini' ],size = ( ( self.winWidth - self.margine * (self.numberOfColumns+1) ) / float( self.numberOfColumns ), ( 0.7 * ( self.winHeight-20 ) - self.margine * (self.numberOfRows+2) ) / float( self.numberOfRows - 1 ) ) )
 
 			else:
 
@@ -193,7 +175,7 @@ class sweeper_GUI( wx.Frame ):
 				else:
 					item = str( int( item ) )
 
-				b = bt.GenButton( self, -1, item, name = item, size = ( ( self.winWidth - self.margine/1.8 * ( self.numberOfColumns ) ) / float( self.numberOfColumns ), ( 0.7 * ( self.winHeight-20 ) - self.margine * ( self.numberOfRows - 1 ) ) / float( self.numberOfRows - 1 ) ) )
+				b = bt.GenButton( self, -1, item, name = item, size = ( ( self.winWidth - self.margine * ( self.numberOfColumns+1 ) ) / float( self.numberOfColumns), ( 0.7 * ( self.winHeight-20 ) - self.margine * ( self.numberOfRows+2) ) / float( self.numberOfRows - 1 ) ) )
 				b.SetFont( wx.Font( 65, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False ) )
 			
 			b.position = ( index_1 / self.numberOfColumns ) + 1, ( index_1 % self.numberOfColumns ) + 1
@@ -243,8 +225,8 @@ class sweeper_GUI( wx.Frame ):
 					self.subSizer.Add( b, ( 0, 2 * self.numberOfColumns / 3 + self.numberOfColumns % 3), ( 1, self.numberOfColumns / 3 ), wx.EXPAND )
 			b.position = ( (index_1+index_2+1) / self.numberOfColumns ) + 1, ( (index_1+index_2+1) % self.numberOfColumns ) + 1
 
-		self.mainSizer.Add( self.res, flag = wx.EXPAND )				    
-		self.mainSizer.Add( self.subSizer, proportion = 1, flag = wx.EXPAND )
+		self.mainSizer.Add( self.res, flag = wx.EXPAND | wx.RIGHT | wx.BOTTOM | wx.LEFT | wx.TOP, border = self.xBorder )				    
+		self.mainSizer.Add( self.subSizer, proportion = 1, flag = wx.EXPAND | wx.LEFT | wx.RIGHT, border = self.xBorder )
 
 		self.SetSizer( self.mainSizer , deleteOld = True )
 		
@@ -297,7 +279,7 @@ class sweeper_GUI( wx.Frame ):
 			event.Veto( )
 
 			if self.control != 'tracker':
-				self.mousePosition = self.winWidth - 8, self.winHeight - 8
+				self.mousePosition = self.winWidth - 8 - self.xBorder, self.winHeight - 8 - self.yBorder
 				self.mouseCursor.move( *self.mousePosition )	
 
 	#-------------------------------------------------------------------------
@@ -320,6 +302,9 @@ class sweeper_GUI( wx.Frame ):
 	#----------------------------------------------------------------------------
 	def onPress(self, event):
 		
+		if self.pressSound.lower( ) == 'on':
+			self.pressingSound.play( )
+
 		if self.control == 'tracker':
 			if self.pressFlag == False:
 				self.button = event.GetEventObject()
@@ -610,6 +595,9 @@ class sweeper_GUI( wx.Frame ):
 							b.Update( )
 
 							self.columnIteration += 1
+
+				if self.switchSound.lower( ) == 'on':
+					self.switchingSound.play( )
 
 			elif self.countRows == self.maxNumberOfRows:
 

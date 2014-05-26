@@ -56,14 +56,18 @@ class suspend( wx.Frame ):
             with open( '.pathToATPlatform' ,'r' ) as textFile:
 		    self.pathToATPlatform = textFile.readline( )
 
-	    with open( self.pathToATPlatform + 'parameters' ,'r' ) as parametersFile:
-		    line = parametersFile.readline( )
-
+	    sys.path.append( self.pathToATPlatform )
+	    from reader import reader
+	    
+	    reader = reader()
+	    reader.readParameters()
+	    parameters = reader.getParameters()
+	    
+	    for item in parameters:
 		    try:
-			    self.timeGap = int( line[ line.rfind( '=' ) + 2: -1 ] )
+			    setattr(self, item[:item.find('=')], int(item[item.find('=')+1:]))
 		    except ValueError:
-		    	    print '\nNiewłaściwie opisany parametr. Błąd w linii:\n%s' % line
-		    	    self.timeGap = 1500
+			    setattr(self, item[:item.find('=')], item[item.find('=')+1:])
 
             self.mouseCursor = PyMouse( )
 	    self.mousePosition = self.winWidth - 8, self.winHeight - 8
@@ -76,7 +80,7 @@ class suspend( wx.Frame ):
 
 		self.mainSizer = wx.BoxSizer( wx.VERTICAL )
 
-		self.subSizer = wx.GridBagSizer( 4, 4 )
+		self.subSizer = wx.GridBagSizer( self.xBorder, self.yBorder )
 
                 b = bt.GenButton( self, -1, '', name='' )
                 b.Bind( wx.EVT_LEFT_DOWN, self.onPress )

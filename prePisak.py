@@ -19,11 +19,12 @@
 import wxversion
 wxversion.select( '2.8' )
 
-import wx, os
+import wx, os, sys, alsaaudio
 import wx.lib.buttons as bt
 import subprocess as sp
 
 from pymouse import PyMouse
+from pygame import mixer
 
 from modules import speller, audiobook, music, movie, radio 
 from modules import exercise
@@ -56,49 +57,25 @@ class main_menu( wx.Frame ):
 		p = sp.Popen( cmd, shell = True, stdin = sp.PIPE, stdout = sp.PIPE, stderr = sp.STDOUT, close_fds = True )
 		self.path = p.stdout.read( )[ :-1 ] + '/'
 		
-		files = [ '.pathToATPlatform', './modules/.pathToATPlatform', './modules/pilots/.pathToATPlatform', './modules/spellers/.pathToATPlatform', './modules/others/.pathToATPlatform', 'modules/ewriting/.pathToATPlatform', 'modules/games/atmemory/.pathToATPlatform', 'modules/games/atsweeper/.pathToATPlatform' ]
+		files = [ '.pathToATPlatform', './modules/.pathToATPlatform', './modules/pilots/.pathToATPlatform', './modules/others/.pathToATPlatform', 'modules/ewriting/.pathToATPlatform', 'modules/games/atmemory/.pathToATPlatform', 'modules/games/atsweeper/.pathToATPlatform' ]
 
 		for item in files:
 			with open(item, 'w') as textFile:
 				textFile.write( self.path ) 
 
-                with open( self.path + 'parameters', 'r' ) as parametersFile:
-			for line in parametersFile:
-				
-				if line[ :line.find('=')-1 ] == 'timeGap':
-					self.timeGap = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'backgroundColour':
-					self.backgroundColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'textColour':
-					self.textColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'scanningColour':
-					self.scanningColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'selectionColour':
-					self.selectionColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'musicVolume':
-					self.musicVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'filmVolume':
-					self.filmVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'control':
-					self.control = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'x_border':
-					self.xBorder = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'y_border':
-					self.yBorder = int( line[ line.rfind('=')+2:-1 ] )
+				sys.path.append( self.path )
 
-				elif not line.isspace( ):
-					print '\nNiewłaściwie opisany parametr. Błąd w linii:\n%s' % line
-					
-					self.timeGap = 1500
-					self.backgroundColour = 'white'
-					self.textColour = 'black'
-					self.scanningColour =  '#E7FAFD'
-					self.selectionColour = '#9EE4EF'
-					self.filmVolumeLevel = 100
-					self.musicVolumeLevel = 40
-					self.control = switch
-					self.xBorder = 4
-					self.yBorder = 4 
+		from reader import reader
+		
+		reader = reader()
+		reader.readParameters()
+		parameters = reader.getParameters()
+
+		for item in parameters:
+			try:
+				setattr(self, item[:item.find('=')], int(item[item.find('=')+1:]))
+			except ValueError:
+				setattr(self, item[:item.find('=')], item[item.find('=')+1:])
 
 		self.labels = 'SPELLER EXERCISES AUDIOBOOKS MUSIC MOVIES RADIO'.split( )
 
@@ -120,10 +97,19 @@ class main_menu( wx.Frame ):
 		
 		if self.control != 'tracker':
 			self.mouseCursor = PyMouse( )
-			self.mousePosition = self.winWidth - 4, self.winHeight - 4
+			self.mousePosition = self.winWidth - 4 - self.xBorder, self.winHeight - 4 - self.yBorder
 			self.mouseCursor.move( *self.mousePosition )
+							
+		if self.switchSound.lower( ) == 'on' or self.pressSound.lower( ) == 'on':
+			mixer.init( )
+			if self.switchSound.lower( ) == 'on':
+				self.switchingSound = mixer.Sound( self.path + '/sounds/switchSound.wav' )
+			if self.pressSound.lower( ) == 'on':
+				self.pressingSound = mixer.Sound( self.path + '/sounds/pressSound.wav' )
 
 		self.SetBackgroundColour( 'black' )
+
+		alsaaudio.Mixer( control = 'Master' ).setvolume( self.musicVolumeLevel, 0 )
 
 	#-------------------------------------------------------------------------	
         def initializeBitmaps(self):
@@ -149,7 +135,7 @@ class main_menu( wx.Frame ):
            		b.SetBackgroundColour( self.backgroundColour )
 			b.Bind( event, self.onPress )
 			self.sizer.Add( b, 0, wx.EXPAND )
-		self.vbox.Add( self.sizer, proportion=1, flag=wx.EXPAND )
+		self.vbox.Add( self.sizer, proportion=1, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT | wx.RIGHT, border=self.xBorder )
 		self.SetSizer( self.vbox )
 
 	#-------------------------------------------------------------------------
@@ -186,11 +172,14 @@ class main_menu( wx.Frame ):
 			event.Veto( )
 
 			if self.control != 'tracker':
-					self.mousePosition = self.winWidth - 4, self.winHeight - 4
+					self.mousePosition = self.winWidth - 4 - self.xBorder, self.winHeight - 4 - self.yBorder
 					self.mouseCursor.move( *self.mousePosition )	
 
 	#-------------------------------------------------------------------------
 	def onPress( self, event ):
+		
+		if self.pressSound.lower( ) == 'on':
+			self.pressingSound.play( )
 
 		if self.control == 'tracker':
                     if self.pressFlag == False:
@@ -367,6 +356,9 @@ class main_menu( wx.Frame ):
 
 						self.colIteration += 1
 						self.countColumns += 1
+				
+				if self.switchSound.lower( ) == 'on':
+					self.switchingSound.play( )
 
 			elif self.countRows == self.maxRows[ 0 ]:
 				self.flag = 'rest'

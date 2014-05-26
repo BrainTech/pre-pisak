@@ -19,11 +19,12 @@
 import wxversion
 wxversion.select( '2.8' )
 
-import glob, os, time #modules of the Python standard library 
+import glob, os, sys, time #modules of the Python standard library 
 import wx, alsaaudio
 import wx.lib.buttons as bt
 
 from pymouse import PyMouse
+from pygame import mixer
 
 from pilots import musicPilot
 
@@ -56,44 +57,18 @@ class music( wx.Frame ):
 		with open( './.pathToATPlatform' ,'r' ) as textFile:
 			self.pathToATPlatform = textFile.readline( )
 
-		with open( self.pathToATPlatform + 'parameters', 'r' ) as parametersFile:
-			for line in parametersFile:
+		sys.path.append( self.pathToATPlatform )
+		from reader import reader
 
-				if line[ :line.find('=')-1 ] == 'timeGap':
-					self.timeGap = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'backgroundColour':
-					self.backgroundColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'textColour':
-					self.textColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'scanningColour':
-					self.scanningColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'selectionColour':
-					self.selectionColour = line[ line.rfind('=')+2:-1 ]
-				elif line[ :line.find('=')-1 ] == 'filmVolume':
-					self.filmVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'musicVolume':
-					self.musicVolumeLevel = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'control':
-					self.control = line[ line.rfind('=')+2:-1 ]			
-				elif line[ :line.find('=')-1 ] == 'x_border':
-					self.xBorder = int( line[ line.rfind('=')+2:-1 ] )
-				elif line[ :line.find('=')-1 ] == 'y_border':
-					self.yBorder = int( line[ line.rfind('=')+2:-1 ] )
+		reader = reader()
+		reader.readParameters()
+		parameters = reader.getParameters()
 
-				elif not line.isspace( ):
-					print 'Niewłaściwie opisane parametry'
-					print 'Błąd w linii', line
-					
-					self.timeGap = 1500
-					self.backgroundColour = 'white'
-					self.textColour = 'black'
-					self.scanningColour =  '#E7FAFD'
-					self.selectionColour = '#9EE4EF'
-					self.filmVolumeLevel = 100
-					self.musicVolumeLevel = 70
-					self.control = 'switch'
-					self.xBorder = 4
-					self.yBorder = 4 
+		for item in parameters:
+			try:
+				setattr(self, item[:item.find('=')], int(item[item.find('=')+1:]))
+			except ValueError:
+				setattr(self, item[:item.find('=')], item[item.find('=')+1:])			
 		
 		alsaaudio.Mixer( control = 'Master' ).setvolume( self.musicVolumeLevel, 0 )
 
@@ -116,8 +91,15 @@ class music( wx.Frame ):
 		
 		if self.control != 'tracker':
 			self.mouseCursor = PyMouse( )
-			self.mousePosition = self.winWidth - 8, self.winHeight - 8
+			self.mousePosition = self.winWidth - 8 - self.xBorder, self.winHeight - 8 - self.yBorder
 			self.mouseCursor.move( *self.mousePosition )			
+
+		if self.switchSound.lower( ) == 'on' or self.pressSound.lower( ) == 'on':
+			mixer.init( )
+			if self.switchSound.lower( ) == 'on':
+				self.switchingSound = mixer.Sound( self.pathToATPlatform + '/sounds/switchSound.wav' )
+			if self.pressSound.lower( ) == 'on':
+				self.pressingSound = mixer.Sound( self.pathToATPlatform + '/sounds/pressSound.wav' )
 		
 		self.SetBackgroundColour( 'black' )
 		
@@ -254,7 +236,7 @@ class music( wx.Frame ):
 
 			self.Layout( )
 
-			self. mainSizer.Add( subSizer, proportion = 1, flag = wx.EXPAND )
+			self. mainSizer.Add( subSizer, proportion = 1, flag = wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP | wx.BOTTOM, border = self.xBorder)
 			
 			self.SetSizer( self. mainSizer )
 			self.Center( True )
@@ -304,7 +286,7 @@ class music( wx.Frame ):
 			event.Veto()
 
 			if self.control != 'tracker':
-				self.mousePosition = self.winWidth - 8, self.winHeight - 8
+				self.mousePosition = self.winWidth - 8 - self.xBorder, self.winHeight - 8 - self.yBorder
 				self.mouseCursor.move( *self.mousePosition )	
 
 	#-------------------------------------------------------------------------
@@ -323,6 +305,9 @@ class music( wx.Frame ):
 		
 	#-------------------------------------------------------------------------
 	def onPress(self, event):
+
+		if self.pressSound.lower( ) == 'on':
+			self.pressingSound.play( )
 
 		if self.control == 'tracker':
 			if self.pressFlag == False:
@@ -409,11 +394,7 @@ class music( wx.Frame ):
 
 				elif self.flag == 'row':
 
-					if self.rowIteration == self.numberOfRows[ 0 ]:
-						buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ], ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] - 1 )
-
-					else:
-						buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ], ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] )
+					buttonsToHighlight = range( ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ], ( self.rowIteration - 1 ) * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] )
 
 					for button in buttonsToHighlight:
 						item = self.subSizers[ self.panelIteration ].GetItem( button )
@@ -588,9 +569,7 @@ class music( wx.Frame ):
 					if self.rowIteration == self.numberOfRows[ 0 ] - 1:
 						self.emptyRowIteration += 1
 						
-						scope = range( self.rowIteration * self.numberOfColumns[ 0 ], self.rowIteration * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] - 1 )
-					else:
-						scope = range( self.rowIteration * self.numberOfColumns[ 0 ], self.rowIteration * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] )
+					scope = range( self.rowIteration * self.numberOfColumns[ 0 ], self.rowIteration * self.numberOfColumns[ 0 ] + self.numberOfColumns[ 0 ] )
 
 					for i in scope:
 						item = self.subSizers[ self.panelIteration ].GetItem( i )
@@ -615,17 +594,10 @@ class music( wx.Frame ):
 						b.SetFocus( )
 
 				else:
-					if self.rowIteration == self.numberOfRows[ 0 ]:
-						self.columnIteration = self.columnIteration % ( self.numberOfColumns[ 0 ] - 1 )
-
-						if self.columnIteration == self.numberOfColumns[ 0 ] - 2:
-							self.emptyColumnIteration += 1
-
-					else:
-						self.columnIteration = self.columnIteration % self.numberOfColumns[ 0 ]
-						
-						if self.columnIteration == self.numberOfColumns[ 0 ] - 1:
-							self.emptyColumnIteration += 1
+					self.columnIteration = self.columnIteration % self.numberOfColumns[ 0 ]
+					
+					if self.columnIteration == self.numberOfColumns[ 0 ]-1:
+						self.emptyColumnIteration += 1
             
 					items = self.subSizers[ self.panelIteration ].GetChildren( )
 					for item in items:
@@ -639,6 +611,11 @@ class music( wx.Frame ):
 					b.SetFocus( )
 				
 					self.columnIteration += 1
+
+			if self.flag != 'rest':
+				if self.switchSound.lower( ) == 'on':
+					self.switchingSound.play( )
+
 			else:
 				pass
 

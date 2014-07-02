@@ -8,8 +8,8 @@ selectionColour = #0099FF
 switchSound = ON
 pressSound = ON
 
-filmVolumeLevel = 60
-musicVolumeLevel = 60
+filmVolumeLevel = 100
+musicVolumeLevel = 100
 
 control = switch
 

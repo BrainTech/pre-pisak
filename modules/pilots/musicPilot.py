@@ -1,20 +1,20 @@
 #!/bin/env python2.7
 # -*- coding: utf-8 -*-
 
-# This file is part of AT-Platform.
+# This file is part of Pre-Pisak.
 #
-# AT-Platform is free software: you can redistribute it and/or modify
+# Pre-Pisak is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# AT-Platform is distributed in the hope that it will be useful,
+# Pre-Pisak is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with AT-Platform. If not, see <http://www.gnu.org/licenses/>.
+# along with Pre-Pisak. If not, see <http://www.gnu.org/licenses/>.
 
 import wxversion
 wxversion.select( '2.8' )
@@ -184,8 +184,14 @@ class pilot(wx.Frame):
 	def OnCloseWindow(self, event):
 
 		if self.control != 'tracker':
-			self.mousePosition = self.winWidth/1.85, self.winHeight/1.85	
-			self.mouseCursor.move( *self.mousePosition )	
+			if os.environ.get('KDE_FULL_SESSION'):
+				self.mousePosition = self.winWidth/1.7, self.winHeight/1.7
+			if True in [ 'debian' in item for item in os.uname( ) ]:				
+				self.mousePosition = self.winWidth/6.5, self.winHeight/6.
+			else:
+				self.mousePosition = self.winWidth/1.9, self.winHeight/1.68
+			
+		self.mouseCursor.move( *self.mousePosition )
 
 		dial = wx.MessageDialog(None, 'Czy napewno chcesz wyjść z programu?', 'Wyjście',
 					wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION | wx.STAY_ON_TOP)

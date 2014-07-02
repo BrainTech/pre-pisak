@@ -373,7 +373,7 @@ class cwiczenia(wx.Frame):
 		if self.control != 'tracker':
 			if os.environ.get('KDE_FULL_SESSION'):
 				self.mousePosition = self.winWidth/1.7, self.winHeight/1.7
-			if True in [ 'debian' in item for item in os.uname( ) ]:				
+			elif True in [ 'debian' in item for item in os.uname( ) ]:				
 				self.mousePosition = self.winWidth/6.5, self.winHeight/6.
 			else:
 				self.mousePosition = self.winWidth/1.9, self.winHeight/1.68

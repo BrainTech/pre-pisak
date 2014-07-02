@@ -268,7 +268,7 @@ class radio( wx.Frame ):
 			
 		self.mouseCursor.move( *self.mousePosition )
 
-		dial = wx.MessageDialog(None, 'Czy napewno chcesz wyjść z programu?', 'Wyjście',
+		dial = wx.MessageDialog(self, 'Czy napewno chcesz wyjść z programu?', 'Wyjście',
 					wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION | wx.STAY_ON_TOP)
             
 		ret = dial.ShowModal()

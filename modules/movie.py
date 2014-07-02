@@ -181,36 +181,36 @@ class movie( wx.Frame ):
 			else:
 				index = -1
 
-		index_2 = 0
-		while index + index_2 < self.numberOfCells - (self.numberOfColumns[0]+1):
-			index_2 += 1
-			b = bt.GenButton( self, -1, name = 'empty' )
-			b.Bind( event, self.onPress )
+			index_2 = 0
+			while index + index_2 < self.numberOfCells - (self.numberOfColumns[0]+1):
+				index_2 += 1
+				b = bt.GenButton( self, -1, name = 'empty' )
+				b.Bind( event, self.onPress )
+				b.SetBackgroundColour( self.backgroundColour )
+				subSizer.Add( b, ( ( index + index_2 ) / self.numberOfColumns[ 0 ], ( index + index_2 ) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
+
+			b = bt.GenBitmapButton( self, -1, bitmap = self.functionButtonPath[ 0 ], name = self.functionButtonName[ 0 ] )
 			b.SetBackgroundColour( self.backgroundColour )
-			subSizer.Add( b, ( ( index + index_2 ) / self.numberOfColumns[ 0 ], ( index + index_2 ) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
+			b.SetBezelWidth( 3 )
+			b.Bind( event, self.onPress )
+			subSizer.Add( b, ( ( index + index_2 + 1 ) / self.numberOfColumns[ 0 ], ( index + index_2 + 1 ) % self.numberOfColumns[ 0 ] ), (1, self.numberOfColumns[0]), wx.EXPAND )
 
-		b = bt.GenBitmapButton( self, -1, bitmap = self.functionButtonPath[ 0 ], name = self.functionButtonName[ 0 ] )
-		b.SetBackgroundColour( self.backgroundColour )
-		b.SetBezelWidth( 3 )
-		b.Bind( event, self.onPress )
-		subSizer.Add( b, ( ( index + index_2 + 1 ) / self.numberOfColumns[ 0 ], ( index + index_2 + 1 ) % self.numberOfColumns[ 0 ] ), (1, self.numberOfColumns[0]), wx.EXPAND )
+			for number in range( self.numberOfRows[ 0 ] ):
+				subSizer.AddGrowableRow( number )
+			for number in range( self.numberOfColumns[ 0 ] ):
+				subSizer.AddGrowableCol( number )
 
-		for number in range( self.numberOfRows[ 0 ] ):
-			subSizer.AddGrowableRow( number )
-		for number in range( self.numberOfColumns[ 0 ] ):
-			subSizer.AddGrowableCol( number )
+			self.Layout( )
 
-		self.Layout( )
+			self. mainSizer.Add( subSizer, proportion = 1, flag = wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP | wx.BOTTOM, border = self.xBorder )
 
-		self. mainSizer.Add( subSizer, proportion = 1, flag = wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP | wx.BOTTOM, border = self.xBorder )
+			self.SetSizer( self. mainSizer )
+			self.Center( True )
 
-		self.SetSizer( self. mainSizer )
-		self.Center( True )
+			if panel != 1:
+				self.mainSizer.Show( item = self.subSizers[ panel - 1 ], show = False, recursive = True )
 
-		if panel != 1:
-			self.mainSizer.Show( item = self.subSizers[ panel - 1 ], show = False, recursive = True )
-
-		self.SetSizer( self.mainSizer )
+			self.SetSizer( self.mainSizer )
                 
 	#-------------------------------------------------------------------------
 	def initializeTimer(self):

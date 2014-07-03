@@ -56,8 +56,6 @@ class speller( wx.Frame ):
 		else:
 			self.initializeParameters( )
 
-		print self.maxNumberOfColumns
-
 	#-------------------------------------------------------------------------
 	def initializeParameters(self):
                 
@@ -734,9 +732,7 @@ class speller( wx.Frame ):
 					# 	self.switchingSound.play( )
 
 					self.columnIteration += 1
-
-				print self.countColumns, self.columnIteration
-				
+					
 			else:
 				pass
 

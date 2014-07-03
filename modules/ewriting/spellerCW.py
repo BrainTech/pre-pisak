@@ -620,16 +620,19 @@ class speller( wx.Frame ):
 			else:
 				self.button.SetBackgroundColour( self.backgroundColour )	
 
+			# self.parent.stoper2.Stop( )
 			self.stoper.Stop( )
 			self.pressFlag = False
 
 		else:
-			if self.control != 'tracker':
-				self.mouseCursor.move( *self.mousePosition )
+			self.mouseCursor.move( *self.mousePosition )
+			self.numberOfPresses = 0
+			# self.numberOfIteration += 1
 
-			self.numberOfPresses = 0		
-
-			if self.flag == 'row':
+			if self.flag == 'rest':
+				pass
+			
+			elif self.flag == 'row':
 
 				if self.countRows == self.maxNumberOfRows:
 					self.flag = 'rest'
@@ -642,6 +645,9 @@ class speller( wx.Frame ):
 						b.SetFocus( )
 
 				else:
+					if self.switchSound.lower( ) == 'on' and self.voice == 'False':
+						self.switchingSound.play( )
+
 					self.rowIteration = self.rowIteration % self.numberOfRows[ self.subSizerNumber ]
 
 					items = self.subSizers[ self.subSizerNumber ].GetChildren( )
@@ -673,55 +679,52 @@ class speller( wx.Frame ):
 
 			elif self.flag == 'columns':
 
-					if self.countColumns == self.maxNumberOfColumns:
-						self.flag = 'row'
+				if self.countColumns == self.maxNumberOfColumns:
+					self.flag = 'row'
 
-						item = self.subSizers[ self.subSizerNumber ].GetItem( self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration - 1 )
+					item = self.subSizers[ self.subSizerNumber ].GetItem( self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration - 1 )
+					b = item.GetWindow( )
+					b.SetBackgroundColour( self.backgroundColour )
+
+					self.rowIteration = 0
+					self.columnIteration = 0
+					self.countColumns = 0
+					self.countRows = 0
+
+				else:
+					if self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 1 or (self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 3 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 4 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ):
+						self.countColumns += 1
+
+					if self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] or ( self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 2 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 3 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ):
+						self.columnIteration = 0
+
+					items = self.subSizers[ self.subSizerNumber ].GetChildren( )
+					for item in items:
 						b = item.GetWindow( )
 						b.SetBackgroundColour( self.backgroundColour )
-
-						self.rowIteration = 0
-						self.columnIteration = 0
-						self.countColumns = 0
-						self.countRows = 0
-						
-					else:
-						if self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 1 or (self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 3 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 4 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ):
-							self.countColumns += 1
-
-						if self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] or ( self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 2 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns[ self.subSizerNumber ] - 3 and self.rowIteration == self.numberOfRows[ self.subSizerNumber ] - 1 ):
-							self.columnIteration = 0
-
-						items = self.subSizers[ self.subSizerNumber ].GetChildren( )
-						for item in items:
-							b = item.GetWindow( )
-							b.SetBackgroundColour( self.backgroundColour )
-							b.SetFocus( )
-
-						item = self.subSizers[ self.subSizerNumber ].GetItem( self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration )
-						b = item.GetWindow( )
-						b.SetBackgroundColour( self.scanningColour )
 						b.SetFocus( )
 
-						if self.voice == 'True':
-							label = self.labels[ self.subSizerNumber ][ self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration ]
+					item = self.subSizers[ self.subSizerNumber ].GetItem( self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration )
+					b = item.GetWindow( )
+					b.SetBackgroundColour( self.scanningColour )
+					b.SetFocus( )
 
-							try:
-								soundIndex = self.phoneLabels.index( [ item for item in self.phoneLabels if item == label ][ 0 ] )
-								sound = self.sounds[ soundIndex ]
-								sound.play( )
+					if self.voice == 'True':
+						label = self.labels[ self.subSizerNumber ][ self.rowIteration * self.numberOfColumns[ self.subSizerNumber ] + self.columnIteration ]
 
-							except IndexError:
-								pass
+						try:
+							soundIndex = self.phoneLabels.index( [ item for item in self.phoneLabels if item == label ][ 0 ] )
+							sound = self.sounds[ soundIndex ]
+							sound.play( )
 
-						if self.switchSound.lower() == 'on' and self.rowIteration == self.numberOfRows[0]-1:
-							self.switchingSound.play( )
+						except IndexError:
+							pass
 
-						self.columnIteration += 1
+					if self.switchSound.lower() == 'on' and self.rowIteration == self.numberOfRows[0]-1:
+						self.switchingSound.play( )
 
-			if self.switchSound.lower( ) == 'on' and self.voice == 'False':
-				self.switchingSound.play( )
-
+					self.columnIteration += 1
+					
 			else:
 				pass
 

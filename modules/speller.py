@@ -85,7 +85,7 @@ class speller( wx.Frame ):
 		    
 		self.labels5 = ['A O N T D J G Ó I Z S K U B Ą Ć E W Y M Ł H Ś Ń R C P L Ę Ż F Ź UNDO SPEAK SAVE SPACJA SPECIAL_CHARACTERS OPEN EXIT'.split( ), '1 2 3 4 5 6 7 8 9 0 + - * / = % $ & . , ; : " ? ! @ # ( ) [ ] { } < > ~ UNDO SPEAK SAVE SPACJA OPEN EXIT'.split( )]
 
-		self.labels6 = [ 'A O U W K J H Ą I Y R C M G Ę Ś E N T P B Ł Ż Ń Z B D L F Ó Ć Ź UNDO SPEAK SAVE SPACJA SPECIAL_CHARACTERS OPEN EXIT'.split( ), '1 2 3 4 5 6 7 8 9 0 + - * / = % $ & . , ; : " ? ! @ # ( ) [ ] { } < > ~ UNDO SPEAK SAVE SPACJA OPEN EXIT'.split( )]
+		self.labels6 = [ 'A O U W K J H Ą I Y R C M G Ę Ś E N T P B Ł Ż Ń Z S D L F Ó Ć Ź UNDO SPEAK SAVE SPACJA SPECIAL_CHARACTERS OPEN EXIT'.split( ), '1 2 3 4 5 6 7 8 9 0 + - * / = % $ & . , ; : " ? ! @ # ( ) [ ] { } < > ~ UNDO SPEAK SAVE SPACJA OPEN EXIT'.split( )]
 		
 		self.labels7 = [ 'A O Z W K J Ę Ó I Y R C M G Ą Ś E N T P B F Ż Ń U S D L H Ł Ć Ź UNDO SPEAK SAVE SPACJA SPECIAL_CHARACTERS OPEN EXIT'.split( ), '1 2 3 4 5 6 7 8 9 0 + - * / = % $ & . , ; : " ? ! @ # ( ) [ ] { } < > ~ UNDO SPEAK SAVE SPACJA OPEN EXIT'.split( )]
 

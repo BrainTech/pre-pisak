@@ -386,7 +386,6 @@ class cwiczenia(wx.Frame):
 		ret = dial.ShowModal()
 		
 		if ret == wx.ID_YES:
-
 			try:
 				self.parent.parent.parent.parent.Destroy()
 				self.parent.parent.parent.Destroy()

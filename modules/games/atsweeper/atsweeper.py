@@ -281,7 +281,7 @@ class sweeper_GUI( wx.Frame ):
 			event.Veto( )
 
 			if self.control != 'tracker':
-				self.mousePosition = self.winWidth - 8 - self.xBorder, self.winHeight - 8 - self.yBorder
+				self.mousePosition = self.winWidth - 10 - self.xBorder, self.winHeight - 12 - self.yBorder
 				self.mouseCursor.move( *self.mousePosition )	
 
 	#-------------------------------------------------------------------------

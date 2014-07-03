@@ -480,7 +480,7 @@ class memory_GUI( wx.Frame ):
 				self.countColumns = 0
 
 			if self.control != 'tracker':
-				self.mouseCursor.move( self.winWidth - 8 - self.xBorder, self.winHeight - 8 - self.yBorder )
+				self.mouseCursor.move( *self.mousePosition )
 
 			if self.flag == 'rest':
 				pass

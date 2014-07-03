@@ -522,7 +522,7 @@ class memory_GUI( wx.Frame ):
 						new_numberOfColumns = self.numberOfColumns
 						if self.rowIteration == self.numberOfRows - 1:
 							new_numberOfColumns = 2
-							self.maxNumberOfColumns = 4
+							self.maxNumberOfColumns = 2
 
 		################################################################################################################################################
 
@@ -535,12 +535,13 @@ class memory_GUI( wx.Frame ):
 							b.SetBackgroundColour( self.backgroundColour )
 
 							self.rowIteration = 0
+							self.countRows = 0
 							self.columnIteration = 0
 							self.countColumns = 0
 
 						else:
 
-							if self.columnIteration == new_numberOfColumns - 1 or (self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns - 3 and self.rowIteration == self.numberOfRows - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns - 4 and self.rowIteration == self.numberOfRows - 1 ):
+							if self.columnIteration == new_numberOfColumns - 1 or (self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns - 4 and self.rowIteration == self.numberOfRows - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns - 4 and self.rowIteration == self.numberOfRows - 1 ):
 								self.countColumns += 1
 
 							if self.columnIteration == new_numberOfColumns or ( self.subSizerNumber == 0 and self.columnIteration == self.numberOfColumns - 2 and self.rowIteration == self.numberOfRows - 1 ) or ( self.subSizerNumber == 1 and self.columnIteration == self.numberOfColumns - 3 and self.rowIteration == self.numberOfRows - 1 ):
@@ -563,6 +564,8 @@ class memory_GUI( wx.Frame ):
 
 							self.maxNumberOfColumns			
 							self.columnIteration += 1
+
+						print self.countColumns, self.columnIteration				
 
 				if self.switchSound.lower( ) == 'on':
 					self.switchingSound.play( )

@@ -20,7 +20,7 @@ import wxversion
 wxversion.select( '2.8' )
 
 import sys, glob, os, time #modules of the Python standard library 
-import wx, alsaaudio
+import wx, alsaaudio, psutil
 import wx.lib.buttons as bt
 
 from pymouse import PyMouse
@@ -269,7 +269,8 @@ class audiobook( wx.Frame ):
 		ret = dial.ShowModal()
 		
 		if ret == wx.ID_YES:
-			os.system( 'smplayer -send-action quit' )
+			if "smplayer" in [psutil.Process(i).name() for i in psutil.get_pid_list()]:
+				os.system( 'smplayer -send-action quit' )
 
 			if __name__ == '__main__':
 				self.Destroy()

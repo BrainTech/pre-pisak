@@ -19,7 +19,7 @@
 import wxversion
 wxversion.select( '2.8' )
 
-import wx, os, sys
+import wx, os, sys, psutil
 import wx.lib.buttons as bt
 import subprocess as sp
 
@@ -129,8 +129,9 @@ class suspend( wx.Frame ):
 		ret = dial.ShowModal()
 		
 		if ret == wx.ID_YES:
-			os.system( 'smplayer -send-action quit' )
-			
+			if "smplayer" in [psutil.Process(i).name() for i in psutil.get_pid_list()]:
+				os.system( 'smplayer -send-action quit' )
+
 			try:
 				self.parent.parent.parent.Destroy()
 				self.parent.parent.Destroy()

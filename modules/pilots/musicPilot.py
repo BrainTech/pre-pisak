@@ -89,7 +89,7 @@ class pilot(wx.Frame):
 
 	    if self.control != 'tracker':	    
 		    self.mouseCursor = PyMouse( )
-		    self.mousePosition = self.winWidth - 8 - self.xBorder, self.winHeight - 8 - self.yBorder
+		    self.mousePosition = self.winWidth - 8 - self.xBorder, self.winHeight - 16 - self.yBorder
 		    self.mouseCursor.move( *self.mousePosition )	
 
 	    if self.switchSound.lower( ) == 'on' or self.pressSound.lower( ) == 'on':
@@ -226,7 +226,7 @@ class pilot(wx.Frame):
 			event.Veto()
 
 			if self.control != 'tracker':											
-				self.mousePosition = self.winWidth - 8 - self.xBorder, self.winHeight - 8 - self.yBorder
+				self.mousePosition = self.winWidth - 8 - self.xBorder, self.winHeight - 16 - self.yBorder
 				self.mouseCursor.move( *self.mousePosition )	
 
 	#-------------------------------------------------------------------------

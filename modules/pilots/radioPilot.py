@@ -287,7 +287,9 @@ class pilot( wx.Frame ):
 						time.sleep( 1.5 )
 
 				elif self.label == 'cancel':
-					os.system( 'smplayer -send-action quit' )
+					if "smplayer" in [psutil.Process(i).name() for i in psutil.get_pid_list()]:
+						os.system( 'smplayer -send-action quit' )
+
 					alsaaudio.Mixer( control = 'Master' ).setvolume( self.filmVolumeLevel, 0 )
 
 					self.onExit( )
@@ -386,7 +388,9 @@ class pilot( wx.Frame ):
 							time.sleep( 1.5 )
 
 					elif self.buttons[ self.position ][ 0 ] == 'cancel':
-						os.system( 'smplayer -send-action quit &' )
+						if "smplayer" in [psutil.Process(i).name() for i in psutil.get_pid_list()]:
+							os.system( 'smplayer -send-action quit &' )
+
 						alsaaudio.Mixer( control = 'Master' ).setvolume( self.filmVolumeLevel, 0 )
 
 						self.onExit( )

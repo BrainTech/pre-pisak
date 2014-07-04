@@ -328,7 +328,9 @@ class pilot( wx.Frame ):
 					os.system( 'wid=`xdotool search --onlyvisible --name SMPlayer` && xdotool windowfocus $wid && xdotool key --window $wid f &&wid=`xdotool search --onlyvisible --name moviePilot` && xdotool windowactivate $wid' )
 				
 				elif self.label == 'back':
-					os.system( 'smplayer -send-action quit' )
+					if "smplayer" in [psutil.Process(i).name() for i in psutil.get_pid_list()]:						
+						os.system( 'smplayer -send-action quit' )
+
 					self.onExit( )
 					
 		else:
@@ -379,7 +381,8 @@ class pilot( wx.Frame ):
 							b.SetBackgroundColour( self.selectionColour )
 							b.SetFocus( )
 
-						os.system( 'smplayer -send-action quit' )
+						if "smplayer" in [psutil.Process(i).name() for i in psutil.get_pid_list()]:
+							os.system( 'smplayer -send-action quit' )
 
 						self.onExit( )
 

@@ -186,15 +186,6 @@ class suspend( wx.Frame ):
 				self.onExit( )
 		else:
 			self.mouseCursor.move( *self.mousePosition )
-		
-		# if __name__ != '__main__':
-			
-		# 	cmd = 'wmctrl -l'
-		# 	p = sp.Popen( cmd, shell=True, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.STDOUT, close_fds=True )
-		# 	output = p.stdout.read( )
-		
-		# 	if 'SMPlayer' not in output:
-		# 		self.onExit( )
 			
 #=============================================================================
 if __name__ == '__main__':

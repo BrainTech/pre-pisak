@@ -348,7 +348,8 @@ class music( wx.Frame ):
 					self.Hide( )
 
 				elif self.label == 'delete':
-					os.system( 'smplayer -send-action quit &' )
+					if "smplayer" in [psutil.Process(i).name() for i in psutil.get_pid_list()]:
+						os.system( 'smplayer -send-action quit &' )
 
 				elif self.label == 'back':
 					self.onExit( )
@@ -452,7 +453,8 @@ class music( wx.Frame ):
 							self.Hide( )
 
 						elif self.columnIteration == 4:
-							os.system( 'smplayer -send-action quit &')
+							if "smplayer" in [psutil.Process(i).name() for i in psutil.get_pid_list()]:
+								os.system( 'smplayer -send-action quit &')
 
 						elif self.columnIteration == 5:
 							self.onExit( )

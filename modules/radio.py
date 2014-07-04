@@ -274,7 +274,8 @@ class radio( wx.Frame ):
 		ret = dial.ShowModal()
 		
 		if ret == wx.ID_YES:
-			os.system( 'smplayer -send-action quit' )
+			if "smplayer" in [psutil.Process(i).name() for i in psutil.get_pid_list()]:
+				os.system( 'smplayer -send-action quit' )
 
 			if __name__ == '__main__':
 				self.Destroy()
@@ -344,7 +345,8 @@ class radio( wx.Frame ):
 				self.Hide( )
 				
 			elif self.label == 'delete':
-				os.system( 'smplayer -send-action quit &')
+				if "smplayer" in [psutil.Process(i).name() for i in psutil.get_pid_list()]:
+					os.system( 'smplayer -send-action quit &')
 				
 			elif self.label == 'back':
 				self.onExit( )
@@ -453,7 +455,8 @@ class radio( wx.Frame ):
 							self.Hide( )
 
 						elif self.columnIteration == 4:
-							os.system( 'smplayer -send-action quit &')
+							if "smplayer" in [psutil.Process(i).name() for i in psutil.get_pid_list()]:
+								os.system( 'smplayer -send-action quit &')
 
 						elif self.columnIteration == 5:
 							self.onExit( )

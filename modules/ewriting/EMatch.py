@@ -371,10 +371,13 @@ class cwiczenia(wx.Frame):
 	def OnCloseWindow(self, event):
 
 		if self.control != 'tracker':
-			if os.environ.get('KDE_FULL_SESSION'):
-				self.mousePosition = self.winWidth/1.7, self.winHeight/1.7
-			elif True in [ 'debian' in item for item in os.uname( ) ]:				
-				self.mousePosition = self.winWidth/6.5, self.winHeight/6.
+			if True in [ 'debian' in item for item in os.uname( ) ]: #POSITION OF THE DIALOG WINDOW DEPENDS ON WINDOWS MANAGER NOT ON DESKTOP ENVIROMENT. THERE IS NO REASONABLE WAY TO CHECK IN PYTHON WHICH WINDOWS MANAGER IS CURRENTLY RUNNING, BESIDE IT IS POSSIBLE TO FEW WINDOWS MANAGER RUNNING AT THE SAME TIME. I DON'T SEE SOLUTION OF THIS ISSUE, EXCEPT OF CREATING OWN SIGNAL (AVR MICROCONTROLLERS).
+				if os.environ.get('KDE_FULL_SESSION'):
+					self.mousePosition = self.winWidth/1.7, self.winHeight/1.7
+				# elif ___: #for gnome-debian
+				# 	self.mousePosition = self.winWidth/6.5, self.winHeight/6.
+				else:
+					self.mousePosition = self.winWidth/1.8, self.winHeight/1.7
 			else:
 				self.mousePosition = self.winWidth/1.9, self.winHeight/1.68
 			

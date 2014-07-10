@@ -19,7 +19,7 @@
 import wxversion
 wxversion.select( '2.8' )
 
-import wx, glob, os, sys
+import wx, glob, os, sys, psutil
 import wx.lib.buttons as bt
 
 from pymouse import PyMouse
@@ -172,13 +172,13 @@ class pilot(wx.Frame):
 		if self.control != 'tracker':
 			if True in [ 'debian' in item for item in os.uname( ) ]: #POSITION OF THE DIALOG WINDOW DEPENDS ON WINDOWS MANAGER NOT ON DESKTOP ENVIROMENT. THERE IS NO REASONABLE WAY TO CHECK IN PYTHON WHICH WINDOWS MANAGER IS CURRENTLY RUNNING, BESIDE IT IS POSSIBLE TO FEW WINDOWS MANAGER RUNNING AT THE SAME TIME. I DON'T SEE SOLUTION OF THIS ISSUE, EXCEPT OF CREATING OWN SIGNAL (AVR MICROCONTROLLERS).
 				if os.environ.get('KDE_FULL_SESSION'):
-					self.mousePosition = self.winWidth/1.7, self.winHeight/1.7
+					self.mousePosition = self.winWidth/1.05, self.winHeight/1.22
 				# elif ___: #for gnome-debian
 				# 	self.mousePosition = self.winWidth/6.5, self.winHeight/6.
 				else:
-					self.mousePosition = self.winWidth/1.8, self.winHeight/1.7
+					self.mousePosition = self.winWidth/1.08, self.winHeight/1.22
 			else:
-				self.mousePosition = self.winWidth/1.9, self.winHeight/1.68
+				self.mousePosition = self.winWidth/1.12, self.winHeight/1.22
 			
 		self.mouseCursor.move( *self.mousePosition )
 
@@ -188,6 +188,13 @@ class pilot(wx.Frame):
 		ret = dial.ShowModal()
 		
 		if ret == wx.ID_YES:
+			try:
+				if "smplayer" in [psutil.Process(i).name() for i in psutil.get_pid_list()]:
+					os.system( 'smplayer -send-action quit' )
+			except TypeError:
+				if "smplayer" in [psutil.Process(i).name for i in psutil.get_pid_list()]:
+					os.system( 'smplayer -send-action quit' )
+
 			os.system( 'wmctrl -c Przeglądarka\ książek' )
 			os.system( 'wmctrl -c E-book\ Viewer' )
 

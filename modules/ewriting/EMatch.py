@@ -19,7 +19,7 @@
 import wxversion
 wxversion.select('2.8')
 
-import os, time, sys
+import os, time, sys, psutil
 from random import shuffle
 
 import wx
@@ -389,6 +389,13 @@ class cwiczenia(wx.Frame):
 		ret = dial.ShowModal()
 		
 		if ret == wx.ID_YES:
+			try:
+				if "smplayer" in [psutil.Process(i).name() for i in psutil.get_pid_list()]:
+					os.system( 'smplayer -send-action quit' )
+			except TypeError:
+				if "smplayer" in [psutil.Process(i).name for i in psutil.get_pid_list()]:
+					os.system( 'smplayer -send-action quit' )
+
 			try:
 				self.parent.parent.parent.parent.Destroy()
 				self.parent.parent.parent.Destroy()

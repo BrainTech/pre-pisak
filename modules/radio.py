@@ -277,8 +277,12 @@ class radio( wx.Frame ):
 		ret = dial.ShowModal()
 		
 		if ret == wx.ID_YES:
-			if "smplayer" in [psutil.Process(i).name() for i in psutil.get_pid_list()]:
-				os.system( 'smplayer -send-action quit' )
+			try:
+				if "smplayer" in [psutil.Process(i).name() for i in psutil.get_pid_list()]:
+					os.system( 'smplayer -send-action quit' )
+			except TypeError:
+				if "smplayer" in [psutil.Process(i).name for i in psutil.get_pid_list()]:
+					os.system( 'smplayer -send-action quit' )
 
 			if __name__ == '__main__':
 				self.Destroy()

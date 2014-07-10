@@ -19,7 +19,7 @@
 import wxversion
 wxversion.select( '2.8' )
 
-import glob, os, time, sys
+import glob, os, time, sys, psutil
 import wx, alsaaudio
 import wx.lib.buttons as bt
 
@@ -201,6 +201,13 @@ class exercise( wx.Frame ):
 		ret = dial.ShowModal()
 		
 		if ret == wx.ID_YES:
+			try:
+				if "smplayer" in [psutil.Process(i).name() for i in psutil.get_pid_list()]:
+					os.system( 'smplayer -send-action quit' )
+			except TypeError:
+				if "smplayer" in [psutil.Process(i).name for i in psutil.get_pid_list()]:
+					os.system( 'smplayer -send-action quit' )
+
 			if __name__ == '__main__':
 				self.Destroy( )
 			else:

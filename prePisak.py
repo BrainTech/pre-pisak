@@ -160,7 +160,7 @@ class main_menu( wx.Frame ):
 				# elif ___: #for gnome-debian
 				# 	self.mousePosition = self.winWidth/6.5, self.winHeight/6.
 				else:
-					self.mousePosition = self.winWidth/1.8, self.winWidth/1.7
+					self.mousePosition = self.winWidth/1.8, self.winHeight/1.7
 			else:
 				self.mousePosition = self.winWidth/1.9, self.winHeight/1.68
 			

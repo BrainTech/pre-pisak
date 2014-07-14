@@ -1,20 +1,20 @@
-timeGap = 1500
+timeGap = 1000
 
 backgroundColour = white
 textColour = black
 scanningColour = #0033FF
 selectionColour = #0099FF
 
-switchSound = OFF
-pressSound = OFF
+switchSound = ON
+pressSound = ON
 
 filmVolumeLevel = 100
 musicVolumeLevel = 100
 
 control = switch
 
-xBorder = 12
-yBorder = 12
+xBorder = 24
+yBorder = 24
 
 spellerNumber = 6
 voice = False
@@ -25,9 +25,9 @@ textFont = wx.SWISS
 tableFontSize = 50
 textFontSize = 100
 
-sex = D
+sex = M
 checkTime = 8000
 colorGrat = lime green
 colorNiest = indian red
 ileLuk = 1
-maxPoints = 8
+maxPoints = 2

@@ -22,6 +22,8 @@ wxversion.select( '2.8' )
 import glob, os, time, sys, psutil
 import wx, alsaaudio
 import wx.lib.buttons as bt
+import subprocess as sp
+import shlex
 
 from pymouse import PyMouse
 from pygame import mixer
@@ -72,7 +74,7 @@ class games( wx.Frame ):
 
 		self.pressFlag = False
 
-		self.numberOfColumns = 3,
+		self.numberOfColumns = 4,
 		self.numberOfRows = 2,
 		
 		self.columnIteration = 0
@@ -107,9 +109,9 @@ class games( wx.Frame ):
 		self.panels = { 1 : [ [], [] ] }
 		self.numberOfPanels = 1
 				
-		self.functionButtonPath = [ wx.BitmapFromImage( wx.ImageFromStream( open(self.pathToATPlatform + 'icons/back.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open(self.pathToATPlatform + 'icons/games/memo.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream(open(self.pathToATPlatform + 'icons/games/memohard.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream(open(self.pathToATPlatform + 'icons/games/minesweeper.png', 'rb' ) ) ) ]
+		self.functionButtonPath = [ wx.BitmapFromImage( wx.ImageFromStream( open(self.pathToATPlatform + 'icons/back.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open(self.pathToATPlatform + 'icons/games/memo.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream(open(self.pathToATPlatform + 'icons/games/memohard.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream(open(self.pathToATPlatform + 'icons/games/minesweeper.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream(open(self.pathToATPlatform + 'icons/games/pacman.png', 'rb' ) ) ) ]
 
-		self.labels = [ 'memory', 'memoryhard', 'saper' ]
+		self.labels = [ 'memory', 'memoryhard', 'saper' , 'pacman']
 		self.functionButtonName = [ 'back' ]
 
 		if self.numberOfPanels == 1:
@@ -138,7 +140,7 @@ class games( wx.Frame ):
 			
 			index = 0
 
-			for index in range( 3 ):
+			for index in range( 4 ):
 				b = bt.GenBitmapButton( self, -1, bitmap = self.functionButtonPath[ index+1 ], name = self.labels[ index ] )
 				b.SetBackgroundColour( self.backgroundColour )
 				b.SetBezelWidth( 3 )
@@ -149,7 +151,7 @@ class games( wx.Frame ):
 			b.SetBackgroundColour( self.backgroundColour )
 			b.SetBezelWidth( 3 )
 			b.Bind( event, self.onPress )
-			subSizer.Add( b, ( ( index + 1 ) / self.numberOfColumns[ 0 ], ( index + 1 ) % self.numberOfColumns[ 0 ] ), (1, 3), wx.EXPAND )
+			subSizer.Add( b, ( ( index + 1 ) / self.numberOfColumns[ 0 ], ( index + 1 ) % self.numberOfColumns[ 0 ] ), (1, 4), wx.EXPAND )
 				
 			for number in range( self.numberOfRows[ 0 ] ):
 				subSizer.AddGrowableRow( number )
@@ -283,6 +285,12 @@ class games( wx.Frame ):
 					atsweeper.sweeper_GUI( self, id = -1 ).Show( True )
 					self.Hide( )
 				
+				elif self.label == 'pacman':
+					self.stoper.Stop()
+					self.Hide()
+					process = sp.Call( ['python', self.pathToATPlatform + '/modules/games/pacman-large/pacman.pyw'] )
+					self.Show()
+
 				elif self.label == 'back':
 					self.onExit( )
 
@@ -351,6 +359,14 @@ class games( wx.Frame ):
 						self.stoper.Stop( )
 						atsweeper.sweeper_GUI( self, id = -1 ).Show( True )
 						self.Hide( )
+				
+					elif self.position == 3:
+						self.stoper.Stop()
+						self.Hide()
+						process = sp.call( ['python', self.pathToATPlatform + '/modules/games/pacman-large/pacman.pyw'] )
+						self.Show()
+			 			self.SetFocus()
+			        		self.stoper.Start( self.timeGap )
 
 					if self.numberOfPanels == 1:
 						self.flag = 'row'

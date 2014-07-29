@@ -60,6 +60,22 @@ IMG_FILL_COLOR = (0x84,0x00,0x84,0xff)
 IMG_EDGE_SHADOW_COLOR = (0xff,0x00,0xff,0xff)
 IMG_PELLET_COLOR = (0x80,0x00,0x80,0xff)
 
+#NEW PARAMETERS
+ROTATION_DELAY = 40 #number of frames after which pacman turns 90 degrees while paused
+
+Xvel = {}
+Xvel['right'] = 2
+Xvel['left'] = -2
+Xvel['down'] = 0
+Xvel['up'] = 0
+
+Yvel = {}
+Yvel['right'] = 0
+Yvel['left'] = 0
+Yvel['down'] = 2
+Yvel['up'] = -2
+
+
 # Must come before pygame.init()
 pygame.mixer.pre_init(22050,16,2,512)
 pygame.mixer.init()
@@ -192,7 +208,13 @@ class game ():
 		# 6 = wait after finishing level
 		self.mode = 0
 		self.modeTimer = 0
+
 		self.idleTimer = 0
+		self.preferred_direction = None
+		self.oldfacing = 'right'
+		self.oldvelX = 2
+		self.oldvelY = 0
+
 		self.ghostTimer = 0
 		self.ghostValue = 0
 		self.fruitTimer = 0
@@ -816,7 +838,7 @@ class pacman ():
 		self.y = 0
 		self.velX = 0
 		self.velY = 0
-		self.speed = 3
+		self.speed = 2
 		
 		self.nearestRow = 0
 		self.nearestCol = 0
@@ -1406,86 +1428,27 @@ def CheckIfCloseButton(events):
 
 
 def CheckInputs(facing = None): 
-#############################################################################################################################################
-#############################################################PLACEHOLDER#####################################################################
-#############################################################################################################################################
 
 	if thisGame.mode == 1:
 
 		if pygame.mouse.get_pressed()[0]:
 			thisGame.idleTimer = 0
+
 			thisGame.SetMode( 9 )
 
 	elif thisGame.mode == 9:
 
-		if pygame.mouse.get_pressed()[0] and not thisLevel.CheckIfHitWall((player.x +Xvel[facing]* player.speed, player.y+Yvel[facing]*player.speed), (player.nearestRow, player.nearestCol)):
+		if pygame.mouse.get_pressed()[0] and not thisLevel.CheckIfHitWall((player.x +Xvel[facing], player.y+Yvel[facing]), (player.nearestRow, player.nearestCol)):
 			thisGame.idleTimer = 0
+			thisGame.oldfacing = facing
 			thisGame.SetMode( 1 )		
+		elif pygame.mouse.get_pressed()[0] and thisLevel.CheckIfHitWall((player.x +Xvel[facing], player.y+Yvel[facing]), (player.nearestRow, player.nearestCol)):	
+			thisGame.idleTimer = 0			
+			thisGame.preferred_direction = facing			
+			player.velX = Xvel[thisGame.oldfacing]
+			player.velY = Yvel[thisGame.oldfacing]			
+			thisGame.SetMode( 1 )
 
-		'''player.x = player.x
-		player.y = player.y
-		not_moved = True	
-			
-
-			while not_moved:
-				
-				for facing in ['right', 'down', 'left', 'up']:
-
-
-					screen.blit(img_Background, (0, 0))
-					player.SET_FACING(facing)					
-					if not thisGame.mode == 8:
-						thisLevel.DrawMap()
-		
-						if thisGame.fruitScoreTimer > 0:
-							if thisGame.modeTimer % 2 == 0:
-								thisGame.DrawNumber (2500, (thisFruit.x - thisGame.screenPixelPos[0] - 16, thisFruit.y - thisGame.screenPixelPos[1] + 4))
-
-						for i in range(0, 4, 1):
-							ghosts[i].Draw()
-						thisFruit.Draw()					
-					
-					pygame.display.flip()
-					for t in xrange(400000):
-						CheckIfCloseButton( pygame.event.get() )
-						#tutaj dodaj korekcje trasy
-						if pygame.mouse.get_pressed()[0] and not thisLevel.CheckIfHitWall((player.x +Xvel[facing]* player.speed, player.y+Yvel[facing]*player.speed), (player.nearestRow, player.nearestCol)) and t > 10000:
-							player.velX = Xvel[facing]
-							player.velY = Yvel[facing]
-							not_moved = False
-							
-					if not_moved:
-						continue
-					else:
-						break	
-
-					 
-				if pygame.key.get_pressed()[ pygame.K_RIGHT ]:
-					if not thisLevel.CheckIfHitWall((player.x + player.speed, player.y), (player.nearestRow, player.nearestCol)): 
-						player.velX = player.speed
-						player.velY = 0
-						not_moved = False
-						
-				
-				elif pygame.key.get_pressed()[ pygame.K_LEFT ]:
-					if not thisLevel.CheckIfHitWall((player.x - player.speed, player.y), (player.nearestRow, player.nearestCol)): 
-						player.velX = -player.speed
-						player.velY = 0
-						not_moved = False
-						
-				elif pygame.key.get_pressed()[ pygame.K_DOWN ]:
-					if not thisLevel.CheckIfHitWall((player.x, player.y + player.speed), (player.nearestRow, player.nearestCol)): 
-						player.velX = 0
-						player.velY = player.speed
-						not_moved = False
-						
-				elif pygame.key.get_pressed()[ pygame.K_UP ]:
-					if not thisLevel.CheckIfHitWall((player.x, player.y - player.speed), (player.nearestRow, player.nearestCol)):
-						player.velX = 0
-						player.velY = -player.speed
-						not_moved = False'''
-						
-#############################################################################################################################################			
 	elif thisGame.mode == 3:
 		if pygame.mouse.get_pressed()[0] or (js!=None and js.get_button(JS_STARTBUTTON)):
 			thisGame.StartNewGame()
@@ -1589,33 +1552,35 @@ if pygame.joystick.get_count()>0:
   js.init()
 else: js=None
 
-Xvel = {}
-Xvel['right'] = 1
-Xvel['left'] = -1
-Xvel['down'] = 0
-Xvel['up'] = 0
-
-Yvel = {}
-Yvel['right'] = 0
-Yvel['left'] = 0
-Yvel['down'] = 1
-Yvel['up'] = -1
 
 facings = ['right', 'down', 'left', 'up']
 
 while True: 
+
 	if thisGame.idleTimer == 6000:			
 		sys.exit(0)
 
 	CheckIfCloseButton( pygame.event.get() )
 	
 	if thisGame.mode == 1:
+		
 		# normal gameplay mode
+		thisGame.modeTimer += 1
+
 		if thisGame.modeTimer > 10:
 			CheckInputs()
 		
-		thisGame.modeTimer += 1
-		player.Move()
+		if thisGame.preferred_direction is None:		
+			player.Move()
+		else:
+			print thisGame.preferred_direction
+			if not thisLevel.CheckIfHitWall((player.x +Xvel[thisGame.preferred_direction], player.y+Yvel[thisGame.preferred_direction]), (player.nearestRow, player.nearestCol)):
+				player.velX = Xvel[thisGame.preferred_direction]
+				player.velY = Yvel[thisGame.preferred_direction]
+				thisGame.preferred_direction = None
+			player.Move()
+
+
 		for i in range(0, 4, 1):
 			ghosts[i].Move()
 		thisFruit.Move()
@@ -1693,14 +1658,14 @@ while True:
 			thisGame.SetNextLevel()
 
 	elif thisGame.mode == 9:
+		thisGame.modeTimer += 1
+		thisGame.preferred_direction = None
 		#spinning pacman - choose a direction
 		if thisGame.modeTimer > 10:
-			facing = facings[thisGame.modeTimer/60%4]
+			facing = facings[thisGame.modeTimer/ROTATION_DELAY%4]
 			player.velX = Xvel[facing]
 			player.velY = Yvel[facing]
 			CheckInputs(facing)
-
-		thisGame.modeTimer += 1
 
 	thisGame.SmartMoveScreen()
 	
@@ -1731,4 +1696,4 @@ while True:
 	pygame.display.flip()
 	
 	thisGame.idleTimer += 1
-	clock.tick (60)
+	clock.tick (40)

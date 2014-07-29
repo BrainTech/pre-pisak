@@ -24,6 +24,7 @@ import wx, alsaaudio
 import wx.lib.buttons as bt
 import subprocess as sp
 import shlex
+import time
 
 from pymouse import PyMouse
 from pygame import mixer
@@ -288,6 +289,7 @@ class games( wx.Frame ):
 				elif self.label == 'pacman':
 					self.stoper.Stop()
 					self.Hide()
+					self.Lower()
 					process = sp.Call( ['python', self.pathToATPlatform + '/modules/games/pacman-large/pacman.pyw'] )
 					self.Show()
 
@@ -362,8 +364,12 @@ class games( wx.Frame ):
 				
 					elif self.position == 3:
 						self.stoper.Stop()
+
 						self.Hide()
+						self.Update()
+
 						process = sp.call( ['python', self.pathToATPlatform + '/modules/games/pacman-large/pacman.pyw'] )
+						
 						self.Show()
 			 			self.SetFocus()
 			        		self.stoper.Start( self.timeGap )

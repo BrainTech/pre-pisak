@@ -850,6 +850,10 @@ class pacman ():
 		self.anim_pacmanR = {}
 		self.anim_pacmanU = {}
 		self.anim_pacmanD = {}
+		self.anim_pacmanLD = {}
+		self.anim_pacmanRD = {}
+		self.anim_pacmanLU = {}
+		self.anim_pacmanRU = {}
 		self.anim_pacmanS = {}
 		self.anim_pacmanCurrent = {}
 		
@@ -858,6 +862,12 @@ class pacman ():
 			self.anim_pacmanR[i] = pygame.image.load(os.path.join(SCRIPT_PATH,"res","sprite","pacman-r " + str(i) + ".gif")).convert()
 			self.anim_pacmanU[i] = pygame.image.load(os.path.join(SCRIPT_PATH,"res","sprite","pacman-u " + str(i) + ".gif")).convert()
 			self.anim_pacmanD[i] = pygame.image.load(os.path.join(SCRIPT_PATH,"res","sprite","pacman-d " + str(i) + ".gif")).convert()
+
+			self.anim_pacmanLD[i] = pygame.image.load(os.path.join(SCRIPT_PATH,"res","sprite","pacman-ld " + str(i) + ".gif")).convert()
+			self.anim_pacmanRD[i] = pygame.image.load(os.path.join(SCRIPT_PATH,"res","sprite","pacman-rd " + str(i) + ".gif")).convert()
+			self.anim_pacmanLU[i] = pygame.image.load(os.path.join(SCRIPT_PATH,"res","sprite","pacman-lu " + str(i) + ".gif")).convert()
+			self.anim_pacmanRU[i] = pygame.image.load(os.path.join(SCRIPT_PATH,"res","sprite","pacman-ru " + str(i) + ".gif")).convert()
+
 			self.anim_pacmanS[i] = pygame.image.load(os.path.join(SCRIPT_PATH,"res","sprite","pacman.gif")).convert()
 
 		self.pelletSndNum = 0
@@ -960,13 +970,36 @@ class pacman ():
 		
 		# set the current frame array to match the direction pacman is facing
 		if self.velX > 0:
-			self.anim_pacmanCurrent = self.anim_pacmanR
+			if thisGame.preferred_direction is None:
+				self.anim_pacmanCurrent = self.anim_pacmanR
+			elif thisGame.preferred_direction == 'down':	
+				self.anim_pacmanCurrent = self.anim_pacmanRD
+			elif thisGame.preferred_direction == 'up':	
+				self.anim_pacmanCurrent = self.anim_pacmanRU
 		elif self.velX < 0:
-			self.anim_pacmanCurrent = self.anim_pacmanL
+			if thisGame.preferred_direction is None:
+				self.anim_pacmanCurrent = self.anim_pacmanL
+			elif thisGame.preferred_direction == 'down':	
+				self.anim_pacmanCurrent = self.anim_pacmanLD
+			elif thisGame.preferred_direction == 'up':	
+				self.anim_pacmanCurrent = self.anim_pacmanLU
+
+
 		elif self.velY > 0:
-			self.anim_pacmanCurrent = self.anim_pacmanD
+			if thisGame.preferred_direction is None:
+				self.anim_pacmanCurrent = self.anim_pacmanD
+			elif thisGame.preferred_direction == 'left':	
+				self.anim_pacmanCurrent = self.anim_pacmanLD
+			elif thisGame.preferred_direction == 'right':	
+				self.anim_pacmanCurrent = self.anim_pacmanRD
+
 		elif self.velY < 0:
-			self.anim_pacmanCurrent = self.anim_pacmanU
+			if thisGame.preferred_direction is None:
+				self.anim_pacmanCurrent = self.anim_pacmanU
+			elif thisGame.preferred_direction == 'left':	
+				self.anim_pacmanCurrent = self.anim_pacmanLU
+			elif thisGame.preferred_direction == 'right':	
+				self.anim_pacmanCurrent = self.anim_pacmanRU
 			
 		screen.blit (self.anim_pacmanCurrent[ self.animFrame ], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
 		
@@ -1562,8 +1595,7 @@ while True:
 
 	CheckIfCloseButton( pygame.event.get() )
 	
-	if thisGame.mode == 1:
-		
+	if thisGame.mode == 1:	
 		# normal gameplay mode
 		thisGame.modeTimer += 1
 
@@ -1573,11 +1605,12 @@ while True:
 		if thisGame.preferred_direction is None:		
 			player.Move()
 		else:
-			print thisGame.preferred_direction
 			if not thisLevel.CheckIfHitWall((player.x +Xvel[thisGame.preferred_direction], player.y+Yvel[thisGame.preferred_direction]), (player.nearestRow, player.nearestCol)):
 				player.velX = Xvel[thisGame.preferred_direction]
 				player.velY = Yvel[thisGame.preferred_direction]
+				thisGame.oldfacing = thisGame.preferred_direction				
 				thisGame.preferred_direction = None
+				
 			player.Move()
 
 
@@ -1591,6 +1624,8 @@ while True:
 		
 		if thisGame.modeTimer == 90:
 			thisLevel.Restart()
+			thisGame.oldfacing = 'right'
+			thisGame.preferred_direction = None				
 			
 			thisGame.lives -= 1
 			if thisGame.lives == -1:

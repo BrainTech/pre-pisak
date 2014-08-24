@@ -180,7 +180,7 @@ class pilot(wx.Frame):
 			else:
 				self.mousePosition = self.winWidth/1.12, self.winHeight/1.22
 			
-		self.mouseCursor.move( *self.mousePosition )
+                        self.mouseCursor.move( *self.mousePosition )
 
 		dial = wx.MessageDialog(self, 'Czy napewno chcesz wyjść z programu?', 'Wyjście',
 					wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION | wx.STAY_ON_TOP)

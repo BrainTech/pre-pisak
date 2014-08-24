@@ -149,7 +149,9 @@ class speller( wx.Frame ):
                 self.typewriterSpaceSound = mixer.Sound( self.pathToATPlatform + 'sounds/typewriter_space.wav' )
                 	    
                 self.parent.SetBackgroundColour( 'black' )
-		
+	
+                # self.button = event.GetEventObject( )
+	
 	#-------------------------------------------------------------------------
         def initializeBitmaps(self):
 
@@ -334,7 +336,7 @@ class speller( wx.Frame ):
 
 		if self.control == 'tracker':
 			if self.pressFlag == False:
-				self.button = event.GetEventObject( )
+                                self.button = event.GetEventObject( )
 				self.button.SetBackgroundColour( self.selectionColour )
 				self.pressFlag = True
 				self.label = event.GetEventObject().GetName().encode( 'utf-8' )
@@ -613,21 +615,21 @@ class speller( wx.Frame ):
 	def timerUpdate(self, event):
 
 		if self.control == 'tracker':
-
-			if self.button.GetBackgroundColour( ) == self.backgroundColour:
-				self.button.SetBackgroundColour( self.selectionColour )
-				
-			else:
-				self.button.SetBackgroundColour( self.backgroundColour )	
-
-			# self.parent.stoper2.Stop( )
-			self.stoper.Stop( )
-			self.pressFlag = False
-
-		else:
+                        try:
+                                if self.button.GetBackgroundColour( ) == self.backgroundColour:
+                                        self.button.SetBackgroundColour( self.selectionColour )
+                                else:
+                                        self.button.SetBackgroundColour( self.backgroundColour )	
+                                        
+                                        self.parent.stoper2.Stop( )
+                                
+                                self.pressFlag = False
+                        except AttributeError:
+                                pass
+                        
+                else:
 			self.mouseCursor.move( *self.mousePosition )
 			self.numberOfPresses = 0
-			# self.numberOfIteration += 1
 
 			if self.flag == 'rest':
 				pass

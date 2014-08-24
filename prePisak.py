@@ -163,8 +163,8 @@ class main_menu( wx.Frame ):
 					self.mousePosition = self.winWidth/1.8, self.winHeight/1.7
 			else:
 				self.mousePosition = self.winWidth/1.9, self.winHeight/1.68
-			
-		self.mouseCursor.move( *self.mousePosition )
+
+                        self.mouseCursor.move( *self.mousePosition )
 
 		dial = wx.MessageDialog(self, 'Czy napewno chcesz wyjść z programu?', 'Wyjście',
 					wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION | wx.STAY_ON_TOP )

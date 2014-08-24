@@ -334,7 +334,7 @@ class speller( wx.Frame ):
 			else:
 				self.mousePosition = self.winWidth/1.9, self.winHeight/1.68
 			
-		self.mouseCursor.move( *self.mousePosition )
+                        self.mouseCursor.move( *self.mousePosition )
 			
 		dial = wx.MessageDialog(self, 'Czy napewno chcesz wyjść z programu?', 'Wyjście',
 					wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION | wx.STAY_ON_TOP)
@@ -378,7 +378,7 @@ class speller( wx.Frame ):
 
 			self.MakeModal( False )
 			self.Destroy( )
-		
+                        
 	#-------------------------------------------------------------------------
 	def onPress(self, event):
 		
@@ -387,7 +387,7 @@ class speller( wx.Frame ):
 
 		if self.control == 'tracker':
 			if self.pressFlag == False:
-				self.button = event.GetEventObject()
+				self.button = event.GetEventObject( )
 				self.button.SetBackgroundColour( self.selectionColour )
 				self.pressFlag = True
 				self.label = event.GetEventObject().GetName().encode( 'utf-8' )			

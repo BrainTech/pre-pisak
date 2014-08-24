@@ -11,7 +11,7 @@ pressSound = ON
 filmVolumeLevel = 100
 musicVolumeLevel = 100
 
-control = switch
+control = tracker
 
 xBorder = 24
 yBorder = 24
@@ -19,7 +19,7 @@ yBorder = 24
 spellerNumber = 6
 voice = False
 vowelColour = red
-polishLettersColour = black
+polishLettersColour = blue
 tableFont = wx.SWISS
 textFont = wx.SWISS
 tableFontSize = 50

@@ -294,8 +294,12 @@ class pilot( wx.Frame ):
 						time.sleep( 1.5 )
 
 				elif self.label == 'cancel':
-					if "smplayer" in [psutil.Process(i).name() for i in psutil.get_pid_list()]:
-						os.system( 'smplayer -send-action quit' )
+					try:
+						if "smplayer" in [psutil.Process(i).name() for i in psutil.get_pid_list()]:
+							os.system( 'smplayer -send-action quit' )
+					except TypeError:
+						if "smplayer" in [psutil.Process(i).name for i in psutil.get_pid_list()]:
+							os.system( 'smplayer -send-action quit' )
 
 					alsaaudio.Mixer( control = 'Master' ).setvolume( self.filmVolumeLevel, 0 )
 

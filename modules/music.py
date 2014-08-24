@@ -355,8 +355,12 @@ class music( wx.Frame ):
 					self.Hide( )
 
 				elif self.label == 'delete':
-					if "smplayer" in [psutil.Process(i).name() for i in psutil.get_pid_list()]:
-						os.system( 'smplayer -send-action quit &' )
+					try:
+						if "smplayer" in [psutil.Process(i).name() for i in psutil.get_pid_list()]:
+							os.system( 'smplayer -send-action quit &' )
+					except TypeError:
+						if "smplayer" in [psutil.Process(i).name for i in psutil.get_pid_list()]:
+							os.system( 'smplayer -send-action quit &' )
 
 				elif self.label == 'back':
 					self.onExit( )

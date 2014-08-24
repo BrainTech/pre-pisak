@@ -308,8 +308,12 @@ class pilot(wx.Frame):
 					os.system( 'smplayer -send-action forward1' )
 
 				elif self.label == 'cancel':
-					if "smplayer" in [psutil.Process(i).name() for i in psutil.get_pid_list()]:
-						os.system( 'smplayer -send-action quit' )
+					try:
+						if "smplayer" in [psutil.Process(i).name() for i in psutil.get_pid_list()]:
+							os.system( 'smplayer -send-action quit' )
+					except TypeError:						
+						if "smplayer" in [psutil.Process(i).name for i in psutil.get_pid_list()]:
+							os.system( 'smplayer -send-action quit' )
 
 					self.onExit( )
 
@@ -402,9 +406,12 @@ class pilot(wx.Frame):
 						os.system( 'smplayer -send-action forward1' )
 
 					elif self.buttons[ self.position ][ 0 ] == 'cancel':
-						if "smplayer" in [psutil.Process(i).name() for i in psutil.get_pid_list()]:
-							os.system( 'smplayer -send-action quit' )
-
+						try:
+							if "smplayer" in [psutil.Process(i).name() for i in psutil.get_pid_list()]:
+								os.system( 'smplayer -send-action quit' )
+						except TypeError:
+							if "smplayer" in [psutil.Process(i).name for i in psutil.get_pid_list()]:
+								os.system( 'smplayer -send-action quit' )
 						self.onExit( )
 
 					elif self.buttons[ self.position ][ 0 ] == 'back':

@@ -77,13 +77,13 @@ class main_menu( wx.Frame ):
 			except ValueError:
 				setattr(self, item[:item.find('=')], item[item.find('=')+1:])
 
-		self.labels = 'SPELLER EXERCISES AUDIOBOOKS MUSIC MOVIES RADIO'.split( )
+		self.labels = 'MOVIES AUDIOBOOKS MUSIC'.split( )
 
 		self.flag = 'row'
 		self.pressFlag = False
 
 		self.numberOfRows = [2]
-		self.numberOfColumns = [3]
+		self.numberOfColumns = [2]
 		self.maxRows = [ 3 * item for item in self.numberOfRows ]
 		self.maxColumns = [ 2 * item for item in self.numberOfColumns ]
 
@@ -114,7 +114,7 @@ class main_menu( wx.Frame ):
 	#-------------------------------------------------------------------------	
         def initializeBitmaps(self):
             
-	    labelFiles = [ self.path + item for item in [ 'icons/modules/speller.png', 'icons/modules/exercises.png', 'icons/modules/audiobooks.png', 'icons/modules/music.png', 'icons/modules/movies.png', 'icons/modules/radio.png', ] ]
+	    labelFiles = [ self.path + item for item in [ 'icons/modules/movies_w.png', 'icons/modules/audiobooks_w.png', 'icons/modules/music_w.png' ] ]
 
             self.labelbitmaps = { }
 	    for index in xrange( len(self.labels) ):
@@ -123,18 +123,33 @@ class main_menu( wx.Frame ):
 	#-------------------------------------------------------------------------
 	def createGui(self):
 		self.vbox = wx.BoxSizer( wx.VERTICAL )
-                self.sizer = wx.GridSizer( self.numberOfRows[ 0 ], self.numberOfColumns[ 0 ], self.xBorder, self.yBorder )
+                self.sizer = wx.GridBagSizer( self.xBorder, self.yBorder )
 
 		if self.control != 'tracker':
 			event = eval('wx.EVT_LEFT_DOWN')
 		else:
 			event = eval('wx.EVT_BUTTON')
 			
-		for i in self.labels:
-			b = bt.GenBitmapButton( self , -1, bitmap = self.labelbitmaps[ i ], name = i )
-           		b.SetBackgroundColour( self.backgroundColour )
-			b.Bind( event, self.onPress )
-			self.sizer.Add( b, 0, wx.EXPAND )
+                b = bt.GenBitmapButton( self , -1, bitmap = self.labelbitmaps[ self.labels[0] ], name = self.labels[0] )
+                b.SetBackgroundColour( self.backgroundColour )
+                b.Bind( event, self.onPress )
+                self.sizer.Add( b, (0, 0), (1, 2), wx.EXPAND )
+                
+                b = bt.GenBitmapButton( self , -1, bitmap = self.labelbitmaps[ self.labels[1] ], name = self.labels[1] )
+                b.SetBackgroundColour( self.backgroundColour )
+                b.Bind( event, self.onPress )
+                self.sizer.Add( b, (1, 0), wx.DefaultSpan, wx.EXPAND )
+
+                b = bt.GenBitmapButton( self , -1, bitmap = self.labelbitmaps[ self.labels[2] ], name = self.labels[2] )
+                b.SetBackgroundColour( self.backgroundColour )
+                b.Bind( event, self.onPress )
+                self.sizer.Add( b, (1, 1), wx.DefaultSpan, wx.EXPAND )
+
+                for number in range( self.numberOfRows[ 0 ] ):
+                        self.sizer.AddGrowableRow( number )
+                for number in range( self.numberOfColumns[ 0 ] ):
+                        self.sizer.AddGrowableCol( number )
+
 		self.vbox.Add( self.sizer, proportion=1, flag=wx.EXPAND | wx.TOP | wx.BOTTOM | wx.LEFT | wx.RIGHT, border=self.xBorder )
 		self.SetSizer( self.vbox )
 
@@ -163,8 +178,7 @@ class main_menu( wx.Frame ):
 					self.mousePosition = self.winWidth/1.8, self.winHeight/1.7
 			else:
 				self.mousePosition = self.winWidth/1.9, self.winHeight/1.68
-
-                        self.mouseCursor.move( *self.mousePosition )
+			self.mouseCursor.move( *self.mousePosition )
 
 		dial = wx.MessageDialog(self, 'Czy napewno chcesz wyjść z programu?', 'Wyjście',
 					wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION | wx.STAY_ON_TOP )

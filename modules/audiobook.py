@@ -75,7 +75,7 @@ class audiobook( wx.Frame ):
 		self.pressFlag = False
 		
 		self.numberOfRows = 3,
-		self.numberOfColumns = 5,
+		self.numberOfColumns = 2,
 		
 		self.columnIteration = 0
 		self.rowIteration = 0						
@@ -143,9 +143,9 @@ class audiobook( wx.Frame ):
 			self.numberOfPanels = 1
 			print "Błąd w strukturze plików."
 
-		self.functionButtonPath = [ wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform + 'icons/volume down.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform + 'icons/volume up.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform + 'icons/show.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform + 'icons/delete.png', 'rb' ) ) ), wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform + 'icons/back.png', 'rb' ) ) ) ]
+		self.functionButtonPath = [ wx.BitmapFromImage( wx.ImageFromStream( open( self.pathToATPlatform + 'icons/back.png', 'rb' ) ) ) ]
 		
-		self.functionButtonName = [ 'volume_down', 'volume_up', 'show', 'delete', 'back' ]
+		self.functionButtonName = [ 'back' ]
 
 		if self.numberOfPanels == 1:
 			self.flag = 'row'
@@ -195,32 +195,8 @@ class audiobook( wx.Frame ):
 			b.SetBackgroundColour( self.backgroundColour )
 			b.SetBezelWidth( 3 )
 			b.Bind( event, self.onPress )
-			subSizer.Add( b, ( ( index + index_2 + 1 ) / self.numberOfColumns[ 0 ], ( index + index_2 + 1 ) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
+			subSizer.Add( b, ( ( index + index_2 + 1 ) / self.numberOfColumns[ 0 ], ( index + index_2 + 1 ) % self.numberOfColumns[ 0 ] ), (1,2), wx.EXPAND )
 
-			b = bt.GenBitmapButton( self, -1, bitmap = self.functionButtonPath[ 1 ], name = self.functionButtonName[ 1 ] )
-			b.SetBackgroundColour( self.backgroundColour )
-			b.SetBezelWidth( 3 )
-			b.Bind( event, self.onPress )
-			subSizer.Add( b, ( ( index + index_2 + 2 ) / self.numberOfColumns[ 0 ], ( index + index_2 + 2 ) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
-
-			b = bt.GenBitmapButton( self, -1, bitmap = self.functionButtonPath[ 2 ], name = self.functionButtonName[ 2 ] )
-			b.SetBackgroundColour( self.backgroundColour )
-			b.SetBezelWidth( 3 )
-			b.Bind( event, self.onPress )
-			subSizer.Add( b, ( ( index + index_2 + 3 ) / self.numberOfColumns[ 0 ], ( index + index_2 + 3 ) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
-
-			b = bt.GenBitmapButton( self, -1, bitmap = self.functionButtonPath[ 3 ], name = self.functionButtonName[ 3 ] )
-			b.SetBackgroundColour( self.backgroundColour )
-			b.SetBezelWidth( 3 )
-			b.Bind( event, self.onPress )
-			subSizer.Add( b, ( ( index + index_2 + 4 ) / self.numberOfColumns[ 0 ], ( index + index_2 + 4 ) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
-
-			b = bt.GenBitmapButton( self, -1, bitmap = self.functionButtonPath[ 4 ], name = self.functionButtonName[ 4 ] )
-			b.SetBackgroundColour( self.backgroundColour )
-			b.SetBezelWidth( 3 )
-			b.Bind( event, self.onPress )
-			subSizer.Add( b, ( ( index + index_2 + 5 ) / self.numberOfColumns[ 0 ], ( index + index_2 + 5 ) % self.numberOfColumns[ 0 ] ), wx.DefaultSpan, wx.EXPAND )
-				
 			for number in range( self.numberOfRows[ 0 ] ):
 				subSizer.AddGrowableRow( number )
 			for number in range( self.numberOfColumns[ 0 ] ):
@@ -263,8 +239,7 @@ class audiobook( wx.Frame ):
 					self.mousePosition = self.winWidth/1.8, self.winHeight/1.7
 			else:
 				self.mousePosition = self.winWidth/1.9, self.winHeight/1.68
-			
-                        self.mouseCursor.move( *self.mousePosition )
+			self.mouseCursor.move( *self.mousePosition )
 
 		dial = wx.MessageDialog(self, 'Czy napewno chcesz wyjść z programu?', 'Wyjście',
 					wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION | wx.STAY_ON_TOP)
@@ -341,11 +316,6 @@ class audiobook( wx.Frame ):
 					self.button.SetFocus( )
 					
 					self.Update( )
-						
-			elif self.label == 'show':
-				self.stoper.Stop( )
-				audiobookPilot.pilot( self, id = 2 ).Show( True )
-				self.Hide( )
 				
 			elif self.label == 'delete':
 				if "smplayer" in [psutil.Process(i).name() for i in psutil.get_pid_list()]:
@@ -365,6 +335,9 @@ class audiobook( wx.Frame ):
 				try:
 					choicePath = self.path + self.name 
 					os.system( 'smplayer -pos 0 0 %s &' % choicePath.replace( ' ', '\ ' ) )
+                                        self.stoper.Stop( )
+                                        audiobookPilot.pilot( self, id = 2 ).Show( True )
+                                        self.Hide( )
 						
 				except IndexError:
 					self.button.SetBackgroundColour( 'red' )

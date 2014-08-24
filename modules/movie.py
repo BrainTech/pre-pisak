@@ -72,7 +72,7 @@ class movie( wx.Frame ):
 
 		self.pressFlag = False
 					
-		self.numberOfColumns = 5,
+		self.numberOfColumns = 2,
 		self.numberOfRows = 3,
 		
 		self.columnIteration = 0
@@ -237,8 +237,7 @@ class movie( wx.Frame ):
 					self.mousePosition = self.winWidth/1.8, self.winHeight/1.7
 			else:
 				self.mousePosition = self.winWidth/1.9, self.winHeight/1.68
-			
-                        self.mouseCursor.move( *self.mousePosition )
+			self.mouseCursor.move( *self.mousePosition )
 			
 		dial = wx.MessageDialog(self, 'Czy napewno chcesz wyjść z programu?', 'Wyjście',
 					wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION | wx.STAY_ON_TOP)
@@ -305,7 +304,7 @@ class movie( wx.Frame ):
 					# time.sleep( 1.5 )
 
 				else:
-					try:                                    					
+					try:
 						mediaIndex = self.existingLogos.index( self.label )
 						choice = self.existingMedia[ mediaIndex ]
 						choicePath = self.path + choice
@@ -375,7 +374,7 @@ class movie( wx.Frame ):
 					selectedButton = item.GetWindow( )
 					selectedButton.SetBackgroundColour( self.selectionColour )
 					selectedButton.SetFocus( )
-
+                                        
 					self.Update( )
 
 					try:                                    					

@@ -114,7 +114,7 @@ class movie( wx.Frame ):
 				fileExtension = item[ item.rfind('.')+1: ]
 				if fileExtension == 'png' or fileExtension == 'jpg' or fileExtension == 'jpeg':
 					self.existingLogos.append( item )
-				elif fileExtension == 'mp4' or fileExtension == 'avi' or fileExtension == 'AVI' or fileExtension == 'VOB' or fileExtension == 'mkv':
+				elif fileExtension == 'mp4' or fileExtension == 'avi' or fileExtension == 'AVI' or fileExtension == 'VOB' or fileExtension == 'mkv' or fileExtension == 'mov' or fileExtension == 'MOV' or fileExtension = 'rmvb':
 					self.existingMedia.append( item )
 
 			self.existingLogos = sorted( self.existingLogos, key=lambda name: int(name.split( '_', 2 )[ 0 ]) )

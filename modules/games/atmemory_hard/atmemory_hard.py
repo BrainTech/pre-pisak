@@ -174,7 +174,7 @@ class memory_GUI( wx.Frame ):
 
                         if index_2 == 1:
 				if self.winstate:
-					b = bt.GenButton( self, -1, u'WYGRYWASZ!',  size = ( self.buttonsBoardWidth / float( self.numberOfColumns ), self.buttonsBoardHeight / float( self.numberOfRows ) ) )
+					b = bt.GenButton( self, -1, u'WYGRYWASZ!',  size = ( self.buttonsBoardWidth / self.numberOfColumns , self.buttonsBoardHeight / self.numberOfRows  ) )
 					b.SetFont( wx.Font(27, wx.FONTFAMILY_ROMAN, wx.FONTWEIGHT_LIGHT,  False) )
 		
 				else:

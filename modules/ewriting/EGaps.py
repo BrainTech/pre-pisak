@@ -89,14 +89,14 @@ class cwiczenia(wx.Frame):
 		
 		self.numberOfIteration = 0
 		self.maxNumberOfIteration = 2 * 5
-		
+		mixer.init( )		
 		if self.control != 'tracker':
 			self.mouseCursor = PyMouse( )
 			self.mousePosition = self.winWidth - 8 - self.xBorder, self.winHeight - 8 - self.yBorder
 			self.mouseCursor.move( *self.mousePosition )			
 							
 		if self.switchSound.lower( ) == 'on' or self.pressSound.lower( ) == 'on':
-			mixer.init( )
+
 			if self.switchSound.lower( ) == 'on':
 				self.switchingSound = mixer.Sound( self.pathToATPlatform + '/sounds/switchSound.wav' )
 			if self.pressSound.lower( ) == 'on':

@@ -96,6 +96,7 @@ class cwiczenia(wx.Frame):
 		self.numberOfExtraWords = 3
 
 		self.numberOfPresses = 1
+		mixer.init( )
 
 		if self.control != 'tracker':
 			self.mouseCursor = PyMouse( )
@@ -103,7 +104,6 @@ class cwiczenia(wx.Frame):
 			self.mouseCursor.move( *self.mousePosition )			
 
 		if self.switchSound.lower( ) == 'on' or self.pressSound.lower( ) == 'on':
-			mixer.init( )
 			if self.switchSound.lower( ) == 'on':
 				self.switchingSound = mixer.Sound( self.pathToATPlatform + '/sounds/switchSound.wav' )
 			if self.pressSound.lower( ) == 'on':

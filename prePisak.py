@@ -262,9 +262,17 @@ class main_menu( wx.Frame ):
 				    label = self.labels[ self.position ]			    
 				    
 				    if label == 'SPELLER':
-					    self.stoper.Stop( )
-					    speller.speller( parent = self, id = -1 ).Show( True )
-					    self.Hide( )
+						self.stoper.Stop()
+
+						self.Hide()
+						self.Update()
+						sp.call( ['synclient', 'TouchpadOff=1'] )
+						process = sp.call( ['python3', '/home/andrzej/pisak/pisak/speller/new_app.py', 'combined'] ) #insert path to PISAK speller
+						sp.call( ['synclient', 'TouchpadOff=0'] )
+						self.Show()
+			 			self.SetFocus()
+						self.stoper.Start( self.timeGap )
+
 
 				    elif label == 'EXERCISES':
 					    self.stoper.Stop( )
